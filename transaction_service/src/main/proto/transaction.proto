@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package com.fpm2025.transaction.grpc;
+
+// Tùy chọn để sinh ra code Java
+option java_multiple_files = true;
+option java_package = "com.fpm2025.transaction.grpc";
+option java_outer_classname = "TransactionProto";
+
+// --------------------
+// Service định nghĩa API gRPC cho Transaction
+// --------------------
+service TransactionService {
+  // Lấy transaction theo ID
+  rpc GetTransaction (GetTransactionRequest) returns (GetTransactionResponse);
+
+  // Tạo transaction mới
+  rpc CreateTransaction (CreateTransactionRequest) returns (CreateTransactionResponse);
+
+  // Lấy danh sách transaction theo userId
+  rpc ListTransactions (ListTransactionsRequest) returns (ListTransactionsResponse);
+
+  // Xóa transaction theo ID
+  rpc DeleteTransaction (DeleteTransactionRequest) returns (DeleteTransactionResponse);
+}
+
+// --------------------
+// Messages
+// --------------------
+message Transaction {
+  string id = 1;
+  string userId = 2;
+  string walletId = 3;
+  double amount = 4;
+  string type = 5;       // e.g., INCOME, EXPENSE
+  string category = 6;   // e.g., FOOD, SALARY
+  string note = 7;
+  string createdAt = 8;
+}
+
+// Request/Response cho GetTransaction
+message GetTransactionRequest {
+  string id = 1;
+}
+
+message GetTransactionResponse {
+  Transaction transaction = 1;
+}
+
+// Request/Response cho CreateTransaction
+message CreateTransactionRequest {
+  string userId = 1;
+  string walletId = 2;
+  double amount = 3;
+  string type = 4;
+  string category = 5;
+  string note = 6;
+}
+
+message CreateTransactionResponse {
+  Transaction transaction = 1;
+}
+
+// Request/Response cho ListTransactions
+message ListTransactionsRequest {
+  string userId = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListTransactionsResponse {
+  repeated Transaction transactions = 1;
+}
+
+// Request/Response cho DeleteTransaction
+message DeleteTransactionRequest {
+  string id = 1;
+}
+
+message DeleteTransactionResponse {
+  bool success = 1;
+}

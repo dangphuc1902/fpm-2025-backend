@@ -1,0 +1,34 @@
+syntax = "proto3";
+package com.fpm2025.auth;
+
+service AuthService {
+  rpc LoginWithGoogle(LoginRequest) returns (LoginResponse);
+  rpc ValidateToken(TokenRequest) returns (TokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message LoginRequest {
+  string google_token = 1;
+}
+
+message LoginResponse {
+  string jwt = 1;
+  string user_id = 2;
+}
+
+message TokenRequest {
+  string jwt = 1;
+}
+
+message TokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}

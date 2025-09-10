@@ -1,0 +1,32 @@
+syntax = "proto3";
+package com.fpm2025.notification;
+
+service NotificationService {
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (NotificationResponse);
+}
+
+message Notification {
+  string notification_id = 1;
+  string user_id = 2;
+  string message = 3;
+  bool read = 4;
+  string created_at = 5;
+}
+
+message ListNotificationsRequest {
+  string user_id = 1;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+}
+
+message MarkAsReadRequest {
+  string notification_id = 1;
+}
+
+message NotificationResponse {
+  bool success = 1;
+  Notification notification = 2;
+}

@@ -1,0 +1,44 @@
+syntax = "proto3";
+package com.fpm2025.reporting;
+
+service ReportingService {
+  rpc GenerateReport(GenerateReportRequest) returns (ReportResponse);
+  rpc ListReports(ListReportsRequest) returns (ListReportsResponse);
+  rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse);
+}
+
+message Report {
+  string report_id = 1;
+  string user_id = 2;
+  string type = 3; // PDF, Excel
+  string period = 4;
+  string file_path = 5;
+}
+
+message GenerateReportRequest {
+  string user_id = 1;
+  string from_date = 2;
+  string to_date = 3;
+  string type = 4; // PDF/Excel
+}
+
+message ReportResponse {
+  bool success = 1;
+  Report report = 2;
+}
+
+message ListReportsRequest {
+  string user_id = 1;
+}
+
+message ListReportsResponse {
+  repeated Report reports = 1;
+}
+
+message DownloadReportRequest {
+  string report_id = 1;
+}
+
+message DownloadReportResponse {
+  bytes file_data = 1;
+}

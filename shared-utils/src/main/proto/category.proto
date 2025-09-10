@@ -1,0 +1,44 @@
+syntax = "proto3";
+package com.fpm2025.category;
+
+service CategoryService {
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (CategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (CategoryResponse);
+}
+
+message Category {
+  string category_id = 1;
+  string name = 2;
+  string type = 3; // income/expense
+  string parent_id = 4;
+}
+
+message ListCategoriesRequest {
+  string user_id = 1;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message CreateCategoryRequest {
+  string user_id = 1;
+  string name = 2;
+  string type = 3;
+  string parent_id = 4;
+}
+
+message UpdateCategoryRequest {
+  Category category = 1;
+}
+
+message DeleteCategoryRequest {
+  string category_id = 1;
+}
+
+message CategoryResponse {
+  bool success = 1;
+  Category category = 2;
+}

@@ -1,0 +1,60 @@
+#yaml
+server:
+  port: 8081
+  
+spring:
+  application:
+    name: user-auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5433/user-auth-service
+    username: root
+    password: admin123456
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  webflux:
+    multipart:
+      max-headers-size: 512KB
+      max-parts: 3
+      max-disk-usage-per-part: 1024KB
+      max-in-memory-size: 5KB
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+redis:
+  port: 6378
+  url: localhost
+  # logger: Ghi lại lịch sử thao tác
+
+logging:
+  level:
+    root: info
+  file:
+    name: D:\WorkSpace\Project\WorkStudySync\log\devlog.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100
+grpc:
+  server:
+    port: 9090 # port gRPC
+    security:
+      enabled: true
+      certificateChain: classpath:certs/server.crt
+      privateKey: classpath:certs/server.key
+    keep-alive-time: 5s
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    metadata-map:
+      grpc.port: ${grpc.server.port}   # Cho Eureka biết gRPC port

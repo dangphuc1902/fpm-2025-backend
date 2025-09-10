@@ -1,0 +1,62 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    enabled: true
+    gateway:
+      routes:
+        - id: user-auth-route
+          uri: lb://user-auth-service
+          predicates:
+            - Path=/auth/**
+          filters:
+            - AuthenticationFilter
+        - id: wallet-route
+          uri: lb://wallet-service
+          predicates:
+            - Path=/wallets/**
+        - id: transaction-route
+          uri: lb://transaction-service
+          predicates:
+            - Path=/transactions/**
+        - id: reporting-route
+          uri: lb://reporting-service
+          predicates:
+            - Path=/reports/**
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+redis:
+  port: 6378
+  url: localhost
+logging:
+  level:
+    root: info
+  file:
+    name: D:\WorkSpace\Project\FPM-2025\log\gateway.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+grpc:
+  client:
+    user-auth-service:
+      address: static://localhost:9090
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+    wallet-service:
+      address: static://localhost:9091
+    transaction-service:
+      address: static://localhost:9092
+    reporting-service:
+      address: static://localhost:9093
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true

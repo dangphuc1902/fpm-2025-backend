@@ -1,0 +1,53 @@
+syntax = "proto3";
+package com.fpm2025.transaction;
+
+service TransactionService {
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
+  rpc AddTransaction(AddTransactionRequest) returns (TransactionResponse);
+  rpc UpdateTransaction(UpdateTransactionRequest) returns (TransactionResponse);
+  rpc DeleteTransaction(DeleteTransactionRequest) returns (TransactionResponse);
+}
+
+message Transaction {
+  string transaction_id = 1;
+  string wallet_id = 2;
+  string category_id = 3;
+  double amount = 4;
+  string date = 5;
+  string note = 6;
+  string type = 7; // income/expense
+}
+
+message ListTransactionsRequest {
+  string user_id = 1;
+  string from_date = 2;
+  string to_date = 3;
+  string type = 4;
+}
+
+message ListTransactionsResponse {
+  repeated Transaction transactions = 1;
+}
+
+message AddTransactionRequest {
+  string user_id = 1;
+  string wallet_id = 2;
+  string category_id = 3;
+  double amount = 4;
+  string date = 5;
+  string note = 6;
+  string type = 7;
+}
+
+message UpdateTransactionRequest {
+  Transaction transaction = 1;
+}
+
+message DeleteTransactionRequest {
+  string transaction_id = 1;
+}
+
+message TransactionResponse {
+  bool success = 1;
+  Transaction transaction = 2;
+}
