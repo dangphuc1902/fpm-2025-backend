@@ -42,8 +42,8 @@
 			<!-- Add common deps here, e.g., gRPC, RabbitMQ, Redis -->
 			<dependency>
 				<groupId>net.devh.boot</groupId>
-				<artifactId>grpc-server-spring-boot-starter</artifactId>
-				<version>3.1.0.RELEASE</version>  <!-- Latest -->
+				<artifactId>grpc-client-spring-boot-starter</artifactId>
+				<version>3.2.0.RELEASE</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -61,12 +61,12 @@
 				<version>${spring-boot.version}</version>
 			</dependency>
 			<!-- gRPC testing -->
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-testing</artifactId>
-            <version>1.63.0</version>
-            <scope>test</scope>
-        </dependency>
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-testing</artifactId>
+				<version>1.63.0</version>
+				<scope>test</scope>
+			</dependency>
 			<!-- JJWT, Resilience4j, etc. -->
 		</dependencies>
 	</dependencyManagement>
