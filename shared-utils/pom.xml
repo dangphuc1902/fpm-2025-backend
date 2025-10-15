@@ -28,10 +28,11 @@
 		<url />
 	</scm>
 	<properties>
-      <configuration-protoSourceRoot>D:\WorkSpace\Project\fpm-2025-backend\shared-utils/src/main/java/com/fpm2025/proto</configuration-protoSourceRoot>
+		<configuration-protoSourceRoot>
+			D:\WorkSpace\Project\fpm-2025-backend\shared-utils/src/main/java/com/fpm2025/proto</configuration-protoSourceRoot>
 		<java.version>17</java.version>
-	    <protobuf.version>3.25.3</protobuf.version>
-    	<grpc.version>1.65.0</grpc.version>
+		<protobuf.version>3.25.3</protobuf.version>
+		<grpc.version>1.65.0</grpc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -51,6 +52,21 @@
 		<dependency>
 			<groupId>io.grpc</groupId>
 			<artifactId>grpc-protobuf</artifactId>
+			<version>${grpc.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-stub</artifactId>
+			<version>${grpc.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-kotlin-stub</artifactId>
+			<version>1.4.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-protobuf</artifactId>
 			<version>1.65.0</version>
 		</dependency>
 
@@ -64,42 +80,72 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-maven-plugin</artifactId>
+				<version>3.25.3</version>
+				<configuration>
+					<protocArtifact>
+						com.google.protobuf:protoc:4.30.2:exe:${os.detected.classifier}</protocArtifact>
+					<pluginId>grpc-java</pluginId>
+					<pluginArtifact>
+						io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>compile</goal>
+							<goal>compile-custom</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
-            <groupId>io.github.ascopes</groupId>
-            <artifactId>protobuf-maven-plugin</artifactId>
-            <version>3.4.2</version>
-            <configuration>
-                <protocVersion>${protobuf.version}</protocVersion>
-                <clearOutputDirectory>false</clearOutputDirectory>
-                <protocArtifact>com.google.protobuf:protoc:${protobuf.version}</protocArtifact>
-                <pluginId>grpc-java</pluginId>
-                <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-            </configuration>
+				<groupId>io.github.ascopes</groupId>
+				<artifactId>protobuf-maven-plugin</artifactId>
+				<version>3.4.2</version>
+				<configuration>
+					<protocVersion>${protobuf.version}</protocVersion>
+					<clearOutputDirectory>false</clearOutputDirectory>
+					<protocArtifact>
+						com.google.protobuf:protoc:${protobuf.version}</protocArtifact>
+					<pluginId>grpc-java</pluginId>
+					<pluginArtifact>
+						io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+				</configuration>
 
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>generate</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<!-- Plugin để detect OS cho protoc-gen-grpc-java -->
-        <plugin>
-            <groupId>kr.motd.maven</groupId>
-            <artifactId>os-maven-plugin</artifactId>
-            <version>1.7.1</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>detect</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
+			<plugin>
+				<groupId>kr.motd.maven</groupId>
+				<artifactId>os-maven-plugin</artifactId>
+				<version>1.7.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>detect</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>

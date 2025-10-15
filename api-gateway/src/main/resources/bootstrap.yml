@@ -1,7 +1,9 @@
 spring:
   cloud:
     config:
-      uri: http://localhost:8888  # Config Server URL
-      fail-fast: true  # Fail nếu không connect
-      name: [service-name]  # e.g., api-gateway (tên file config)
-      profile: default  # Profile (e.g., default, dev, prod)
+      uri: http://localhost:8888
+      fail-fast: true
+      name: api-gateway
+      profile: default
+  application:
+    name: api-gateway

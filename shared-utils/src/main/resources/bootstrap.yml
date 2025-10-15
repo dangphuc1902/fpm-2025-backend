@@ -3,5 +3,5 @@ spring:
     config:
       uri: http://localhost:8888  # Config Server URL
       fail-fast: true  # Fail nếu không connect
-      name: [service-name]  # e.g., api-gateway (tên file config)
+      name: [shared-utils]  # e.g., api-gateway (tên file config)
       profile: default  # Profile (e.g., default, dev, prod)
