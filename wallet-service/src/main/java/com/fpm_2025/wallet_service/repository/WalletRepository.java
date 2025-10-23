@@ -1,4 +1,4 @@
-package WalletRepository;
+package com.fpm_2025.wallet_service.repository;
 
 import java.util.List;
 
