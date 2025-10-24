@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: true
+      name: api-gateway
+      profile: default
+  application:
+    name: api-gateway

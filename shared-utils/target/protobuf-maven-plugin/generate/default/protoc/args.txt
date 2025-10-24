@@ -1,0 +1,12 @@
+--java_out=D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\target\generated-sources\protobuf
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\budget.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\category.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\notification.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\profile.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\reporting.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\transaction.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\user_auth.proto
+D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto\wallet.proto
+--proto_path=D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\src\main\proto
+--proto_path=D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\target\protobuf-maven-plugin\generate\default\archives\protobuf-java-3.25.3-bmPgvFw3yoaM6gJXD74CgXyaKIs
+--proto_path=D:\WorkSpace\Project\FPM-2025\fpm-2025-backend\shared-utils\target\protobuf-maven-plugin\generate\default\archives\proto-google-common-protos-2.29.0-ADqLYjLSMOHreBDOZPlBSmXlVjQ
