@@ -1,0 +1,30 @@
+# Maven
+target/
+*/target/
+
+# Logs
+*.log
+log/
+logs/
+
+# IntelliJ IDEA / Eclipse
+.idea/
+*.iml
+.project
+.settings/
+bin/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+out/
+build/
+
+# Ignore node_modules if using frontend submodules
+node_modules/
+
+# Docker
+*.env
+docker-compose.override.yml
