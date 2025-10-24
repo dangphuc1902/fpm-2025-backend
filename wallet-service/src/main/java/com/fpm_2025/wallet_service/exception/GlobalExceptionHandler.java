@@ -1,5 +1,6 @@
 package com.fpm_2025.wallet_service.exception;
 
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
