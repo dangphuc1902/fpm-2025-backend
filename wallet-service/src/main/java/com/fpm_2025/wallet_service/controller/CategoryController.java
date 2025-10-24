@@ -1,9 +1,9 @@
 package com.fpm_2025.wallet_service.controller;
 
-import com.fpm_2025.wallet_service.dto.request.CreateCategoryRequest;
-import com.fpm_2025.wallet_service.dto.response.BaseResponse;
-import com.fpm_2025.wallet_service.dto.response.CategoryResponse;
-import com.fpm_2025.wallet_service.enums.CategoryType;
+import com.fpm_2025.wallet_service.payload.request.CreateCategoryRequest;
+import com.fpm_2025.wallet_service.payload.response.BaseResponse;
+import com.fpm_2025.wallet_service.payload.response.CategoryResponse;
+import com.fpm_2025.wallet_service.entity.enums.*;
 import com.fpm_2025.wallet_service.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
