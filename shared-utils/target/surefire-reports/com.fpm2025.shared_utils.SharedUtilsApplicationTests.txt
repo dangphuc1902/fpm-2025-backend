@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.fpm2025.shared_utils.SharedUtilsApplicationTests
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.728 s -- in com.fpm2025.shared_utils.SharedUtilsApplicationTests

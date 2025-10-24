@@ -1,9 +1,0 @@
-spring:
-  cloud:
-    config:
-      uri: http://localhost:8888
-      fail-fast: true
-      name: user-auth-service
-      profile: default
-  application:
-    name: user-auth-service
