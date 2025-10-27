@@ -1,14 +1,16 @@
 package com.fpm_2025.wallet_service.controller;
 
-import com.fpm_2025.wallet_service.payload.request.CreateCategoryRequest;
-import com.fpm_2025.wallet_service.payload.response.BaseResponse;
-import com.fpm_2025.wallet_service.payload.response.CategoryResponse;
+import com.fpm_2025.wallet_service.dto.payload.request.CreateCategoryRequest;
+import com.fpm_2025.wallet_service.dto.payload.response.BaseResponse;
+import com.fpm_2025.wallet_service.dto.payload.response.CategoryResponse;
 import com.fpm_2025.wallet_service.entity.enums.*;
 import com.fpm_2025.wallet_service.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +22,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Category", description = "Category management APIs")
 public class CategoryController {
-
-    private final CategoryService categoryService;
+	
+	@Autowired
+    private CategoryService categoryService;
 
     @PostMapping
     @Operation(summary = "Create new category")

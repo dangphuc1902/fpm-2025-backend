@@ -1,20 +1,21 @@
 package com.fpm_2025.wallet_service.controller;
 
-import com.fpm_2025.wallet_service.dto.request.CreateWalletRequest;
-import com.fpm_2025.wallet_service.dto.request.UpdateWalletRequest;
-import com.fpm_2025.wallet_service.dto.response.BaseResponse;
-import com.fpm_2025.wallet_service.dto.response.WalletResponse;
-import com.fpm_2025.wallet_service.enums.WalletType;
+import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
+import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
+import com.fpm_2025.wallet_service.dto.payload.response.BaseResponse;
+import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
+import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import com.fpm_2025.wallet_service.service.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -23,8 +24,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Wallet", description = "Wallet management APIs")
 public class WalletController {
-
-	private final WalletService walletService;
+	
+	@Autowired
+	private WalletService walletService;
 
 	@PostMapping
 	@Operation(summary = "Create new wallet")

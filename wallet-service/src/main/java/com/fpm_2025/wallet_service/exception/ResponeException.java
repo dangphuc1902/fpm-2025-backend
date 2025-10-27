@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.exception;
 
-import com.fpm_2025.wallet_service.payload.response.BaseResponse;
+import com.fpm_2025.wallet_service.dto.payload.response.BaseResponse;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,16 +1,18 @@
-package com.WorkStudySync.service;
+package com.fpm_2025.wallet_service.service;
 
-import com.WorkStudySync.entity.WalletEntity;
-import com.WorkStudySync.enums.WalletType;
-import com.WorkStudySync.exception.ResourceNotFoundException;
-import com.WorkStudySync.exception.DuplicateResourceException;
-import com.WorkStudySync.exception.InsufficientBalanceException;
-import com.WorkStudySync.payload.request.CreateWalletRequest;
-import com.WorkStudySync.payload.request.UpdateWalletRequest;
-import com.WorkStudySync.payload.response.WalletResponse;
-import com.WorkStudySync.repository.WalletRepository;
+import com.fpm_2025.wallet_service.entity.WalletEntity;
+import com.fpm_2025.wallet_service.entity.enums.*;
+import com.fpm_2025.wallet_service.exception.ResourceNotFoundException;
+import com.fpm_2025.wallet_service.exception.DuplicateResourceException;
+import com.fpm_2025.wallet_service.exception.InsufficientBalanceException;
+import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
+import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
+import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
+import com.fpm_2025.wallet_service.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional(readOnly = true)
 public class WalletService {
-
-    private final WalletRepository walletRepository;
+	@Autowired
+    private WalletRepository walletRepository;
 
     @Transactional
     public WalletResponse createWallet(CreateWalletRequest request, Long userId) {

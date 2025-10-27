@@ -1,4 +1,4 @@
-package com.fpm_2025.wallet_service.payload.request;
+package com.fpm_2025.wallet_service.dto.payload.request;
 
 import com.fpm_2025.wallet_service.entity.enums.CategoryType;
 import jakarta.validation.constraints.NotBlank;
@@ -23,6 +23,38 @@ public class CreateCategoryRequest {
 
     private String iconPath;
 
-    @NotNull(message = "Category type is required")
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Long getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(Long parentId) {
+		this.parentId = parentId;
+	}
+
+	public String getIconPath() {
+		return iconPath;
+	}
+
+	public void setIconPath(String iconPath) {
+		this.iconPath = iconPath;
+	}
+
+	public CategoryType getType() {
+		return type;
+	}
+
+	public void setType(CategoryType type) {
+		this.type = type;
+	}
+
+	@NotNull(message = "Category type is required")
     private CategoryType type;
 }

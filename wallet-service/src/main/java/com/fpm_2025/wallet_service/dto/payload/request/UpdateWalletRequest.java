@@ -1,4 +1,4 @@
-package com.fpm_2025.wallet_service.payload.request;
+package com.fpm_2025.wallet_service.dto.payload.request;
 
 import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import jakarta.validation.constraints.Size;

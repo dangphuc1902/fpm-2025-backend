@@ -1,4 +1,4 @@
-package com.fpm_2025.wallet_service.payload.request;
+package com.fpm_2025.wallet_service.dto.payload.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

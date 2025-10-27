@@ -1,4 +1,4 @@
-package com.fpm_2025.wallet_service.payload.response;
+package com.fpm_2025.wallet_service.dto.payload.response;
 
 public class RoleResponse {
     private String name;
