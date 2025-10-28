@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -27,10 +28,12 @@ import java.util.stream.Collectors;
 public class WalletService {
 	@Autowired
     private WalletRepository walletRepository;
+	
+    Logger logger  = LoggerFactory.getLogger(WalletService.class);
 
     @Transactional
     public WalletResponse createWallet(CreateWalletRequest request, Long userId) {
-        log.info("Creating wallet for user: {}, wallet name: {}", userId, request.getName());
+    	logger.info("Creating wallet for user: {}, wallet name: {}", userId, request.getName());
 
         // Check if wallet with same name exists for user
         if (walletRepository.existsByUserIdAndName(userId, request.getName())) {
@@ -48,13 +51,13 @@ public class WalletService {
             .build();
 
         WalletEntity savedWallet = walletRepository.save(wallet);
-        log.info("Wallet created successfully with id: {}", savedWallet.getId());
+        logger.info("Wallet created successfully with id: {}", savedWallet.getId());
 
         return mapToResponse(savedWallet);
     }
 
     public List<WalletResponse> getUserWallets(Long userId) {
-        log.info("Fetching all wallets for user: {}", userId);
+    	logger.info("Fetching all wallets for user: {}", userId);
         List<WalletEntity> wallets = walletRepository.findByUserId(userId);
         return wallets.stream()
             .map(this::mapToResponse)
@@ -62,7 +65,7 @@ public class WalletService {
     }
 
     public List<WalletResponse> getUserActiveWallets(Long userId) {
-        log.info("Fetching active wallets for user: {}", userId);
+    	logger.info("Fetching active wallets for user: {}", userId);
         List<WalletEntity> wallets = walletRepository.findActiveWalletsByUserId(userId);
         return wallets.stream()
             .map(this::mapToResponse)
@@ -70,7 +73,7 @@ public class WalletService {
     }
 
     public List<WalletResponse> getUserWalletsByType(Long userId, WalletType type) {
-        log.info("Fetching wallets by type: {} for user: {}", type, userId);
+    	logger.info("Fetching wallets by type: {} for user: {}", type, userId);
         List<WalletEntity> wallets = walletRepository.findByUserIdAndType(userId, type);
         return wallets.stream()
             .map(this::mapToResponse)
@@ -78,7 +81,7 @@ public class WalletService {
     }
 
     public WalletResponse getWalletById(Long walletId, Long userId) {
-        log.info("Fetching wallet with id: {} for user: {}", walletId, userId);
+    	logger.info("Fetching wallet with id: {} for user: {}", walletId, userId);
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
         return mapToResponse(wallet);
@@ -86,7 +89,7 @@ public class WalletService {
 
     @Transactional
     public WalletResponse updateWallet(Long walletId, UpdateWalletRequest request, Long userId) {
-        log.info("Updating wallet with id: {} for user: {}", walletId, userId);
+    	logger.info("Updating wallet with id: {} for user: {}", walletId, userId);
 
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
@@ -108,21 +111,21 @@ public class WalletService {
         }
 
         if (request.getIsActive() != null) {
-            wallet.setIsActive(request.getIsActive());
+            wallet.setActive(request.getIsActive());
         }
 
         WalletEntity updatedWallet = walletRepository.save(wallet);
-        log.info("Wallet updated successfully with id: {}", updatedWallet.getId());
+        logger.info("Wallet updated successfully with id: {}", updatedWallet.getId());
 
         return mapToResponse(updatedWallet);
     }
 
     @Transactional
     public void deleteWallet(Long walletId, Long userId) {
-        log.info("Deleting wallet with id: {} for user: {}", walletId, userId);
+    	logger.info("Deleting wallet with id: {} for user: {}", walletId, userId);
 
-        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
-            .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
+    	WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
 
         // Check if wallet has balance
         if (wallet.getBalance().compareTo(BigDecimal.ZERO) > 0) {
@@ -130,18 +133,18 @@ public class WalletService {
         }
 
         walletRepository.delete(wallet);
-        log.info("Wallet deleted successfully with id: {}", walletId);
+        logger.info("Wallet deleted successfully with id: {}", walletId);
     }
 
     public BigDecimal getTotalBalance(Long userId) {
-        log.info("Calculating total balance for user: {}", userId);
+    	logger.info("Calculating total balance for user: {}", userId);
         BigDecimal total = walletRepository.getTotalBalanceByUserId(userId);
         return total != null ? total : BigDecimal.ZERO;
     }
 
     @Transactional
     public WalletResponse updateBalance(Long walletId, Long userId, BigDecimal amount, boolean isAddition) {
-        log.info("Updating balance for wallet: {}, amount: {}, isAddition: {}", walletId, amount, isAddition);
+    	logger.info("Updating balance for wallet: {}, amount: {}, isAddition: {}", walletId, amount, isAddition);
 
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
@@ -161,7 +164,7 @@ public class WalletService {
 
         wallet.setBalance(newBalance);
         WalletEntity updatedWallet = walletRepository.save(wallet);
-        log.info("Balance updated successfully. New balance: {}", newBalance);
+        logger.info("Balance updated successfully. New balance: {}", newBalance);
 
         return mapToResponse(updatedWallet);
     }

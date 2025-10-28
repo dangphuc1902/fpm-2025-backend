@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserRepository extends JpaRepository<UserEntity, UUID> {
-	Optional<UserEntity> findByEmail(String username);
+public interface UserRepository extends JpaRepository<UserEntity, Integer> {
+	Optional<UserEntity> findByEmail(String email);
 	boolean existsByEmail(String email);
 }

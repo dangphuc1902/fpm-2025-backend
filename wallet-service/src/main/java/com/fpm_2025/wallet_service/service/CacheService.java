@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CacheService {
 	private Logger logger  = LoggerFactory.getLogger(CacheService.class);
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final CacheManager cacheManager;
+    private RedisTemplate<String, Object> redisTemplate;
+    private CacheManager cacheManager;
     // ========== Wallet Balance Cache ==========
     
     public void cacheWalletBalance(Long walletId, Object balance) {

@@ -12,11 +12,14 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Slf4j
 public class JwtService {
-
+	
+    Logger logger  = LoggerFactory.getLogger(JwtService.class);
     @Value("${jwt.secret:your-256-bit-secret-key-change-this-in-production-must-be-very-long}")
     private String secretKey;
 
@@ -53,7 +56,7 @@ public class JwtService {
         try {
             return !isTokenExpired(token);
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+        	logger.error("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
