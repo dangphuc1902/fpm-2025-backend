@@ -2,9 +2,9 @@ package com.fpm_2025.wallet_service.entity.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Getter
 @RequiredArgsConstructor
@@ -14,10 +14,6 @@ public enum CategoryType {
     INCOME("income");
 
     private final String value;
-    
-    CategoryType(String string) {
-		this.value = "";	
-	}
 
     @JsonValue
     public String getValue() {

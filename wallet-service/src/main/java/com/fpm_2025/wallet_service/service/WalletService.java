@@ -2,6 +2,7 @@ package com.fpm_2025.wallet_service.service;
 
 import com.fpm_2025.wallet_service.entity.WalletEntity;
 import com.fpm_2025.wallet_service.entity.enums.*;
+import com.fpm_2025.wallet_service.event.model.TransactionCreatedEvent;
 import com.fpm_2025.wallet_service.exception.ResourceNotFoundException;
 import com.fpm_2025.wallet_service.exception.DuplicateResourceException;
 import com.fpm_2025.wallet_service.exception.InsufficientBalanceException;
@@ -195,9 +196,57 @@ public class WalletService {
             .currency(entity.getCurrency())
             .balance(entity.getBalance())
             .icon(entity.getIcon())
-            .isActive(entity.getIsActive())
+            .isActive(entity.isActive())
             .createdAt(entity.getCreatedAt())
             .updatedAt(entity.getUpdatedAt())
             .build();
+    }
+    public WalletEntity getWalletEntityByUserIdAndWalletType(Long userId, WalletType type) {
+        return walletRepository.findByUserIdAndWalletType(userId, type)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Wallet not found for userId=%d and type=%s", userId, type)
+                ));
+    }
+
+    public void updateBalance(WalletEntity wallet, BigDecimal newBalance) {
+        wallet.setBalance(newBalance);
+        walletRepository.save(wallet);
+    }
+    /**
+     * Cập nhật số dư ví dựa theo giao dịch mới tạo (TransactionCreatedEvent).
+     */
+    @Transactional
+    public void updateBalanceFromTransaction(TransactionCreatedEvent event) {
+        log.info("[WalletService] Updating balance from transactionId={} walletId={} amount={} type={}",
+                event.getTransactionId(), event.getWalletId(), event.getAmount(), event.getType());
+
+        // 1️ Lấy ví tương ứng
+        WalletEntity wallet = walletRepository.findById(event.getWalletId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Wallet not found for id: " + event.getWalletId()));
+
+        // 2️ Kiểm tra loại giao dịch và cập nhật số dư
+        BigDecimal oldBalance = wallet.getBalance();
+        BigDecimal newBalance;
+
+        if (CategoryType.valueOf(event.getType()) == CategoryType.INCOME) {
+            newBalance = oldBalance.add(event.getAmount());
+        } else if (CategoryType.valueOf(event.getType()) == CategoryType.EXPENSE) {
+            // Kiểm tra đủ tiền
+            if (oldBalance.compareTo(event.getAmount()) < 0) {
+                throw new IllegalStateException("Insufficient balance in wallet id=" + event.getWalletId());
+            }
+            newBalance = oldBalance.subtract(event.getAmount());
+        } else {
+            throw new IllegalArgumentException("Unknown transaction type: " + event.getType());
+        }
+
+        // 3️ Ghi lại số dư mới
+        wallet.setBalance(newBalance);
+        walletRepository.save(wallet);
+
+        // 4️ Log kết quả
+        log.info("[WalletService] Wallet id={} balance updated from {} -> {}",
+                event.getWalletId(), oldBalance, newBalance);
     }
 }

@@ -1,46 +1,53 @@
 syntax = "proto3";
+
 package com.fpm2025.transaction;
 
-service TransactionService {
-  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
-  rpc AddTransaction(AddTransactionRequest) returns (TransactionResponse);
-  rpc UpdateTransaction(UpdateTransactionRequest) returns (TransactionResponse);
-  rpc DeleteTransaction(DeleteTransactionRequest) returns (TransactionResponse);
-}
+option java_package = "com.fpm2025.transaction";
+option java_outer_classname = "TransactionProto";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
 
 message Transaction {
   string transaction_id = 1;
   string wallet_id = 2;
   string category_id = 3;
   double amount = 4;
-  string date = 5;
-  string note = 6;
-  string type = 7; // income/expense
+  string note = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  string type = 7;  // INCOME, EXPENSE
 }
 
 message ListTransactionsRequest {
   string user_id = 1;
-  string from_date = 2;
-  string to_date = 3;
-  string type = 4;
+  string wallet_id = 2;
+  string from_date = 3;
+  string to_date = 4;
+  string type = 5;
 }
 
 message ListTransactionsResponse {
   repeated Transaction transactions = 1;
 }
 
-message AddTransactionRequest {
+message GetTransactionRequest {
+  string transaction_id = 1;
+}
+
+message CreateTransactionRequest {
   string user_id = 1;
   string wallet_id = 2;
   string category_id = 3;
   double amount = 4;
-  string date = 5;
-  string note = 6;
-  string type = 7;
+  string note = 5;
+  string type = 6;
 }
 
 message UpdateTransactionRequest {
-  Transaction transaction = 1;
+  string transaction_id = 1;
+  double amount = 2;
+  string note = 3;
+  string category_id = 4;
 }
 
 message DeleteTransactionRequest {
@@ -50,4 +57,13 @@ message DeleteTransactionRequest {
 message TransactionResponse {
   bool success = 1;
   Transaction transaction = 2;
+  string message = 3;
+}
+
+service TransactionService {
+  rpc ListTransactions (ListTransactionsRequest) returns (ListTransactionsResponse);
+  rpc GetTransaction (GetTransactionRequest) returns (Transaction);
+  rpc CreateTransaction (CreateTransactionRequest) returns (TransactionResponse);
+  rpc UpdateTransaction (UpdateTransactionRequest) returns (TransactionResponse);
+  rpc DeleteTransaction (DeleteTransactionRequest) returns (TransactionResponse);
 }

@@ -1,22 +1,23 @@
 syntax = "proto3";
+
 package com.fpm2025.budget;
 
-service BudgetService {
-  rpc ListBudgets(ListBudgetsRequest) returns (ListBudgetsResponse);
-  rpc SetBudget(SetBudgetRequest) returns (BudgetResponse);
-  rpc CheckBudget(CheckBudgetRequest) returns (CheckBudgetResponse);
-}
+option java_package = "com.fpm2025.budget";
+option java_outer_classname = "BudgetProto";
+option java_multiple_files = true;
 
 message Budget {
   string budget_id = 1;
-  string category_id = 2;
-  double limit = 3;
-  double spent = 4;
-  string month = 5;
+  string user_id = 2;
+  string category_id = 3;
+  double limit_amount = 4;
+  double spent_amount = 5;
+  string month = 6;  // "2025-11"
 }
 
 message ListBudgetsRequest {
   string user_id = 1;
+  string month = 2;
 }
 
 message ListBudgetsResponse {
@@ -26,13 +27,8 @@ message ListBudgetsResponse {
 message SetBudgetRequest {
   string user_id = 1;
   string category_id = 2;
-  double limit = 3;
+  double limit_amount = 3;
   string month = 4;
-}
-
-message BudgetResponse {
-  bool success = 1;
-  Budget budget = 2;
 }
 
 message CheckBudgetRequest {
@@ -44,4 +40,17 @@ message CheckBudgetRequest {
 message CheckBudgetResponse {
   bool exceeded = 1;
   double percent_used = 2;
+  double remaining = 3;
+}
+
+message BudgetResponse {
+  bool success = 1;
+  Budget budget = 2;
+  string message = 3;
+}
+
+service BudgetService {
+  rpc ListBudgets (ListBudgetsRequest) returns (ListBudgetsResponse);
+  rpc SetBudget (SetBudgetRequest) returns (BudgetResponse);
+  rpc CheckBudget (CheckBudgetRequest) returns (CheckBudgetResponse);
 }

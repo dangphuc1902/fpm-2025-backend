@@ -45,7 +45,7 @@ public class WalletMapper {
         return WalletEntity.builder()
                 .userId(userId)                           // Từ JWT token
                 .name(request.getName())                  // Từ request
-                .type(WalletType.valueOf(request.getType().toUpperCase()))
+                .type(request.getType())
                 .currency(request.getCurrency() != null ? 
                          request.getCurrency() : "VND")   // Default value
                 .balance(request.getInitialBalance() != null ? 
@@ -77,7 +77,7 @@ public class WalletMapper {
                 .currency(entity.getCurrency())
                 .balance(entity.getBalance())
                 .icon(entity.getIcon())
-                .isActive(entity.getIsActive())
+                .isActive(entity.isActive())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -121,7 +121,7 @@ public class WalletMapper {
         }
 
         if (request.getType() != null) {
-            entity.setType(WalletType.valueOf(request.getType().toUpperCase()));
+            entity.setType(request.getType());
         }
 
         if (request.getIcon() != null) {
@@ -129,7 +129,7 @@ public class WalletMapper {
         }
 
         if (request.getIsActive() != null) {
-            entity.setIsActive(request.getIsActive());
+            entity.setActive(request.getIsActive());
         }
 
         // Balance KHÔNG được update qua API (chỉ qua transaction)

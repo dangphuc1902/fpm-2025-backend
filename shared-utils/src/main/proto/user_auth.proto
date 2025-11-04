@@ -1,10 +1,16 @@
 syntax = "proto3";
-package com.fpm2025.auth;
 
-service AuthService {
-  rpc LoginWithGoogle(LoginRequest) returns (LoginResponse);
-  rpc ValidateToken(TokenRequest) returns (TokenResponse);
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
+package com.fpm2025.userauth;
+
+option java_package = "com.fpm2025.userauth";
+option java_outer_classname = "UserAuthProto";
+option java_multiple_files = true;
+
+message User {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  repeated string roles = 4;
 }
 
 message LoginRequest {
@@ -13,7 +19,8 @@ message LoginRequest {
 
 message LoginResponse {
   string jwt = 1;
-  string user_id = 2;
+  User user = 2;
+  int64 expires_in = 3;
 }
 
 message TokenRequest {
@@ -22,7 +29,7 @@ message TokenRequest {
 
 message TokenResponse {
   bool valid = 1;
-  string user_id = 2;
+  User user = 2;
 }
 
 message LogoutRequest {
@@ -31,4 +38,10 @@ message LogoutRequest {
 
 message LogoutResponse {
   bool success = 1;
+}
+
+service AuthService {
+  rpc LoginWithGoogle (LoginRequest) returns (LoginResponse);
+  rpc ValidateToken (TokenRequest) returns (TokenResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
 }

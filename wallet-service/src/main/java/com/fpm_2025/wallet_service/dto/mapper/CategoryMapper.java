@@ -32,7 +32,7 @@ public class CategoryMapper {
                 .name(request.getName())
                 .parentId(request.getParentId())
                 .iconPath(request.getIconPath())
-                .type(CategoryType.valueOf(request.getType().toUpperCase()))
+                .type(request.getType())
                 .build();
     }
 

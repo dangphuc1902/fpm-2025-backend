@@ -1,17 +1,20 @@
 syntax = "proto3";
+
 package com.fpm2025.notification;
 
-service NotificationService {
-  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
-  rpc MarkAsRead(MarkAsReadRequest) returns (NotificationResponse);
-}
+option java_package = "com.fpm2025.notification";
+option java_outer_classname = "NotificationProto";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
 
 message Notification {
   string notification_id = 1;
   string user_id = 2;
-  string message = 3;
-  bool read = 4;
-  string created_at = 5;
+  string title = 3;
+  string body = 4;
+  bool is_read = 5;
+  google.protobuf.Timestamp created_at = 6;
 }
 
 message ListNotificationsRequest {
@@ -26,7 +29,20 @@ message MarkAsReadRequest {
   string notification_id = 1;
 }
 
+message SendNotificationRequest {
+  string user_id = 1;
+  string title = 2;
+  string body = 3;
+}
+
 message NotificationResponse {
   bool success = 1;
   Notification notification = 2;
+  string message = 3;
+}
+
+service NotificationService {
+  rpc ListNotifications (ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead (MarkAsReadRequest) returns (NotificationResponse);
+  rpc SendNotification (SendNotificationRequest) returns (NotificationResponse);
 }

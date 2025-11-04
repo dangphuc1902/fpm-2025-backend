@@ -43,7 +43,7 @@ public class TransactionMapper {
                 .wallet(wallet)                          // JPA relationship
                 .category(category)                      // JPA relationship
                 .amount(request.getAmount())
-                .type(CategoryType.valueOf(request.getType().toUpperCase()))
+                .type(request.getType())
                 .note(request.getNote())
                 .transactionDate(request.getTransactionDate() != null ? 
                                 request.getTransactionDate() : LocalDateTime.now())
@@ -118,7 +118,7 @@ public class TransactionMapper {
 
         // Update type nếu có
         if (request.getType() != null) {
-            entity.setType(CategoryType.valueOf(request.getType().toUpperCase()));
+            entity.setType(request.getType());
         }
 
         // Update note

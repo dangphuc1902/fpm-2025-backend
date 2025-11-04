@@ -20,8 +20,6 @@ import java.time.LocalDateTime;
     @Index(name = "idx_transactions_date", columnList = "transaction_date"),
     @Index(name = "idx_transactions_user_date", columnList = "user_id, transaction_date")
 })
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,7 +34,7 @@ public class TransactionEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id", nullable = false)
-    private WalletType wallet;
+    private WalletEntity wallet;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -72,4 +70,84 @@ public class TransactionEntity {
             throw new IllegalStateException("Amount must be greater than zero");
         }
     }
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
+
+	public CategoryEntity getCategory() {
+		return category;
+	}
+
+	public void setCategory(CategoryEntity category) {
+		this.category = category;
+	}
+
+	public BigDecimal getAmount() {
+		return amount;
+	}
+
+	public void setAmount(BigDecimal amount) {
+		this.amount = amount;
+	}
+
+	public CategoryType getType() {
+		return type;
+	}
+
+	public void setType(CategoryType type) {
+		this.type = type;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
+
+	public LocalDateTime getTransactionDate() {
+		return transactionDate;
+	}
+
+	public void setTransactionDate(LocalDateTime transactionDate) {
+		this.transactionDate = transactionDate;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
+	public WalletEntity getWallet() {
+		return wallet;
+	}
+
+	public void setWallet(WalletEntity wallet) {
+		this.wallet = wallet;
+	}
 }

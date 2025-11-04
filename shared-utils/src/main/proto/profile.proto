@@ -1,32 +1,26 @@
 syntax = "proto3";
+
 package com.fpm2025.profile;
 
-service ProfileService {
-  rpc GetProfile(GetProfileRequest) returns (ProfileResponse);
-  rpc UpdateProfile(UpdateProfileRequest) returns (ProfileResponse);
-  rpc ChangeTheme(ChangeThemeRequest) returns (ThemeResponse);
-}
+option java_package = "com.fpm2025.profile";
+option java_outer_classname = "ProfileProto";
+option java_multiple_files = true;
 
 message Profile {
   string user_id = 1;
   string email = 2;
-  string name = 3;
+  string full_name = 3;
   string avatar_url = 4;
-  string theme = 5; // light/dark
+  string theme = 5;  // light, dark
 }
 
 message GetProfileRequest {
   string user_id = 1;
 }
 
-message ProfileResponse {
-  bool success = 1;
-  Profile profile = 2;
-}
-
 message UpdateProfileRequest {
   string user_id = 1;
-  string name = 2;
+  string full_name = 2;
   string avatar_url = 3;
 }
 
@@ -35,7 +29,19 @@ message ChangeThemeRequest {
   string theme = 2;
 }
 
+message ProfileResponse {
+  bool success = 1;
+  Profile profile = 2;
+  string message = 3;
+}
+
 message ThemeResponse {
   bool success = 1;
   string theme = 2;
+}
+
+service ProfileService {
+  rpc GetProfile (GetProfileRequest) returns (ProfileResponse);
+  rpc UpdateProfile (UpdateProfileRequest) returns (ProfileResponse);
+  rpc ChangeTheme (ChangeThemeRequest) returns (ThemeResponse);
 }

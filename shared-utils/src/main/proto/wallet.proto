@@ -1,18 +1,14 @@
 syntax = "proto3";
+
 package com.fpm2025.wallet;
 
-service WalletService {
-  rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse);
-  rpc CreateWallet(CreateWalletRequest) returns (WalletResponse);
-  rpc UpdateWallet(UpdateWalletRequest) returns (WalletResponse);
-  rpc DeleteWallet(DeleteWalletRequest) returns (WalletResponse);
-  rpc GetLedger(GetLedgerRequest) returns (GetLedgerResponse);
-}
+option java_package = "com.fpm2025.wallet";
+option java_multiple_files = true;
 
 message Wallet {
   string wallet_id = 1;
   string name = 2;
-  string type = 3; // cash, card, bank
+  string type = 3;
   double balance = 4;
 }
 
@@ -41,22 +37,16 @@ message DeleteWalletRequest {
   string wallet_id = 1;
 }
 
-message WalletResponse {
-  bool success = 1;
-  Wallet wallet = 2;
-}
-
 message GetLedgerRequest {
   string wallet_id = 1;
 }
 
-message LedgerEntry {
-  string transaction_id = 1;
-  string date = 2;
-  double amount = 3;
-  string type = 4; // debit/credit
+message GetLedgerResponse {
+  // TODO: add transactions
 }
 
-message GetLedgerResponse {
-  repeated LedgerEntry entries = 1;
+message WalletResponse {
+  bool success = 1;
+  Wallet wallet = 2;
+  string message = 3;
 }

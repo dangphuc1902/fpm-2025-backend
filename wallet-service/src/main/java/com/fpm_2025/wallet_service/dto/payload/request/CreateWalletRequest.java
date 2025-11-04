@@ -7,14 +7,16 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class CreateWalletRequest {
 
     @NotBlank(message = "Wallet name is required")
@@ -60,15 +62,17 @@ public class CreateWalletRequest {
 	public void setIcon(String icon) {
 		this.icon = icon;
 	}
-
+	
 	@NotNull(message = "Wallet type is required")
+	@Builder.Default
     private WalletType type;
 
     @Size(max = 3, message = "Currency code must be 3 characters")
     private String currency = "VND";
-
+    
+    @Builder.Default
     @DecimalMin(value = "0.0", inclusive = true, message = "Initial balance cannot be negative")
     private BigDecimal initialBalance = BigDecimal.ZERO;
-
+    
     private String icon;
 }

@@ -1,18 +1,23 @@
 syntax = "proto3";
+
 package com.fpm2025.category;
 
-service CategoryService {
-  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
-  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
-  rpc UpdateCategory(UpdateCategoryRequest) returns (CategoryResponse);
-  rpc DeleteCategory(DeleteCategoryRequest) returns (CategoryResponse);
+option java_package = "com.fpm2025.category";
+option java_outer_classname = "CategoryProto";
+option java_multiple_files = true;
+
+import "google/protobuf/empty.proto";
+
+enum CategoryType {
+  UNKNOWN = 0;
+  INCOME = 1;
+  EXPENSE = 2;
 }
 
 message Category {
   string category_id = 1;
   string name = 2;
-  string type = 3; // income/expense
-  string parent_id = 4;
+  CategoryType type = 3;
 }
 
 message ListCategoriesRequest {
@@ -23,15 +28,20 @@ message ListCategoriesResponse {
   repeated Category categories = 1;
 }
 
+message GetCategoryRequest {
+  string category_id = 1;
+}
+
 message CreateCategoryRequest {
   string user_id = 1;
   string name = 2;
-  string type = 3;
-  string parent_id = 4;
+  CategoryType type = 3;
 }
 
 message UpdateCategoryRequest {
-  Category category = 1;
+  string category_id = 1;
+  string name = 2;
+  CategoryType type = 3;
 }
 
 message DeleteCategoryRequest {
@@ -41,4 +51,13 @@ message DeleteCategoryRequest {
 message CategoryResponse {
   bool success = 1;
   Category category = 2;
+  string message = 3;
+}
+
+service CategoryService {
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc GetCategory (GetCategoryRequest) returns (Category);
+  rpc CreateCategory (CreateCategoryRequest) returns (CategoryResponse);
+  rpc UpdateCategory (UpdateCategoryRequest) returns (CategoryResponse);
+  rpc DeleteCategory (DeleteCategoryRequest) returns (google.protobuf.Empty);
 }

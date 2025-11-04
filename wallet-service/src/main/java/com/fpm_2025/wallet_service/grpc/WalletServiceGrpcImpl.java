@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.grpc;
 
-import com.fpm_2025.wallet_service.*;
+import com.fpm2025.wallet.*;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
 import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
@@ -26,7 +26,7 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
 
         try {
             Long userId = Long.parseLong(request.getUserId());
-            List<WalletEntity> wallets = walletRepository.findByUserIdAndIsActive(userId, true);
+            List<WalletEntity> wallets = walletRepository.findActiveWalletsByUserId(userId);
 
             List<Wallet> grpcWallets = wallets.stream()
                     .map(this::mapToGrpcWallet)
@@ -61,12 +61,15 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
 
             WalletEntity savedWallet = walletRepository.save(wallet);
 
-            WalletResponse response = WalletResponse.newBuilder()
+            Wallet grpcWallet = mapToGrpcWallet(savedWallet);
+
+            WalletResponse grpcResponse = WalletResponse.newBuilder()
                     .setSuccess(true)
-                    .setWallet(mapToGrpcWallet(savedWallet))
+                    .setWallet(grpcWallet)
+                    .setMessage("Wallet created successfully")
                     .build();
 
-            responseObserver.onNext(response);
+            responseObserver.onNext(grpcResponse);
             responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("gRPC: CreateWallet failed", e);
@@ -88,12 +91,15 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
 
             WalletEntity updatedWallet = walletRepository.save(wallet);
 
-            WalletResponse response = WalletResponse.newBuilder()
+            Wallet grpcWallet = mapToGrpcWallet(updatedWallet);
+
+            WalletResponse grpcResponse = WalletResponse.newBuilder()
                     .setSuccess(true)
-                    .setWallet(mapToGrpcWallet(updatedWallet))
+                    .setWallet(grpcWallet)
+                    .setMessage("Wallet updated successfully")
                     .build();
 
-            responseObserver.onNext(response);
+            responseObserver.onNext(grpcResponse);
             responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("gRPC: UpdateWallet failed", e);
@@ -110,15 +116,15 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
             WalletEntity wallet = walletRepository.findById(walletId)
                     .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
-            // Soft delete
-            wallet.setIsActive(false);
+            wallet.setActive(false);
             walletRepository.save(wallet);
 
-            WalletResponse response = WalletResponse.newBuilder()
+            WalletResponse grpcResponse = WalletResponse.newBuilder()
                     .setSuccess(true)
+                    .setMessage("Wallet deleted successfully")
                     .build();
 
-            responseObserver.onNext(response);
+            responseObserver.onNext(grpcResponse);
             responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("gRPC: DeleteWallet failed", e);
@@ -131,10 +137,7 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
         log.info("gRPC: GetLedger called for walletId: {}", request.getWalletId());
 
         try {
-            // Implementation would fetch transactions from transaction service
-            // For now, return empty response
             GetLedgerResponse response = GetLedgerResponse.newBuilder().build();
-
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -145,10 +148,10 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
 
     private Wallet mapToGrpcWallet(WalletEntity entity) {
         return Wallet.newBuilder()
-                .setWalletId(entity.getId().toString())
-                .setName(entity.getName())
-                .setType(entity.getType().getValue())
-                .setBalance(entity.getBalance().doubleValue())
+                .setWalletId(entity.getId() != null ? entity.getId().toString() : "")
+                .setName(entity.getName() == null ? "" : entity.getName())
+                .setType(entity.getType() != null ? entity.getType().getValue() : "")
+                .setBalance(entity.getBalance() != null ? entity.getBalance().doubleValue() : 0.0)
                 .build();
     }
 }
