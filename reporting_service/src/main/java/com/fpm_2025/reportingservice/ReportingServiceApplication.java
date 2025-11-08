@@ -1,4 +1,4 @@
-package com.fpm_2025.reporting_service;
+package com.fpm_2025.reportingservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

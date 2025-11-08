@@ -1,72 +1,165 @@
-//package com.fpm2025.user_auth_service.util;
-//
-//import io.jsonwebtoken.Claims;
-//import io.jsonwebtoken.Jwts;
-//import io.jsonwebtoken.io.Decoders;
-//import io.jsonwebtoken.security.Keys;
-//
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.stereotype.Component;
-//
-//import com.fpm2025.user_auth_service.entity.UserEntity;
-//
-//import java.util.Date;
-//import java.util.Map;
-//
-//import javax.crypto.SecretKey;
-//
-//@Component
-//public class JwtUltils {
-//    @Value("${key.token.jwt}")
-//    private String strKeyToken;
-//
-//    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 giờ
-//    private SecretKey getSigningKey() {
-//        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(strKeyToken));
-//    }
-//
-//    public String createToken(UserEntity user) {
-//        Date now = new Date();
-//        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
-//
-//        return Jwts.builder()
-//                .subject(user.getEmail()) // subject là email
-//                .claim("id", user.getUserId())
-//                .claim("name", user.getFullName())
-//                .claim("avatar", user.getAvatar())
-//                .claim("user_type", user.getUserType() != null ? user.getUserType() : "USER")
-//                .issuedAt(now)
-//                .expiration(expiryDate)
-//                .signWith(getSigningKey())
-//                .compact();
-//    }
-//
-//    public String createToken(Map<String, Object> claims) {
-//        SecretKey secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(strKeyToken));
-//
-//        return Jwts.builder()
-//                .claims(claims) // không dùng setClaims nữa
-//                .subject("Login JWT") // không dùng setSubject
-//                .issuedAt(new Date())
-//                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24h
-//                .signWith(secretKey) // không cần truyền SignatureAlgorithm nữa
-//                .compact();
-//    }
-//
-//
-////    TODO: Giải mã token
-//    public String decryptToke(String token){
-//        SecretKey secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(strKeyToken));
-//        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getSubject();
-//    }
-//    
-//    public Claims decryptTokenClaims(String token) {
-//        SecretKey secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(strKeyToken));
-//        return Jwts.parser()
-//                .verifyWith(secretKey)
-//                .build()
-//                .parseSignedClaims(token)
-//                .getPayload(); // trả về toàn bộ payload (claims)
-//    }
-//
-//}
+package com.fpm2025.user_auth_service.util;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+/**
+ * JWT Utility Class
+ * 
+ * Handles:
+ * - JWT token generation
+ * - JWT token validation
+ * - Claims extraction
+ */
+@Component
+@Slf4j
+public class JwtUtils {
+
+    @Value("${jwt.secret:your-256-bit-secret-key-change-this-in-production-must-be-very-long}")
+    private String secretKey;
+
+    @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
+    private Long expiration;
+
+    /**
+     * Generate JWT token for user
+     */
+    public String generateToken(Long userId, String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("email", email);
+        
+        return createToken(claims, userId.toString());
+    }
+
+    /**
+     * Generate token with custom claims
+     */
+    public String createToken(Map<String, Object> claims, String subject) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Extract userId from token
+     */
+    public Long extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        Object userIdObj = claims.get("userId");
+        
+        if (userIdObj instanceof Integer) {
+            return ((Integer) userIdObj).longValue();
+        } else if (userIdObj instanceof Long) {
+            return (Long) userIdObj;
+        } else {
+            return Long.parseLong(userIdObj.toString());
+        }
+    }
+
+    /**
+     * Extract email from token
+     */
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
+    }
+
+    /**
+     * Extract subject (usually userId string) from token
+     */
+    public String extractSubject(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    /**
+     * Extract expiration date from token
+     */
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    /**
+     * Extract specific claim from token
+     */
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    /**
+     * Extract all claims from token
+     */
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    /**
+     * Validate token
+     */
+    public boolean isTokenValid(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if token is expired
+     */
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    /**
+     * Get signing key from secret
+     */
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /**
+     * Get expiration time in milliseconds
+     */
+    public Long getExpiration() {
+        return expiration;
+    }
+
+    /**
+     * Refresh token (generate new token with same claims but new expiry)
+     */
+    public String refreshToken(String token) {
+        Claims claims = extractAllClaims(token);
+        
+        // Remove old timestamps
+        claims.remove(Claims.ISSUED_AT);
+        claims.remove(Claims.EXPIRATION);
+        
+        return createToken(claims, claims.getSubject());
+    }
+}
