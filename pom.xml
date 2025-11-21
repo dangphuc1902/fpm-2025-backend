@@ -44,6 +44,40 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<!-- Core utils chung -->
+			<dependency>
+				<groupId>com.fpm2025</groupId>
+				<artifactId>fpm-core</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+
+			<!-- Domain entities -->
+			<dependency>
+				<groupId>com.fpm2025</groupId>
+				<artifactId>fpm-domain</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+
+			<!-- gRPC + Protobuf contracts (QUAN TRỌNG NHẤT) -->
+			<dependency>
+				<groupId>com.fpm2025</groupId>
+				<artifactId>fpm-proto</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+
+			<!-- Messaging (Kafka, events) -->
+			<dependency>
+				<groupId>com.fpm2025</groupId>
+				<artifactId>fpm-messaging</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+
+			<!-- Các libs khác nếu cần -->
+			<dependency>
+				<groupId>com.fpm2025</groupId>
+				<artifactId>fpm-grpc</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
@@ -92,7 +126,23 @@
 				<version>1.63.0</version>
 				<scope>test</scope>
 			</dependency>
-			<!-- JJWT, Resilience4j, etc. -->
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-api</artifactId>
+				<version>0.12.5</version>
+			</dependency>
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-impl</artifactId>
+				<version>0.12.5</version>
+				<scope>runtime</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.jsonwebtoken</groupId>
+				<artifactId>jjwt-jackson</artifactId>
+				<version>0.12.5</version>
+				<scope>runtime</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

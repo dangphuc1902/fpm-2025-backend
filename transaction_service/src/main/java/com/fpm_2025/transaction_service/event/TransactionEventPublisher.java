@@ -59,7 +59,7 @@ public class TransactionEventPublisher {
     }
 
     public void publishTransactionDeleted(TransactionDeletedEvent event) {
-        log.info("Publishing transaction.deleted event: transactionId={}", 
+        log.info("Publishing transaction.deleted event: transactionId={}",
             event.getTransactionId());
         
         try {
@@ -69,7 +69,7 @@ public class TransactionEventPublisher {
                 event
             );
             
-            log.info("Transaction deleted event published successfully");
+            log.info("Transaction deleted event published successfully");	    
         } catch (Exception e) {
             log.error("Failed to publish transaction deleted event", e);
         }

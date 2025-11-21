@@ -35,7 +35,7 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register new user")
-    public ResponseEntity<BaseResponse<Map<String, Object>>> register(
+	public ResponseEntity<BaseResponse<Map<String, Object>>> register(
             @Valid @RequestBody UserRegisterRequest request) {
         
         Map<String, Object> response = authService.register(request);
@@ -77,7 +77,7 @@ public class AuthController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(BaseResponse.error("Invalid authorization header"));
+                    .body(BaseResponse.error(null ,"Invalid authorization header"));
         }
 
         String token = authHeader.substring(7);
