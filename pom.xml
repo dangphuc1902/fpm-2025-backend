@@ -18,6 +18,13 @@
 		<module>transaction_service</module>
 		<module>reporting_service</module>
 		<module>eureka-server</module>
+	    <module>libs/fpm-common</module>
+	    <module>libs/fpm-domain</module>
+	    <module>libs/fpm-grpc</module>
+	    <module>libs/fpm-messaging</module>
+	    <module>libs/fpm-microservice-libs</module>
+	    <module>libs/fpm-testing-libs</module>
+	    <module>libs/fpm-protocol</module>
 	</modules>
 
 	<properties>
@@ -61,7 +68,7 @@
 			<!-- gRPC + Protobuf contracts (QUAN TRỌNG NHẤT) -->
 			<dependency>
 				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-proto</artifactId>
+				<artifactId>fpm-protocol</artifactId>
 				<version>1.0.0-SNAPSHOT</version>
 			</dependency>
 
