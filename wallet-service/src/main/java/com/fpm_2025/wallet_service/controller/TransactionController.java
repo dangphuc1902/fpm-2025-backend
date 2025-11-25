@@ -2,8 +2,7 @@ package com.fpm_2025.wallet_service.controller;
 
 import com.fpm_2025.wallet_service.dto.payload.request.CreateTransactionRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateTransactionRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.BaseResponse;
-import com.fpm_2025.wallet_service.dto.payload.response.PageResponse;
+import com.fpm2025.core.dto.response.*;
 import com.fpm_2025.wallet_service.dto.payload.response.TransactionResponse;
 import com.fpm_2025.wallet_service.entity.enums.CategoryType;
 import com.fpm_2025.wallet_service.service.TransactionService;

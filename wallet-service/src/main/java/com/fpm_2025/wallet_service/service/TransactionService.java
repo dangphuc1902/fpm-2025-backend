@@ -13,6 +13,7 @@ import com.fpm_2025.wallet_service.exception.ResourceNotFoundException;
 import com.fpm_2025.wallet_service.repository.CategoryRepository;
 import com.fpm_2025.wallet_service.repository.TransactionRepository;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
+import com.fpm_2025.wallet_service.service.imp.TransactionServiceImp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class TransactionService {
+public class TransactionService implements TransactionServiceImp {
 
 	@Autowired
 	private TransactionRepository transactionRepository;

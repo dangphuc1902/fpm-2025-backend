@@ -2,7 +2,7 @@ package com.fpm_2025.wallet_service.controller;
 
 import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.BaseResponse;
+import com.fpm2025.core.dto.response.*;
 import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
 import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import com.fpm_2025.wallet_service.service.WalletService;

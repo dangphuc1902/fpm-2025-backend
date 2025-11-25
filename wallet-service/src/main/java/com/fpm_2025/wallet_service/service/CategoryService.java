@@ -7,6 +7,8 @@ import com.fpm_2025.wallet_service.exception.DuplicateResourceException;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateCategoryRequest;
 import com.fpm_2025.wallet_service.dto.payload.response.CategoryResponse;
 import com.fpm_2025.wallet_service.repository.CategoryRepository;
+import com.fpm_2025.wallet_service.service.imp.CategoryServiceImp;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class CategoryService {
+public class CategoryService implements CategoryServiceImp {
 
     private final CategoryRepository categoryRepository;
     private final Logger logger = LoggerFactory.getLogger(CategoryService.class);

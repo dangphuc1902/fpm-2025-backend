@@ -10,6 +10,8 @@ import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
+import com.fpm_2025.wallet_service.service.imp.WalletServiceImp;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +28,7 @@ import org.slf4j.LoggerFactory;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class WalletService {
+public class WalletService implements WalletServiceImp{
 	@Autowired
     private WalletRepository walletRepository;
 	

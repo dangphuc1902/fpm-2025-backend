@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
+import com.fpm_2025.wallet_service.service.imp.CacheServiceImp;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CacheService {
+public class CacheService implements CacheServiceImp {
 	private Logger logger  = LoggerFactory.getLogger(CacheService.class);
     private RedisTemplate<String, Object> redisTemplate;
     private CacheManager cacheManager;
