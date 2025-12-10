@@ -4,9 +4,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>com.fpm2025</groupId>
-		<artifactId>fpm-backend-parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.5.5</version>
+		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<artifactId>transaction_service</artifactId>
 	<name>transaction_service</name>
@@ -29,7 +30,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<!-- Các starter khác -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
