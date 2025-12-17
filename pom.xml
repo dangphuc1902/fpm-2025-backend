@@ -18,14 +18,6 @@
 		<module>transaction_service</module>
 		<module>reporting_service</module>
 		<module>eureka-server</module>
-	    <module>libs/fpm-common</module>
-	    <module>libs/fpm-domain</module>
-	    <module>libs/fpm-grpc</module>
-	    <module>libs/fpm-messaging</module>
-	    <module>libs/fpm-microservice-libs</module>
-	    <module>libs/fpm-testing-libs</module>
-	    <module>libs/fpm-protocol</module>
-	    <module>libs/fpm-security</module>
 	</modules>
 
 	<properties>
@@ -51,47 +43,6 @@
 				<version>${spring-boot.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<!-- Core utils chung -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-core</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-			</dependency>
-
-			<!-- Domain entities -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-domain</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-			</dependency>
-
-			<!-- gRPC + Protobuf contracts (QUAN TRỌNG NHẤT) -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-protocol</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-			</dependency>
-			
-			<!-- gRPC + Protobuf contracts (QUAN TRỌNG NHẤT) -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-security</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-			</dependency>
-
-			<!-- Messaging (Kafka, events) -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-messaging</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-			</dependency>
-
-			<!-- Các libs khác nếu cần -->
-			<dependency>
-				<groupId>com.fpm2025</groupId>
-				<artifactId>fpm-grpc</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.projectlombok</groupId>

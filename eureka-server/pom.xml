@@ -29,8 +29,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.fpm2025</groupId>
-			<artifactId>fpm-libs</artifactId>
-			<version>1.0.0</version>
+			<artifactId>fpm-common</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

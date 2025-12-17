@@ -73,6 +73,7 @@
     <factorypathentry kind="VARJAR" id="M2_REPO/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/com/google/api/grpc/proto-google-common-protos/2.54.1/proto-google-common-protos-2.54.1.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/io/grpc/grpc-protobuf-lite/1.72.0/grpc-protobuf-lite-1.72.0.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/net/devh/grpc-server-spring-boot-starter/2.15.0.RELEASE/grpc-server-spring-boot-starter-2.15.0.RELEASE.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/net/devh/grpc-server-spring-boot-autoconfigure/2.15.0.RELEASE/grpc-server-spring-boot-autoconfigure-2.15.0.RELEASE.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/net/devh/grpc-common-spring-boot/2.15.0.RELEASE/grpc-common-spring-boot-2.15.0.RELEASE.jar" enabled="true" runInBatchMode="false"/>
