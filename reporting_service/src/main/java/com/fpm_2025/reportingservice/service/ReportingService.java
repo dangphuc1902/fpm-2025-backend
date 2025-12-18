@@ -1,6 +1,6 @@
 package com.fpm_2025.reportingservice.service;
 
-import com.fpm_2025.reportingservice.dto.*;
+import com.fpm_2025.reportingservice.domain.*;
 import com.fpm_2025.reportingservice.entity.ReportEntity;
 import com.fpm_2025.reportingservice.entity.TransactionSummaryEntity;
 import com.fpm_2025.reportingservice.repository.ReportRepository;

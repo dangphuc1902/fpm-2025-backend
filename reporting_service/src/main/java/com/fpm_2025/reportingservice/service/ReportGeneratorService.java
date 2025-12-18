@@ -1,6 +1,6 @@
 package com.fpm_2025.reportingservice.service;
 
-import com.fpm_2025.reportingservice.dto.*;
+import com.fpm_2025.reportingservice.domain.*;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import lombok.RequiredArgsConstructor;
