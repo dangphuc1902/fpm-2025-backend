@@ -37,6 +37,25 @@ public class CategoryMapper {
     }
 
     /**
+     * Chuyển CreateCategoryRequest → CategoryEntity (with userId)
+     * 
+     * DÙNG KHI: User tạo custom category
+     */
+    public CategoryEntity toEntity(CreateCategoryRequest request, Long userId) {
+        if (request == null) {
+            return null;
+        }
+
+        return CategoryEntity.builder()
+                .name(request.getName())
+                .parentId(request.getParentId())
+                .userId(userId)
+                .iconPath(request.getIconPath())
+                .type(request.getType())
+                .build();
+    }
+
+    /**
      * Chuyển CategoryEntity → CategoryResponse (KHÔNG bao gồm children)
      * 
      * DÙNG KHI: Trả về single category hoặc flat list
@@ -50,8 +69,12 @@ public class CategoryMapper {
                 .id(entity.getId())
                 .name(entity.getName())
                 .parentId(entity.getParentId())
+                .userId(entity.getUserId())
                 .iconPath(entity.getIconPath())
+                .color(entity.getColor())
                 .type(entity.getType())
+                .depth(entity.getDepth())
+                .sortOrder(entity.getSortOrder())
                 .children(null)  // Không load children (lazy)
                 .build();
     }
@@ -60,16 +83,6 @@ public class CategoryMapper {
      * Chuyển CategoryEntity → CategoryResponse (BAO GỒM children)
      * 
      * DÙNG KHI: Cần hierarchical tree structure
-     * 
-     * Example output:
-     * {
-     *   "id": 1,
-     *   "name": "Food & Dining",
-     *   "children": [
-     *     {"id": 10, "name": "Breakfast"},
-     *     {"id": 11, "name": "Lunch"}
-     *   ]
-     * }
      */
     public CategoryResponse toResponseWithChildren(CategoryEntity entity) {
         if (entity == null) {
@@ -88,8 +101,12 @@ public class CategoryMapper {
                 .id(entity.getId())
                 .name(entity.getName())
                 .parentId(entity.getParentId())
+                .userId(entity.getUserId())
                 .iconPath(entity.getIconPath())
+                .color(entity.getColor())
                 .type(entity.getType())
+                .depth(entity.getDepth())
+                .sortOrder(entity.getSortOrder())
                 .children(childrenResponses)
                 .build();
     }
@@ -111,11 +128,6 @@ public class CategoryMapper {
      * Chuyển List<CategoryEntity> → Tree structure
      * 
      * DÙNG KHI: Cần build category tree từ flat list
-     * 
-     * Algorithm:
-     * 1. Tìm tất cả root categories (parentId = null)
-     * 2. Cho mỗi root, tìm children của nó
-     * 3. Recursively build tree
      */
     public List<CategoryResponse> toTreeStructure(List<CategoryEntity> entities) {
         if (entities == null || entities.isEmpty()) {

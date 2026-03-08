@@ -1,14 +1,27 @@
 package com.fpm_2025.transaction_service.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fpm_2025.transaction_service.*;
-import com.fpm2025.core.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "transactions", indexes = {
@@ -17,8 +30,11 @@ import java.time.LocalDateTime;
     @Index(name = "idx_transactions_category_id", columnList = "category_id"),
     @Index(name = "idx_transactions_type", columnList = "type"),
     @Index(name = "idx_transactions_date", columnList = "transaction_date"),
-    @Index(name = "idx_transactions_user_date", columnList = "user_id, transaction_date")
+    @Index(name = "idx_transactions_user_date", columnList = "user_id, transaction_date"),
+    @Index(name = "idx_transactions_user_wallet", columnList = "user_id, wallet_id, transaction_date")
 })
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -31,27 +47,35 @@ public class TransactionEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
-    private WalletEntity wallet;
+    @Column(name = "wallet_id", nullable = false)
+    private Long walletId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private CategoryEntity category;
+    @Column(name = "category_id", nullable = false)
+    private Long categoryId;
 
     @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "category_type")
-    private CategoryType type;
+    @Column(name = "type", nullable = false, length = 20)
+    private String type;  // EXPENSE, INCOME
 
     @Column(name = "note", length = 255)
     private String note;
 
-    @Column(name = "transaction_date")
     @Builder.Default
+    @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate = LocalDateTime.now();
+
+    @Column(name = "location_json", columnDefinition = "JSON")
+    private String locationJson;
+
+    @Builder.Default
+    @Column(name = "is_recurring")
+    private Boolean isRecurring = false;
+
+    @Column(name = "recurring_id")
+    private Long recurringId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -69,84 +93,4 @@ public class TransactionEntity {
             throw new IllegalStateException("Amount must be greater than zero");
         }
     }
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public Long getUserId() {
-		return userId;
-	}
-
-	public void setUserId(Long userId) {
-		this.userId = userId;
-	}
-
-	public CategoryEntity getCategory() {
-		return category;
-	}
-
-	public void setCategory(CategoryEntity category) {
-		this.category = category;
-	}
-
-	public BigDecimal getAmount() {
-		return amount;
-	}
-
-	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
-	}
-
-	public CategoryType getType() {
-		return type;
-	}
-
-	public void setType(CategoryType type) {
-		this.type = type;
-	}
-
-	public String getNote() {
-		return note;
-	}
-
-	public void setNote(String note) {
-		this.note = note;
-	}
-
-	public LocalDateTime getTransactionDate() {
-		return transactionDate;
-	}
-
-	public void setTransactionDate(LocalDateTime transactionDate) {
-		this.transactionDate = transactionDate;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
-	public WalletEntity getWallet() {
-		return wallet;
-	}
-
-	public void setWallet(WalletEntity wallet) {
-		this.wallet = wallet;
-	}
 }

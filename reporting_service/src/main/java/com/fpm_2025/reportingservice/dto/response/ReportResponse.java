@@ -14,14 +14,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ReportResponse {
     
-    private String reportId;
-    private String reportName;
+    private Long id;
+    private Long userId;
     private ExportFormat format;
-    private String status; // GENERATING, COMPLETED, FAILED
-    private String downloadUrl;
-    private Long fileSizeBytes;
-    private LocalDateTime generatedAt;
-    private LocalDateTime expiresAt;
-    private Integer progressPercentage;
-    private String errorMessage;
+    private String period;
+    private String status; // PENDING, PROCESSING, DONE, FAILED
+    private String fileName;
+    private String fileUrl;
+    private Long fileSize;
+    private String errorMsg;
+    private LocalDateTime createdAt;
+    private LocalDateTime completedAt;
 }

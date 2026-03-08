@@ -6,42 +6,42 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface CategorySummaryRepository extends JpaRepository<CategorySummary, Long> {
     
-    Optional<CategorySummary> findByUserIdAndCategoryIdAndMonthStart(
-        Long userId, Long categoryId, LocalDate monthStart
+    Optional<CategorySummary> findByUserIdAndCategoryIdAndYearMonth(
+        Long userId, Long categoryId, String yearMonth
     );
     
-    List<CategorySummary> findByUserIdAndMonthStart(Long userId, LocalDate monthStart);
+    List<CategorySummary> findByUserIdAndYearMonth(Long userId, String yearMonth);
     
     @Query("SELECT cs FROM CategorySummary cs WHERE cs.userId = :userId " +
-           "AND cs.monthStart BETWEEN :startDate AND :endDate " +
+           "AND cs.yearMonth BETWEEN :startMonth AND :endMonth " +
            "ORDER BY cs.totalAmount DESC")
-    List<CategorySummary> findByUserIdAndDateRange(
+    List<CategorySummary> findByUserIdAndYearMonthBetween(
         @Param("userId") Long userId,
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
+        @Param("startMonth") String startMonth,
+        @Param("endMonth") String endMonth
     );
     
     @Query("SELECT cs FROM CategorySummary cs WHERE cs.userId = :userId " +
-           "AND cs.monthStart = :monthStart " +
+           "AND cs.yearMonth = :yearMonth " +
            "ORDER BY cs.totalAmount DESC")
     List<CategorySummary> findTopCategoriesByMonth(
         @Param("userId") Long userId,
-        @Param("monthStart") LocalDate monthStart
+        @Param("yearMonth") String yearMonth
     );
-    
+
     @Query("SELECT cs FROM CategorySummary cs WHERE cs.userId = :userId " +
-           "AND cs.budgetLimit IS NOT NULL " +
-           "AND cs.percentageOfBudget > 80 " +
-           "AND cs.monthStart = :monthStart")
-    List<CategorySummary> findOverBudgetCategories(
+           "AND cs.yearMonth = :yearMonth " +
+           "AND cs.type = :type " +
+           "ORDER BY cs.totalAmount DESC")
+    List<CategorySummary> findByUserIdAndYearMonthAndType(
         @Param("userId") Long userId,
-        @Param("monthStart") LocalDate monthStart
+        @Param("yearMonth") String yearMonth,
+        @Param("type") CategorySummary.CategorySummaryType type
     );
 }

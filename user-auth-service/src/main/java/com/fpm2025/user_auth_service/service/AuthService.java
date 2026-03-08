@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +51,7 @@ public class AuthService {
         }
 
         // Update last login
-        user.setLastLogin(OffsetDateTime.now());
+        user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
         // Generate JWT token
@@ -112,7 +112,7 @@ public class AuthService {
             }
 
             // Update last login
-            user.setLastLogin(OffsetDateTime.now());
+            user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
             // Generate JWT token

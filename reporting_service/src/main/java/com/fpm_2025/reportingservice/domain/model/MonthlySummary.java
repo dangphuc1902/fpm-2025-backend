@@ -1,19 +1,30 @@
 package com.fpm_2025.reportingservice.domain.model;
 
-import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "monthly_summaries", indexes = {
-    @Index(name = "idx_user_month", columnList = "user_id,month_start"),
-    @Index(name = "idx_wallet_month", columnList = "wallet_id,month_start")
+    @Index(name = "idx_monthly_user_id", columnList = "user_id"),
+    @Index(name = "idx_monthly_year_month", columnList = "year_month")
+},
+uniqueConstraints = {
+    @UniqueConstraint(name = "uk_monthly_user_month", columnNames = {"user_id", "year_month"})
 })
 @Data
 @Builder
@@ -28,34 +39,32 @@ public class MonthlySummary {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(name = "wallet_id")
-    private Long walletId;
+    @Column(name = "year_month", nullable = false, length = 7)
+    private String yearMonth;
     
-    @Column(name = "month_start", nullable = false)
-    private LocalDate monthStart;
-    
-    @Column(name = "total_income", precision = 19, scale = 2)
+    @Builder.Default
+    @Column(name = "total_income", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalIncome = BigDecimal.ZERO;
     
-    @Column(name = "total_expense", precision = 19, scale = 2)
+    @Builder.Default
+    @Column(name = "total_expense", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalExpense = BigDecimal.ZERO;
     
-    @Column(name = "net_savings", precision = 19, scale = 2)
-    private BigDecimal netSavings = BigDecimal.ZERO;
+    @Builder.Default
+    @Column(name = "net_income", nullable = false, precision = 15, scale = 2)
+    private BigDecimal netIncome = BigDecimal.ZERO;
     
-    @Column(name = "transaction_count")
+    @Builder.Default
+    @Column(name = "transaction_count", nullable = false)
     private Integer transactionCount = 0;
     
-    @Column(name = "avg_transaction_amount", precision = 19, scale = 2)
-    private BigDecimal avgTransactionAmount = BigDecimal.ZERO;
+    @Column(name = "avg_daily_expense", precision = 15, scale = 2)
+    private BigDecimal avgDailyExpense;
     
-    @Column(name = "opening_balance", precision = 19, scale = 2)
-    private BigDecimal openingBalance = BigDecimal.ZERO;
+    @Column(name = "top_expense_category", length = 100)
+    private String topExpenseCategory;
     
-    @Column(name = "closing_balance", precision = 19, scale = 2)
-    private BigDecimal closingBalance = BigDecimal.ZERO;
-    
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
@@ -65,16 +74,18 @@ public class MonthlySummary {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        calculateNetSavings();
+        calculateNetIncome();
     }
     
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        calculateNetSavings();
+        calculateNetIncome();
     }
     
-    private void calculateNetSavings() {
-        this.netSavings = totalIncome.subtract(totalExpense);
+    private void calculateNetIncome() {
+        if (totalIncome != null && totalExpense != null) {
+            this.netIncome = totalIncome.subtract(totalExpense);
+        }
     }
 }

@@ -1,27 +1,19 @@
 package com.fpm_2025.reportingservice.service;
 
-import com.fpm2025.protocol.transaction.DateRangeRequest;
-import com.fpm2025.protocol.transaction.TransactionGrpcServiceGrpc;
-import com.fpm2025.protocol.transaction.TransactionsResponse;
-import com.fpm2025.protocol.category.CategoryGrpcServiceGrpc;
-import com.fpm2025.protocol.category.CategoryTypeRequest;
-import com.fpm2025.protocol.category.CategoriesResponse;
-import com.fpm2025.reporting.service.dto.request.DashboardRequest;
-import com.fpm2025.reporting.service.dto.response.DashboardResponse;
-import com.fpm2025.reporting.service.dto.response.CategorySpending;
-import com.fpm2025.reporting.service.entity.BudgetEntity;
-import com.fpm2025.reporting.service.entity.MonthlySummaryEntity;
-import com.fpm2025.reporting.service.repository.BudgetRepository;
-import com.fpm2025.reporting.service.repository.MonthlySummaryRepository;
+import com.fpm_2025.reportingservice.domain.model.Budget;
+import com.fpm_2025.reportingservice.domain.model.CategorySummary;
+import com.fpm_2025.reportingservice.domain.model.MonthlySummary;
+import com.fpm_2025.reportingservice.dto.request.DashboardRequest;
+import com.fpm_2025.reportingservice.dto.response.DashboardResponse;
+import com.fpm_2025.reportingservice.repository.BudgetRepository;
+import com.fpm_2025.reportingservice.repository.CategorySummaryRepository;
+import com.fpm_2025.reportingservice.repository.MonthlySummaryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,140 +21,82 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    @GrpcClient("transaction-service")
-    private TransactionGrpcServiceGrpc.TransactionGrpcServiceBlockingStub transactionStub;
-
-    @GrpcClient("category-service")
-    private CategoryGrpcServiceGrpc.CategoryGrpcServiceBlockingStub categoryStub;
-
-    private final BudgetRepository budgetRepository;
     private final MonthlySummaryRepository monthlySummaryRepository;
+    private final CategorySummaryRepository categorySummaryRepository;
+    private final BudgetRepository budgetRepository;
 
     public DashboardResponse getDashboard(DashboardRequest request) {
-        log.info("Getting dashboard for user: {}, month: {}", request.getUserId(), request.getMonth());
+        log.info("Getting dashboard for user: {}, month: {}", request.getUserId(), request.getYearMonth());
 
-        // Get date range for the month
-        LocalDate startDate = request.getMonth().withDayOfMonth(1);
-        LocalDate endDate = request.getMonth().withDayOfMonth(request.getMonth().lengthOfMonth());
+        String yearMonth = request.getYearMonth();
 
-        // Fetch transactions from transaction-service via gRPC
-        DateRangeRequest grpcRequest = DateRangeRequest.newBuilder()
-                .setUserId(request.getUserId())
-                .setStartDate(startDate.format(DateTimeFormatter.ISO_DATE))
-                .setEndDate(endDate.format(DateTimeFormatter.ISO_DATE))
-                .build();
+        // Get monthly summary
+        Optional<MonthlySummary> summaryOpt = monthlySummaryRepository
+                .findByUserIdAndYearMonth(request.getUserId(), yearMonth);
 
-        TransactionsResponse transactionsResponse = transactionStub.getTransactionsByDateRange(grpcRequest);
-
-        // Calculate summary
-        BigDecimal totalIncome = BigDecimal.ZERO;
-        BigDecimal totalExpense = BigDecimal.ZERO;
-        Map<Long, BigDecimal> categorySpendingMap = new HashMap<>();
-
-        for (var transaction : transactionsResponse.getTransactionsList()) {
-            BigDecimal amount = BigDecimal.valueOf(transaction.getAmount().getAmount());
-            
-            if ("INCOME".equals(transaction.getType())) {
-                totalIncome = totalIncome.add(amount);
-            } else if ("EXPENSE".equals(transaction.getType())) {
-                totalExpense = totalExpense.add(amount);
-                
-                // Aggregate by category
-                Long categoryId = transaction.getCategoryId();
-                categorySpendingMap.merge(categoryId, amount, BigDecimal::add);
-            }
+        // Build summary
+        DashboardResponse.Summary summary;
+        if (summaryOpt.isPresent()) {
+            MonthlySummary ms = summaryOpt.get();
+            summary = DashboardResponse.Summary.builder()
+                    .totalIncome(ms.getTotalIncome())
+                    .totalExpense(ms.getTotalExpense())
+                    .netIncome(ms.getNetIncome())
+                    .transactionCount(ms.getTransactionCount())
+                    .avgDailyExpense(ms.getAvgDailyExpense())
+                    .topExpenseCategory(ms.getTopExpenseCategory())
+                    .build();
+        } else {
+            summary = DashboardResponse.Summary.builder().build();
         }
 
-        // Fetch categories
-        CategoriesResponse categoriesResponse = categoryStub.getCategoriesByType(
-                CategoryTypeRequest.newBuilder()
-                        .setType("EXPENSE")
-                        .setUserId(request.getUserId())
-                        .build()
-        );
+        // Get category breakdown
+        List<CategorySummary> categorySummaries = categorySummaryRepository
+                .findByUserIdAndYearMonth(request.getUserId(), yearMonth);
 
-        Map<Long, String> categoryNameMap = categoriesResponse.getCategoriesList().stream()
-                .collect(Collectors.toMap(
-                        category -> category.getId(),
-                        category -> category.getName()
-                ));
-
-        // Build category spending list
-        List<CategorySpending> categorySpendingList = categorySpendingMap.entrySet().stream()
-                .map(entry -> {
-                    BigDecimal percentage = totalExpense.compareTo(BigDecimal.ZERO) == 0 
-                            ? BigDecimal.ZERO 
-                            : entry.getValue().multiply(BigDecimal.valueOf(100))
-                                    .divide(totalExpense, 2, java.math.RoundingMode.HALF_UP);
-                    
-                    return CategorySpending.builder()
-                            .categoryId(entry.getKey())
-                            .categoryName(categoryNameMap.getOrDefault(entry.getKey(), "Unknown"))
-                            .amount(entry.getValue())
-                            .percentage(percentage.doubleValue())
-                            .build();
-                })
-                .sorted((a, b) -> b.getAmount().compareTo(a.getAmount()))
+        List<DashboardResponse.CategoryBreakdown> categoryBreakdowns = categorySummaries.stream()
+                .map(cs -> DashboardResponse.CategoryBreakdown.builder()
+                        .categoryId(cs.getCategoryId())
+                        .categoryName(cs.getCategoryName())
+                        .type(cs.getType().name())
+                        .amount(cs.getTotalAmount())
+                        .transactionCount(cs.getTransactionCount())
+                        .percentage(cs.getPercentage())
+                        .build())
                 .collect(Collectors.toList());
 
-        // Fetch budgets
-        List<BudgetEntity> budgets = budgetRepository.findByUserIdAndMonth(
-                request.getUserId(), 
-                request.getMonth()
-        );
+        // Get budget statuses
+        List<Budget> budgets = budgetRepository
+                .findActiveBudgetsByYearMonth(request.getUserId(), yearMonth);
 
-        // Build response
+        List<DashboardResponse.BudgetStatus> budgetStatuses = budgets.stream()
+                .map(this::toBudgetStatus)
+                .collect(Collectors.toList());
+
         return DashboardResponse.builder()
                 .userId(request.getUserId())
-                .month(request.getMonth())
-                .totalIncome(totalIncome)
-                .totalExpense(totalExpense)
-                .balance(totalIncome.subtract(totalExpense))
-                .transactionCount(transactionsResponse.getTransactionsList().size())
-                .categorySpending(categorySpendingList)
-                .budgets(budgets.stream()
-                        .map(this::toBudgetStatus)
-                        .collect(Collectors.toList()))
+                .yearMonth(yearMonth)
+                .summary(summary)
+                .categoryBreakdowns(categoryBreakdowns)
+                .budgetStatuses(budgetStatuses)
                 .build();
     }
 
-    public DashboardResponse getQuickSummary(DashboardRequest request) {
-        log.info("Getting quick summary for user: {}", request.getUserId());
-
-        // Try to get from monthly summary cache
-        Optional<MonthlySummaryEntity> summaryOpt = monthlySummaryRepository
-                .findByUserIdAndMonth(request.getUserId(), request.getMonth());
-
-        if (summaryOpt.isPresent()) {
-            MonthlySummaryEntity summary = summaryOpt.get();
-            return DashboardResponse.builder()
-                    .userId(request.getUserId())
-                    .month(request.getMonth())
-                    .totalIncome(summary.getTotalIncome())
-                    .totalExpense(summary.getTotalExpense())
-                    .balance(summary.getBalance())
-                    .transactionCount(summary.getTransactionCount())
-                    .build();
-        }
-
-        // If not cached, get full dashboard
-        return getDashboard(request);
-    }
-
-    private DashboardResponse.BudgetStatus toBudgetStatus(BudgetEntity budget) {
+    private DashboardResponse.BudgetStatus toBudgetStatus(Budget budget) {
         String status = "OK";
-        if (budget.getUsagePercentage() >= 100) {
+        if (budget.isOverBudget()) {
             status = "EXCEEDED";
-        } else if (budget.getUsagePercentage() >= 80) {
+        } else if (budget.getUsagePercentage().intValue() >= 80) {
             status = "WARNING";
         }
 
         return DashboardResponse.BudgetStatus.builder()
                 .categoryId(budget.getCategoryId())
-                .budgetAmount(budget.getLimited())
-                .usedAmount(budget.getUsed())
-                .remainingAmount(budget.getRemaining())
-                .percentage(budget.getUsagePercentage())
+                .categoryName(budget.getCategoryName())
+                .amountLimit(budget.getAmountLimit())
+                .amountUsed(budget.getAmountUsed())
+                .remainingAmount(budget.getRemainingAmount())
+                .usagePercentage(budget.getUsagePercentage())
                 .status(status)
                 .build();
     }

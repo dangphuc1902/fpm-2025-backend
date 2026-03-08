@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,43 +17,30 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     
     List<Budget> findByUserIdAndCategoryIdAndIsActiveTrue(Long userId, Long categoryId);
     
+    Optional<Budget> findByUserIdAndCategoryIdAndYearMonth(
+        Long userId, Long categoryId, String yearMonth
+    );
+    
     @Query("SELECT b FROM Budget b WHERE b.userId = :userId " +
-           "AND b.isActive = true " +
-           "AND b.startDate <= :date " +
-           "AND (b.endDate IS NULL OR b.endDate >= :date)")
-    List<Budget> findActiveBudgetsForDate(
+           "AND b.yearMonth = :yearMonth " +
+           "AND b.isActive = true")
+    List<Budget> findActiveBudgetsByYearMonth(
         @Param("userId") Long userId,
-        @Param("date") LocalDate date
+        @Param("yearMonth") String yearMonth
     );
     
     @Query("SELECT b FROM Budget b WHERE b.userId = :userId " +
            "AND b.period = :period " +
            "AND b.isActive = true " +
-           "AND b.startDate <= :today " +
-           "AND (b.endDate IS NULL OR b.endDate >= :today)")
+           "AND b.yearMonth = :yearMonth")
     List<Budget> findActiveBudgetsByPeriod(
         @Param("userId") Long userId,
         @Param("period") BudgetPeriod period,
-        @Param("today") LocalDate today
+        @Param("yearMonth") String yearMonth
     );
     
     @Query("SELECT b FROM Budget b WHERE b.userId = :userId " +
            "AND b.isActive = true " +
-           "AND b.currentSpent >= b.amountLimit * b.alertThreshold / 100")
+           "AND b.amountUsed >= b.amountLimit * 0.8")
     List<Budget> findBudgetsNeedingAlert(@Param("userId") Long userId);
-    
-    @Query("SELECT b FROM Budget b WHERE b.userId = :userId " +
-           "AND (:categoryId IS NULL OR b.categoryId = :categoryId) " +
-           "AND (:walletId IS NULL OR b.walletId = :walletId) " +
-           "AND b.period = :period " +
-           "AND b.isActive = true " +
-           "AND b.startDate <= :today " +
-           "AND (b.endDate IS NULL OR b.endDate >= :today)")
-    Optional<Budget> findActiveBudget(
-        @Param("userId") Long userId,
-        @Param("categoryId") Long categoryId,
-        @Param("walletId") Long walletId,
-        @Param("period") BudgetPeriod period,
-        @Param("today") LocalDate today
-    );
 }

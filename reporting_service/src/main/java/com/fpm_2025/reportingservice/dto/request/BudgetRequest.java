@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -16,16 +15,12 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class BudgetRequest {
     
-    @NotBlank(message = "Budget name is required")
-    @Size(max = 100, message = "Name must not exceed 100 characters")
-    private String name;
-    
-    @Size(max = 500, message = "Description must not exceed 500 characters")
-    private String description;
-    
+    @NotNull(message = "Category ID is required")
     private Long categoryId;
     
-    private Long walletId;
+    @NotBlank(message = "Category name is required")
+    @Size(max = 100, message = "Category name must not exceed 100 characters")
+    private String categoryName;
     
     @NotNull(message = "Amount limit is required")
     @Positive(message = "Amount limit must be positive")
@@ -34,14 +29,7 @@ public class BudgetRequest {
     @NotNull(message = "Budget period is required")
     private BudgetPeriod period;
     
-    @NotNull(message = "Start date is required")
-    private LocalDate startDate;
-    
-    private LocalDate endDate;
-    
-    @Min(value = 1, message = "Alert threshold must be at least 1%")
-    @Max(value = 100, message = "Alert threshold must not exceed 100%")
-    private BigDecimal alertThreshold;
-    
-    private Boolean rolloverEnabled;
+    @NotBlank(message = "Year month is required")
+    @Pattern(regexp = "\\d{4}-\\d{2}", message = "Year month must be in format yyyy-MM")
+    private String yearMonth;
 }

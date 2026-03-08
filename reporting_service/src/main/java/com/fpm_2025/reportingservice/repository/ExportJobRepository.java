@@ -9,12 +9,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ExportJobRepository extends JpaRepository<ExportJob, Long> {
-    
-    Optional<ExportJob> findByJobId(String jobId);
     
     List<ExportJob> findByUserIdOrderByCreatedAtDesc(Long userId);
     
@@ -28,7 +25,7 @@ public interface ExportJobRepository extends JpaRepository<ExportJob, Long> {
         @Param("status") ExportStatus status
     );
     
-    @Query("SELECT ej FROM ExportJob ej WHERE ej.status = 'COMPLETED' " +
+    @Query("SELECT ej FROM ExportJob ej WHERE ej.status = 'DONE' " +
            "AND ej.completedAt < :beforeDate")
     List<ExportJob> findOldCompletedJobs(@Param("beforeDate") LocalDateTime beforeDate);
 }

@@ -2,15 +2,13 @@ package com.fpm_2025.wallet_service.entity.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.STRING)
 public enum WalletType {
 	CASH("CASH"),
-    BANK("BANK"),
-    CREDIT("CREDIT");
+    CARD("CARD"),
+    BANK("BANK");
 
     private final String value;
 

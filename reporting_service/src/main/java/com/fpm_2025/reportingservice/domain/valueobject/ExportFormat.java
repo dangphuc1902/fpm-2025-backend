@@ -2,7 +2,8 @@ package com.fpm_2025.reportingservice.domain.valueobject;
 
 public enum ExportFormat {
     PDF("application/pdf", ".pdf"),
-    EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx");
+    EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+    CSV("text/csv", ".csv");
 
     private final String contentType;
     private final String extension;

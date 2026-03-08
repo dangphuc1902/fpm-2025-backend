@@ -114,7 +114,7 @@ public class WalletService implements WalletServiceImp{
         }
 
         if (request.getIsActive() != null) {
-            wallet.setActive(request.getIsActive());
+            wallet.setIsActive(request.getIsActive());
         }
 
         WalletEntity updatedWallet = walletRepository.save(wallet);
@@ -198,7 +198,7 @@ public class WalletService implements WalletServiceImp{
             .currency(entity.getCurrency())
             .balance(entity.getBalance())
             .icon(entity.getIcon())
-            .isActive(entity.isActive())
+            .isActive(entity.getIsActive())
             .createdAt(entity.getCreatedAt())
             .updatedAt(entity.getUpdatedAt())
             .build();

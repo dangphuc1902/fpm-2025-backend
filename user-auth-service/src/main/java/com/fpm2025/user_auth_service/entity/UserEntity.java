@@ -6,7 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -15,7 +15,8 @@ import java.time.OffsetDateTime;
         @Index(name = "idx_users_email", columnList = "email"),
         @Index(name = "idx_users_google_id", columnList = "google_id"),
         @Index(name = "idx_users_username", columnList = "username"),
-        @Index(name = "idx_users_last_login", columnList = "last_login")
+        @Index(name = "idx_users_last_login", columnList = "last_login"),
+        @Index(name = "idx_users_role", columnList = "role")
     }
 )
 @Getter
@@ -32,29 +33,37 @@ public class UserEntity implements Serializable {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "phone_number", unique = true, length = 20)
+    private String phoneNumber;
+
     @Column(name = "google_id", unique = true, length = 255)
     private String googleId;
 
     @Column(unique = true, length = 100)
     private String username;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "hashed_password", length = 255)
     private String hashedPassword;
 
-    @Column(columnDefinition = "TEXT")
-    private String jwtToken;
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String role = "USER";
 
-    @Column(name = "jwt_token_encrypted", columnDefinition = "TEXT")
-    private String jwtTokenEncrypted;
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    private OffsetDateTime updatedAt;
+    @Column(name = "updated_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    private LocalDateTime updatedAt;
 
-    @Column(name = "last_login", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime lastLogin;
+    @Column(name = "last_login", columnDefinition = "TIMESTAMP NULL")
+    private LocalDateTime lastLogin;
 }

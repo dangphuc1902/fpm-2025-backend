@@ -77,7 +77,7 @@ public class WalletMapper {
                 .currency(entity.getCurrency())
                 .balance(entity.getBalance())
                 .icon(entity.getIcon())
-                .isActive(entity.isActive())
+                .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

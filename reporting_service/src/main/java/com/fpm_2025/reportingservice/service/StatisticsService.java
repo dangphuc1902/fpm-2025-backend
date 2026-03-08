@@ -1,11 +1,9 @@
 package com.fpm_2025.reportingservice.service;
 
-import com.fpm_2025.grpc.TransactionProto;
-import com.fpm_2025.reporting.domain.model.CategorySummary;
-import com.fpm_2025.reporting.domain.model.MonthlySummary;
-import com.fpm_2025.reporting.grpc.client.TransactionGrpcClient;
-import com.fpm_2025.reporting.repository.CategorySummaryRepository;
-import com.fpm_2025.reporting.repository.MonthlySummaryRepository;
+import com.fpm_2025.reportingservice.domain.model.CategorySummary;
+import com.fpm_2025.reportingservice.domain.model.MonthlySummary;
+import com.fpm_2025.reportingservice.repository.CategorySummaryRepository;
+import com.fpm_2025.reportingservice.repository.MonthlySummaryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StatisticsService {
     
-    private final TransactionGrpcClient transactionClient;
     private final MonthlySummaryRepository monthlySummaryRepository;
     private final CategorySummaryRepository categorySummaryRepository;
     
@@ -34,76 +32,55 @@ public class StatisticsService {
         log.info("Generating comprehensive statistics for user {} from {} to {}", 
             userId, startDate, endDate);
         
+        String startMonth = YearMonth.from(startDate).toString();
+        String endMonth = YearMonth.from(endDate).toString();
+        
         Map<String, Object> stats = new HashMap<>();
         
-        // Basic statistics
-        stats.put("basicStats", getBasicStatistics(userId, startDate, endDate));
+        // Basic statistics from monthly summaries
+        stats.put("basicStats", getBasicStatistics(userId, startMonth, endMonth));
         
         // Trend analysis
-        stats.put("trends", getTrendAnalysis(userId, startDate, endDate));
+        stats.put("trends", getTrendAnalysis(userId, startMonth, endMonth));
         
         // Category insights
-        stats.put("categoryInsights", getCategoryInsights(userId, startDate, endDate));
-        
-        // Time-based patterns
-        stats.put("patterns", getSpendingPatterns(userId, startDate, endDate));
-        
-        // Comparison with previous period
-        stats.put("periodComparison", getPeriodComparison(userId, startDate, endDate));
+        stats.put("categoryInsights", getCategoryInsights(userId, startMonth, endMonth));
         
         // Financial health score
-        stats.put("healthScore", calculateFinancialHealthScore(userId, startDate, endDate));
+        stats.put("healthScore", calculateFinancialHealthScore(userId, startMonth, endMonth));
         
         return stats;
     }
     
-    private Map<String, Object> getBasicStatistics(Long userId, LocalDate startDate, LocalDate endDate) {
-        List<TransactionProto> transactions = transactionClient.getTransactionsByDateRange(
-            userId, startDate, endDate, null
-        );
+    private Map<String, Object> getBasicStatistics(Long userId, String startMonth, String endMonth) {
+        List<MonthlySummary> summaries = monthlySummaryRepository
+            .findByUserIdAndYearMonthBetween(userId, startMonth, endMonth);
         
-        BigDecimal totalIncome = BigDecimal.ZERO;
-        BigDecimal totalExpense = BigDecimal.ZERO;
-        int incomeCount = 0;
-        int expenseCount = 0;
+        BigDecimal totalIncome = summaries.stream()
+            .map(MonthlySummary::getTotalIncome)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        for (TransactionProto tx : transactions) {
-            BigDecimal amount = new BigDecimal(tx.getAmount());
-            if ("INCOME".equals(tx.getType())) {
-                totalIncome = totalIncome.add(amount);
-                incomeCount++;
-            } else if ("EXPENSE".equals(tx.getType())) {
-                totalExpense = totalExpense.add(amount);
-                expenseCount++;
-            }
-        }
+        BigDecimal totalExpense = summaries.stream()
+            .map(MonthlySummary::getTotalExpense)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal avgIncome = incomeCount > 0 
-            ? totalIncome.divide(BigDecimal.valueOf(incomeCount), 2, RoundingMode.HALF_UP)
-            : BigDecimal.ZERO;
-        
-        BigDecimal avgExpense = expenseCount > 0
-            ? totalExpense.divide(BigDecimal.valueOf(expenseCount), 2, RoundingMode.HALF_UP)
-            : BigDecimal.ZERO;
+        int totalTransactions = summaries.stream()
+            .mapToInt(MonthlySummary::getTransactionCount)
+            .sum();
         
         Map<String, Object> basicStats = new HashMap<>();
         basicStats.put("totalIncome", totalIncome);
         basicStats.put("totalExpense", totalExpense);
-        basicStats.put("netSavings", totalIncome.subtract(totalExpense));
+        basicStats.put("netIncome", totalIncome.subtract(totalExpense));
         basicStats.put("savingsRate", calculateSavingsRate(totalIncome, totalExpense));
-        basicStats.put("totalTransactions", transactions.size());
-        basicStats.put("incomeTransactions", incomeCount);
-        basicStats.put("expenseTransactions", expenseCount);
-        basicStats.put("averageIncome", avgIncome);
-        basicStats.put("averageExpense", avgExpense);
+        basicStats.put("totalTransactions", totalTransactions);
         
         return basicStats;
     }
     
-    private Map<String, Object> getTrendAnalysis(Long userId, LocalDate startDate, LocalDate endDate) {
-        // Get monthly summaries for trend analysis
+    private Map<String, Object> getTrendAnalysis(Long userId, String startMonth, String endMonth) {
         List<MonthlySummary> summaries = monthlySummaryRepository
-            .findByUserIdAndDateRangeAndWallet(userId, startDate, endDate, null);
+            .findByUserIdAndYearMonthBetween(userId, startMonth, endMonth);
         
         if (summaries.size() < 2) {
             return Map.of("message", "Insufficient data for trend analysis");
@@ -131,31 +108,33 @@ public class StatisticsService {
         trends.put("expenseTrend", expenseTrend);
         trends.put("monthlyData", summaries.stream()
             .map(s -> Map.of(
-                "month", s.getMonthStart(),
+                "month", s.getYearMonth(),
                 "income", s.getTotalIncome(),
                 "expense", s.getTotalExpense(),
-                "savings", s.getNetSavings()
+                "netIncome", s.getNetIncome()
             ))
             .collect(Collectors.toList()));
         
         return trends;
     }
     
-    private Map<String, Object> getCategoryInsights(Long userId, LocalDate startDate, LocalDate endDate) {
+    private Map<String, Object> getCategoryInsights(Long userId, String startMonth, String endMonth) {
         List<CategorySummary> summaries = categorySummaryRepository
-            .findByUserIdAndDateRange(userId, startDate, endDate);
+            .findByUserIdAndYearMonthBetween(userId, startMonth, endMonth);
         
         // Find top spending categories
         List<Map<String, Object>> topCategories = summaries.stream()
             .sorted((a, b) -> b.getTotalAmount().compareTo(a.getTotalAmount()))
             .limit(5)
-            .map(cs -> Map.of(
-                "categoryId", cs.getCategoryId(),
-                "categoryName", cs.getCategoryName(),
-                "totalAmount", cs.getTotalAmount(),
-                "transactionCount", cs.getTransactionCount(),
-                "averageAmount", cs.getAvgAmount()
-            ))
+            .map(cs -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("categoryId", cs.getCategoryId());
+                map.put("categoryName", cs.getCategoryName());
+                map.put("totalAmount", cs.getTotalAmount());
+                map.put("transactionCount", cs.getTransactionCount());
+                map.put("percentage", cs.getPercentage());
+                return map;
+            })
             .collect(Collectors.toList());
         
         // Calculate category concentration (Herfindahl index)
@@ -163,12 +142,15 @@ public class StatisticsService {
             .map(CategorySummary::getTotalAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal concentration = summaries.stream()
-            .map(cs -> {
-                BigDecimal share = cs.getTotalAmount().divide(totalExpense, 4, RoundingMode.HALF_UP);
-                return share.multiply(share);
-            })
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal concentration = BigDecimal.ZERO;
+        if (totalExpense.compareTo(BigDecimal.ZERO) > 0) {
+            concentration = summaries.stream()
+                .map(cs -> {
+                    BigDecimal share = cs.getTotalAmount().divide(totalExpense, 4, RoundingMode.HALF_UP);
+                    return share.multiply(share);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
         
         Map<String, Object> insights = new HashMap<>();
         insights.put("topCategories", topCategories);
@@ -179,72 +161,8 @@ public class StatisticsService {
         return insights;
     }
     
-    private Map<String, Object> getSpendingPatterns(Long userId, LocalDate startDate, LocalDate endDate) {
-        List<TransactionProto> transactions = transactionClient.getTransactionsByDateRange(
-            userId, startDate, endDate, null
-        );
-        
-        // Group by day of week
-        Map<String, BigDecimal> byDayOfWeek = transactions.stream()
-            .filter(tx -> "EXPENSE".equals(tx.getType()))
-            .collect(Collectors.groupingBy(
-                tx -> LocalDate.parse(tx.getTransactionDate()).getDayOfWeek().toString(),
-                Collectors.reducing(BigDecimal.ZERO, 
-                    tx -> new BigDecimal(tx.getAmount()), 
-                    BigDecimal::add)
-            ));
-        
-        // Group by time of day (if timestamp available)
-        Map<String, Integer> byTimeOfDay = new HashMap<>();
-        byTimeOfDay.put("MORNING", 0);
-        byTimeOfDay.put("AFTERNOON", 0);
-        byTimeOfDay.put("EVENING", 0);
-        byTimeOfDay.put("NIGHT", 0);
-        
-        // Find largest transaction
-        Optional<TransactionProto> largestTx = transactions.stream()
-            .filter(tx -> "EXPENSE".equals(tx.getType()))
-            .max(Comparator.comparing(tx -> new BigDecimal(tx.getAmount())));
-        
-        Map<String, Object> patterns = new HashMap<>();
-        patterns.put("spendingByDayOfWeek", byDayOfWeek);
-        patterns.put("spendingByTimeOfDay", byTimeOfDay);
-        
-        if (largestTx.isPresent()) {
-            patterns.put("largestTransaction", Map.of(
-                "amount", largestTx.get().getAmount(),
-                "date", largestTx.get().getTransactionDate(),
-                "description", largestTx.get().getDescription()
-            ));
-        }
-        
-        return patterns;
-    }
-    
-    private Map<String, Object> getPeriodComparison(Long userId, LocalDate startDate, LocalDate endDate) {
-        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
-        LocalDate previousStart = startDate.minusDays(daysBetween + 1);
-        LocalDate previousEnd = startDate.minusDays(1);
-        
-        Map<String, Object> currentPeriod = getBasicStatistics(userId, startDate, endDate);
-        Map<String, Object> previousPeriod = getBasicStatistics(userId, previousStart, previousEnd);
-        
-        BigDecimal currentIncome = (BigDecimal) currentPeriod.get("totalIncome");
-        BigDecimal previousIncome = (BigDecimal) previousPeriod.get("totalIncome");
-        BigDecimal currentExpense = (BigDecimal) currentPeriod.get("totalExpense");
-        BigDecimal previousExpense = (BigDecimal) previousPeriod.get("totalExpense");
-        
-        Map<String, Object> comparison = new HashMap<>();
-        comparison.put("currentPeriod", currentPeriod);
-        comparison.put("previousPeriod", previousPeriod);
-        comparison.put("incomeChange", calculateChangePercentage(previousIncome, currentIncome));
-        comparison.put("expenseChange", calculateChangePercentage(previousExpense, currentExpense));
-        
-        return comparison;
-    }
-    
-    private Map<String, Object> calculateFinancialHealthScore(Long userId, LocalDate startDate, LocalDate endDate) {
-        Map<String, Object> basicStats = getBasicStatistics(userId, startDate, endDate);
+    private Map<String, Object> calculateFinancialHealthScore(Long userId, String startMonth, String endMonth) {
+        Map<String, Object> basicStats = getBasicStatistics(userId, startMonth, endMonth);
         
         BigDecimal savingsRate = (BigDecimal) basicStats.get("savingsRate");
         
@@ -290,15 +208,6 @@ public class StatisticsService {
     private BigDecimal calculateGrowthRate(BigDecimal oldValue, BigDecimal newValue) {
         if (oldValue.compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;
-        }
-        return newValue.subtract(oldValue)
-            .divide(oldValue, 4, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(100));
-    }
-    
-    private BigDecimal calculateChangePercentage(BigDecimal oldValue, BigDecimal newValue) {
-        if (oldValue.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.valueOf(100);
         }
         return newValue.subtract(oldValue)
             .divide(oldValue, 4, RoundingMode.HALF_UP)

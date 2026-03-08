@@ -12,14 +12,14 @@ import java.util.List;
 @Repository
 public interface BudgetAlertRepository extends JpaRepository<BudgetAlert, Long> {
     
-    List<BudgetAlert> findByUserIdAndIsReadFalseOrderBySentAtDesc(Long userId);
+    List<BudgetAlert> findByUserIdAndIsReadFalseOrderByTriggeredAtDesc(Long userId);
     
-    List<BudgetAlert> findByUserIdOrderBySentAtDesc(Long userId);
+    List<BudgetAlert> findByUserIdOrderByTriggeredAtDesc(Long userId);
     
-    List<BudgetAlert> findByBudgetIdOrderBySentAtDesc(Long budgetId);
+    List<BudgetAlert> findByBudgetIdOrderByTriggeredAtDesc(Long budgetId);
     
     @Query("SELECT ba FROM BudgetAlert ba WHERE ba.userId = :userId " +
-           "AND ba.sentAt >= :since ORDER BY ba.sentAt DESC")
+           "AND ba.triggeredAt >= :since ORDER BY ba.triggeredAt DESC")
     List<BudgetAlert> findRecentAlerts(
         @Param("userId") Long userId,
         @Param("since") LocalDateTime since
@@ -27,11 +27,11 @@ public interface BudgetAlertRepository extends JpaRepository<BudgetAlert, Long> 
     
     @Query("SELECT COUNT(ba) > 0 FROM BudgetAlert ba " +
            "WHERE ba.budgetId = :budgetId " +
-           "AND ba.alertType = :alertType " +
-           "AND ba.sentAt >= :since")
+           "AND ba.thresholdPercent = :thresholdPercent " +
+           "AND ba.triggeredAt >= :since")
     boolean existsRecentAlert(
         @Param("budgetId") Long budgetId,
-        @Param("alertType") String alertType,
+        @Param("thresholdPercent") Integer thresholdPercent,
         @Param("since") LocalDateTime since
     );
 }

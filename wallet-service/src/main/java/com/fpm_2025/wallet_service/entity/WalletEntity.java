@@ -12,13 +12,16 @@ import com.fpm_2025.wallet_service.entity.enums.WalletType;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "wallets", indexes = {
         @Index(name = "idx_wallets_user_id", columnList = "user_id"),
         @Index(name = "idx_wallets_type", columnList = "type"),
-        @Index(name = "idx_wallets_is_active", columnList = "is_active")
+        @Index(name = "idx_wallets_active", columnList = "is_active"),
+        @Index(name = "idx_wallets_deleted", columnList = "is_deleted"),
+        @Index(name = "idx_wallets_user_active", columnList = "user_id, is_active, is_deleted")
 })
 public class WalletEntity {
 
@@ -31,15 +34,20 @@ public class WalletEntity {
 
     @Column(nullable = false, length = 100)
     private String name;
-    
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "wallet_type DEFAULT 'cash'")
+    @Column(nullable = false, length = 20)
     private WalletType type = WalletType.CASH;
 
-    @Column(length = 3)
+    @Builder.Default
+    @Column(length = 3, nullable = false)
     private String currency = "VND";
-    
+
+    @Column(name = "currency_symbol", length = 5)
+    @Builder.Default
+    private String currencySymbol = "₫";
+
     @Builder.Default
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
@@ -47,10 +55,14 @@ public class WalletEntity {
     @Column(length = 50)
     private String icon;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
-    
     @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

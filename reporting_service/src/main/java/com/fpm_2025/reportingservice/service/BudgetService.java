@@ -2,11 +2,9 @@ package com.fpm_2025.reportingservice.service;
 
 import com.fpm_2025.reportingservice.domain.model.Budget;
 import com.fpm_2025.reportingservice.domain.model.BudgetAlert;
-import com.fpm_2025.reportingservice.domain.valueobject.BudgetPeriod;
 import com.fpm_2025.reportingservice.dto.request.BudgetRequest;
 import com.fpm_2025.reportingservice.dto.response.BudgetStatusResponse;
 import com.fpm_2025.reportingservice.exception.ResourceNotFoundException;
-import com.fpm_2025.reportingservice.grpc.client.CategoryGrpcClient;
 import com.fpm_2025.reportingservice.repository.BudgetAlertRepository;
 import com.fpm_2025.reportingservice.repository.BudgetRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,35 +24,20 @@ public class BudgetService {
     
     private final BudgetRepository budgetRepository;
     private final BudgetAlertRepository budgetAlertRepository;
-    private final CategoryGrpcClient categoryClient;
     
     @Transactional
     public Budget createBudget(Long userId, BudgetRequest request) {
-        log.info("Creating budget for user {}: {}", userId, request.getName());
-        
-        LocalDate endDate = request.getEndDate();
-        if (endDate == null && request.getPeriod() != BudgetPeriod.CUSTOM) {
-            endDate = request.getPeriod().calculateEndDate(request.getStartDate());
-        }
+        log.info("Creating budget for user {}, category: {}", userId, request.getCategoryName());
         
         Budget budget = Budget.builder()
             .userId(userId)
-            .name(request.getName())
-            .description(request.getDescription())
             .categoryId(request.getCategoryId())
-            .walletId(request.getWalletId())
+            .categoryName(request.getCategoryName())
             .amountLimit(request.getAmountLimit())
             .period(request.getPeriod())
-            .startDate(request.getStartDate())
-            .endDate(endDate)
-            .alertThreshold(request.getAlertThreshold() != null 
-                ? request.getAlertThreshold() 
-                : BigDecimal.valueOf(80))
-            .rolloverEnabled(request.getRolloverEnabled() != null 
-                ? request.getRolloverEnabled() 
-                : false)
+            .yearMonth(request.getYearMonth())
             .isActive(true)
-            .currentSpent(BigDecimal.ZERO)
+            .amountUsed(BigDecimal.ZERO)
             .build();
         
         return budgetRepository.save(budget);
@@ -72,12 +52,11 @@ public class BudgetService {
             throw new SecurityException("Unauthorized access to budget");
         }
         
-        budget.setName(request.getName());
-        budget.setDescription(request.getDescription());
+        budget.setCategoryName(request.getCategoryName());
         budget.setAmountLimit(request.getAmountLimit());
         
-        if (request.getAlertThreshold() != null) {
-            budget.setAlertThreshold(request.getAlertThreshold());
+        if (request.getPeriod() != null) {
+            budget.setPeriod(request.getPeriod());
         }
         
         return budgetRepository.save(budget);
@@ -101,8 +80,8 @@ public class BudgetService {
         Budget budget = budgetRepository.findById(budgetId)
             .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
         
-        BigDecimal oldSpent = budget.getCurrentSpent();
-        budget.setCurrentSpent(oldSpent.add(amount));
+        BigDecimal oldUsed = budget.getAmountUsed();
+        budget.setAmountUsed(oldUsed.add(amount));
         
         Budget savedBudget = budgetRepository.save(budget);
         
@@ -112,22 +91,28 @@ public class BudgetService {
     
     @Transactional
     public void recalculateBudgetSpending(Budget budget, BigDecimal totalSpent) {
-        budget.setCurrentSpent(totalSpent);
+        budget.setAmountUsed(totalSpent);
         budgetRepository.save(budget);
         checkAndCreateAlert(budget);
     }
     
     private void checkAndCreateAlert(Budget budget) {
-        if (!budget.shouldAlert()) {
-            return;
-        }
+        BigDecimal usagePercentage = budget.getUsagePercentage();
         
-        String alertType = budget.isOverBudget() ? "OVER_BUDGET" : "THRESHOLD_REACHED";
+        // Check thresholds: 80% and 100%
+        int thresholdPercent;
+        if (budget.isOverBudget()) {
+            thresholdPercent = 100;
+        } else if (usagePercentage.compareTo(BigDecimal.valueOf(80)) >= 0) {
+            thresholdPercent = 80;
+        } else {
+            return; // No alert needed
+        }
         
         // Check if similar alert was sent recently (within 24 hours)
         boolean recentAlertExists = budgetAlertRepository.existsRecentAlert(
             budget.getId(),
-            alertType,
+            thresholdPercent,
             LocalDateTime.now().minusHours(24)
         );
         
@@ -135,27 +120,20 @@ public class BudgetService {
             return;
         }
         
-        String message = budget.isOverBudget()
-            ? String.format("Budget '%s' exceeded! Spent: $%.2f of $%.2f limit", 
-                budget.getName(), budget.getCurrentSpent(), budget.getAmountLimit())
-            : String.format("Budget '%s' reached %.0f%% threshold! Spent: $%.2f of $%.2f", 
-                budget.getName(), budget.getUsagePercentage(), 
-                budget.getCurrentSpent(), budget.getAmountLimit());
-        
         BudgetAlert alert = BudgetAlert.builder()
             .budgetId(budget.getId())
             .userId(budget.getUserId())
-            .alertType(alertType)
-            .message(message)
-            .percentageUsed(budget.getUsagePercentage())
-            .amountOver(budget.isOverBudget() 
-                ? budget.getCurrentSpent().subtract(budget.getAmountLimit()) 
-                : null)
+            .categoryName(budget.getCategoryName())
+            .thresholdPercent(thresholdPercent)
+            .amountLimit(budget.getAmountLimit())
+            .amountUsed(budget.getAmountUsed())
             .isRead(false)
             .build();
         
         budgetAlertRepository.save(alert);
-        log.warn("Budget alert created: {}", message);
+        log.warn("Budget alert created: category={}, threshold={}%, used={}/{}", 
+            budget.getCategoryName(), thresholdPercent, 
+            budget.getAmountUsed(), budget.getAmountLimit());
     }
     
     public List<Budget> getActiveBudgets(Long userId) {
@@ -176,60 +154,34 @@ public class BudgetService {
     public BudgetStatusResponse getBudgetStatus(Long userId, Long budgetId) {
         Budget budget = getBudgetById(userId, budgetId);
         
-        String categoryName = null;
-        if (budget.getCategoryId() != null) {
-            var category = categoryClient.getCategoryById(budget.getCategoryId());
-            categoryName = category != null ? category.getName() : "Unknown";
-        }
-        
-        // Calculate days remaining
-        Integer daysRemaining = null;
-        if (budget.getEndDate() != null) {
-            daysRemaining = (int) ChronoUnit.DAYS.between(LocalDate.now(), budget.getEndDate());
-        }
-        
-        // Calculate daily average and projection
-        long daysSinceStart = ChronoUnit.DAYS.between(budget.getStartDate(), LocalDate.now()) + 1;
-        BigDecimal dailyAverage = budget.getCurrentSpent()
-            .divide(BigDecimal.valueOf(daysSinceStart), 2, RoundingMode.HALF_UP);
-        
-        BigDecimal projectedTotal = null;
-        if (budget.getEndDate() != null) {
-            long totalDays = ChronoUnit.DAYS.between(budget.getStartDate(), budget.getEndDate()) + 1;
-            projectedTotal = dailyAverage.multiply(BigDecimal.valueOf(totalDays));
-        }
-        
         // Determine status
         String status = determineStatus(budget);
         
         // Get recent alerts
-        List<BudgetAlert> alerts = budgetAlertRepository.findByBudgetIdOrderBySentAtDesc(budgetId);
+        List<BudgetAlert> alerts = budgetAlertRepository.findByBudgetIdOrderByTriggeredAtDesc(budgetId);
         List<BudgetStatusResponse.Alert> recentAlerts = alerts.stream()
             .limit(5)
             .map(alert -> BudgetStatusResponse.Alert.builder()
-                .type(alert.getAlertType())
-                .message(alert.getMessage())
-                .date(alert.getSentAt().toLocalDate())
+                .thresholdPercent(alert.getThresholdPercent())
+                .categoryName(alert.getCategoryName())
+                .amountLimit(alert.getAmountLimit())
+                .amountUsed(alert.getAmountUsed())
                 .isRead(alert.getIsRead())
                 .build())
             .collect(Collectors.toList());
         
         return BudgetStatusResponse.builder()
             .budgetId(budget.getId())
-            .name(budget.getName())
-            .categoryName(categoryName)
+            .categoryId(budget.getCategoryId())
+            .categoryName(budget.getCategoryName())
             .amountLimit(budget.getAmountLimit())
-            .currentSpent(budget.getCurrentSpent())
+            .amountUsed(budget.getAmountUsed())
             .remainingAmount(budget.getRemainingAmount())
             .usagePercentage(budget.getUsagePercentage())
             .period(budget.getPeriod())
-            .startDate(budget.getStartDate())
-            .endDate(budget.getEndDate())
+            .yearMonth(budget.getYearMonth())
             .status(status)
             .isActive(budget.getIsActive())
-            .daysRemaining(daysRemaining)
-            .dailyAverageSpent(dailyAverage)
-            .projectedTotal(projectedTotal)
             .recentAlerts(recentAlerts)
             .build();
     }
@@ -247,7 +199,7 @@ public class BudgetService {
         
         if (usagePercentage.compareTo(BigDecimal.valueOf(95)) >= 0) {
             return "CRITICAL";
-        } else if (usagePercentage.compareTo(budget.getAlertThreshold()) >= 0) {
+        } else if (usagePercentage.compareTo(BigDecimal.valueOf(80)) >= 0) {
             return "WARNING";
         }
         
@@ -255,7 +207,7 @@ public class BudgetService {
     }
     
     public List<BudgetAlert> getUnreadAlerts(Long userId) {
-        return budgetAlertRepository.findByUserIdAndIsReadFalseOrderBySentAtDesc(userId);
+        return budgetAlertRepository.findByUserIdAndIsReadFalseOrderByTriggeredAtDesc(userId);
     }
     
     @Transactional

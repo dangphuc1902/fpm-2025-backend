@@ -16,45 +16,11 @@ public class CategoryResponse {
     private Long id;
     private String name;
     private Long parentId;
+    private Long userId;
     private String iconPath;
+    private String color;
     private CategoryType type;
+    private Integer depth;
+    private Integer sortOrder;
     private List<CategoryResponse> children;
-	public Long getId() {
-		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	public Long getParentId() {
-		return parentId;
-	}
-	public void setParentId(Long parentId) {
-		this.parentId = parentId;
-	}
-	public String getIconPath() {
-		return iconPath;
-	}
-	public void setIconPath(String iconPath) {
-		this.iconPath = iconPath;
-	}
-	public CategoryType getType() {
-		return type;
-	}
-	public void setType(CategoryType type) {
-		this.type = type;
-	}
-	public List<CategoryResponse> getChildren() {
-		return children;
-	}
-	public void setChildren(List<CategoryResponse> children) {
-		this.children = children;
-	}
-    
-    
 }

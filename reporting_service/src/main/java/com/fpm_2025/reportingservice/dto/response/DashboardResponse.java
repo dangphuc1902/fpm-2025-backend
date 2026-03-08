@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -15,10 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 public class DashboardResponse {
     
+    private Long userId;
+    private String yearMonth;
     private Summary summary;
     private List<CategoryBreakdown> categoryBreakdowns;
-    private List<TrendData> trends;
-    private BudgetComparison budgetComparison;
+    private List<BudgetStatus> budgetStatuses;
     
     @Data
     @Builder
@@ -27,10 +27,10 @@ public class DashboardResponse {
     public static class Summary {
         private BigDecimal totalIncome;
         private BigDecimal totalExpense;
-        private BigDecimal netSavings;
-        private Integer totalTransactions;
-        private BigDecimal savingsRate;
-        private BigDecimal currentBalance;
+        private BigDecimal netIncome;
+        private Integer transactionCount;
+        private BigDecimal avgDailyExpense;
+        private String topExpenseCategory;
     }
     
     @Data
@@ -40,31 +40,23 @@ public class DashboardResponse {
     public static class CategoryBreakdown {
         private Long categoryId;
         private String categoryName;
+        private String type;
         private BigDecimal amount;
         private Integer transactionCount;
         private BigDecimal percentage;
-        private String color;
     }
     
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TrendData {
-        private LocalDate date;
-        private BigDecimal income;
-        private BigDecimal expense;
-        private BigDecimal balance;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class BudgetComparison {
-        private BigDecimal budgeted;
-        private BigDecimal actual;
-        private BigDecimal difference;
-        private BigDecimal percentageUsed;
+    public static class BudgetStatus {
+        private Long categoryId;
+        private String categoryName;
+        private BigDecimal amountLimit;
+        private BigDecimal amountUsed;
+        private BigDecimal remainingAmount;
+        private BigDecimal usagePercentage;
+        private String status;
     }
 }
