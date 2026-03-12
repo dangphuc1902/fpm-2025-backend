@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class JwtService {
 	
     Logger logger  = LoggerFactory.getLogger(JwtService.class);
-    @Value("${jwt.secret:your-256-bit-secret-key-change-this-in-production-must-be-very-long}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 24 hours
