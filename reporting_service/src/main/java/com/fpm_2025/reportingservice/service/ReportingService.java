@@ -194,15 +194,26 @@ public class ReportingService {
         log.info("Calculating income/expense trend for user: {}", userId);
 
         LocalDate now = LocalDate.now();
+
+        // 1️⃣ Fetch all transactions for the 6-month period in a single call
+        YearMonth startYm = YearMonth.from(now.minusMonths(5));
+        LocalDateTime startDateRange = startYm.atDay(1).atStartOfDay();
+        LocalDateTime endDateRange = YearMonth.from(now).atEndOfMonth().atTime(23, 59, 59);
+
+        List<TransactionData> allTransactions = transactionClient
+            .getTransactionsByDateRange(userId, startDateRange, endDateRange);
+
+        // 2️⃣ Group transactions by YearMonth
+        Map<YearMonth, List<TransactionData>> transactionsByMonth = allTransactions.stream()
+            .collect(Collectors.groupingBy(t -> YearMonth.from(t.getTransactionDate())));
+
         List<TrendData> trend = new java.util.ArrayList<>();
 
+        // 3️⃣ Calculate income/expense for each month
         for (int i = 5; i >= 0; i--) {
             YearMonth ym = YearMonth.from(now.minusMonths(i));
-            LocalDateTime startDate = ym.atDay(1).atStartOfDay();
-            LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
-
-            List<TransactionData> transactions = transactionClient
-                .getTransactionsByDateRange(userId, startDate, endDate);
+            List<TransactionData> transactions = transactionsByMonth
+                .getOrDefault(ym, new java.util.ArrayList<>());
 
             BigDecimal income = transactions.stream()
                 .filter(t -> "INCOME".equals(t.getType()))
