@@ -24,7 +24,7 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter implements GatewayFilter {
 
-    @Value("${jwt.secret:your-256-bit-secret-key-change-this-in-production-must-be-very-long}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     private static final List<String> PUBLIC_ENDPOINTS = List.of(

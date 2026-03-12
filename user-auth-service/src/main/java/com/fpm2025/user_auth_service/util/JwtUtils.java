@@ -27,7 +27,7 @@ import java.util.function.Function;
 @Slf4j
 public class JwtUtils {
 
-    @Value("${jwt.secret:your-256-bit-secret-key-change-this-in-production-must-be-very-long}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds

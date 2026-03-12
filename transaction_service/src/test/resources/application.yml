@@ -1,0 +1,2 @@
+jwt:
+  secret: "test-secret-key-at-least-256-bits-long-for-hmac-sha-256-algorithm"
