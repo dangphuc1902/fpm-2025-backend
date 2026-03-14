@@ -59,22 +59,17 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
 
   # Microservices
-  config-service:
-    build: ./backend/config-service
-    ports:
-      - "8888:8888"
-    environment:
-      SPRING_PROFILES_ACTIVE: native
-
   eureka-server:
-    build: ./backend/eureka-server
+    build:
+      context: .
+      dockerfile: ./eureka-server/Dockerfile
     ports:
       - "8761:8761"
-    depends_on:
-      - config-service
 
-  user-service:
-    build: ./backend/user-service
+  user-auth-service:
+    build:
+      context: .
+      dockerfile: ./user-auth-service/Dockerfile
     ports:
       - "8081:8081"
     environment:
@@ -91,7 +86,9 @@ services:
         condition: service_started
 
   wallet-service:
-    build: ./backend/wallet-service
+    build:
+      context: .
+      dockerfile: ./wallet-service/Dockerfile
     ports:
       - "8082:8082"
     environment:
@@ -110,8 +107,10 @@ services:
       redis:
         condition: service_started
 
-  transaction-service:
-    build: ./backend/transaction-service
+  transaction_service:
+    build:
+      context: .
+      dockerfile: ./transaction_service/Dockerfile
     ports:
       - "8083:8083"
     environment:
@@ -133,8 +132,10 @@ services:
       eureka-server:
         condition: service_started
 
-  reporting-service:
-    build: ./backend/reporting-service
+  reporting_service:
+    build:
+      context: .
+      dockerfile: ./reporting_service/Dockerfile
     ports:
       - "8084:8084"
     environment:
@@ -154,7 +155,9 @@ services:
         condition: service_started
 
   api-gateway:
-    build: ./backend/api-gateway
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
     ports:
       - "8080:8080"
     environment:

@@ -66,4 +66,7 @@ public class UserEntity implements Serializable {
 
     @Column(name = "last_login", columnDefinition = "TIMESTAMP NULL")
     private LocalDateTime lastLogin;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<RefreshToken> refreshTokens;
 }

@@ -36,6 +36,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final WebClient.Builder webClientBuilder;
+    private final JwtBlacklistService jwtBlacklistService;
 
     @Transactional
     public Map<String, Object> login(UserLoginRequest request) {
@@ -132,6 +133,9 @@ public class AuthService {
         log.info("Token validation request");
 
         try {
+            if (jwtBlacklistService.isTokenBlacklisted(token)) {
+                throw new RuntimeException("Token is blacklisted");
+            }
             Long userId = jwtUtils.extractUserId(token);
             String email = jwtUtils.extractEmail(token);
 
@@ -156,18 +160,12 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(Long userId) {
-        log.info("Logout request for user: {}", userId);
-
-        UserEntity user = userRepository.findById(Math.toIntExact(userId))
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Clear JWT token (nếu store trong DB)
-        user.setJwtToken(null);
-        user.setJwtTokenEncrypted(null);
-        userRepository.save(user);
-
-        log.info("Logout successful for user: {}", userId);
+    public void logout(String token) {
+        log.info("Logout request");
+        Long userId = jwtUtils.extractUserId(token);
+        long remainingTime = jwtUtils.getRemainingExpiration(token);
+        jwtBlacklistService.blacklistToken(token, remainingTime);
+        log.info("User {} logged out, token blacklisted.", userId);
     }
 
     // ==================== Private Methods ====================

@@ -18,6 +18,7 @@
         <java.version>21</java.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <spring-grpc.version>0.10.0</spring-grpc.version>
+        <mysql.version>8.4.0</mysql.version>  <!-- CVE-2023-22102: Fixed in 8.2.0+ -->
     </properties>
 
     <dependencies>
@@ -116,6 +117,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>

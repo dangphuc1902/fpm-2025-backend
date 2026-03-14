@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -13,6 +14,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
 @Component
+@Profile("!test")
 public class DataLoader {
 	@Value("classpath:D:\\WorkSpace\\Project\\FPM-2025\\config\\config\\src\\main\\resources\\config\\user.csv")
 	private Resource usersCsv;

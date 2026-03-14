@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package com.fpm2025;
+
+option java_multiple_files = true;
+option java_package = "com.fpm2025.user_auth_service.grpc";
+
+// The authentication service definition.
+// This service handles user authentication, token validation, and user information retrieval.
+service AuthService {
+  // Validates a JWT token.
+  // Takes a token string and returns whether the token is valid, along with user details if it is.
+  rpc ValidateToken(TokenRequest) returns (TokenValidationResponse) {}
+
+  // Gets user details by user ID.
+  // Retrieves user information based on a given user ID.
+  rpc GetUserById(UserIdRequest) returns (UserResponse) {}
+}
+
+// Request message for validating a token.
+message TokenRequest {
+  // The JWT token to be validated.
+  string token = 1;
+}
+
+// Response message for token validation.
+message TokenValidationResponse {
+  // True if the token is valid, false otherwise.
+  bool valid = 1;
+  // The user ID associated with the token.
+  string userId = 2;
+  // The email associated with the token.
+  string email = 3;
+  // The role of the user.
+  string role = 4;
+}
+
+// Request message for getting a user by ID.
+message UserIdRequest {
+  // The ID of the user to retrieve.
+  string userId = 1;
+}
+
+// Response message containing user details.
+message UserResponse {
+  // The user's ID.
+  string userId = 1;
+  // The user's email address.
+  string email = 2;
+  // The user's username.
+  string username = 3;
+  // The user's role.
+  string role = 4;
+  // The URL of the user's avatar.
+  string avatar_url = 5;
+  // The user's phone number.
+  string phone_number = 6;
+}
