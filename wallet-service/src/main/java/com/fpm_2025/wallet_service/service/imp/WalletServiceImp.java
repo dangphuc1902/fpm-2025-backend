@@ -23,6 +23,8 @@ public interface WalletServiceImp {
     WalletResponse getWalletById(Long walletId, Long userId);
     // Cập nhật thông tin ví
     WalletResponse updateWallet(Long walletId, UpdateWalletRequest request, Long userId);
+    // Bật/tắt ví
+    WalletResponse toggleWallet(Long walletId, Long userId);
     // Xoá ví của user
     void deleteWallet(Long walletId, Long userId);
     // Tính tổng số dư tất cả ví của user

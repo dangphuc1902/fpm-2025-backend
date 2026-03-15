@@ -2,7 +2,7 @@ package com.fpm2025.user_auth_service.security;
 
 import java.util.Date;
 
-import org.jvnet.hk2.annotations.Service;
+import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.fpm2025.user_auth_service.entity.UserEntity;

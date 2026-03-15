@@ -38,6 +38,7 @@ public class CategoryService implements CategoryServiceImp {
             throw new DuplicateResourceException("Category with name '" + request.getName() + "' already exists");
         }
 
+        Integer depth = 1;
         if (request.getParentId() != null) {
             CategoryEntity parent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent category not found with id: " + request.getParentId()));
@@ -45,6 +46,11 @@ public class CategoryService implements CategoryServiceImp {
             if (!parent.getType().equals(request.getType())) {
                 throw new IllegalArgumentException("Parent and child categories must have the same type");
             }
+
+            if (parent.getDepth() + 1 > 3) {
+                throw new RuntimeException("Category depth exceeded");
+            }
+            depth = parent.getDepth() + 1;
         }
 
         CategoryEntity category = CategoryEntity.builder()
@@ -52,6 +58,7 @@ public class CategoryService implements CategoryServiceImp {
                 .parentId(request.getParentId())
                 .iconPath(request.getIconPath())
                 .type(request.getType())
+                .depth(depth)
                 .build();
 
         CategoryEntity savedCategory = categoryRepository.save(category);

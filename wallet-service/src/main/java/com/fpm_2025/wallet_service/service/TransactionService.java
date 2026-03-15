@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,6 +44,8 @@ public class TransactionService implements TransactionServiceImp {
 	private CategoryRepository categoryRepository;
 	@Autowired
 	private WalletRepository walletRepository;
+	@Autowired
+	private KafkaTemplate<String, Object> kafkaTemplate;
 
 	@Transactional
 	public TransactionResponse createTransaction(CreateTransactionRequest request, Long userId) {
@@ -55,6 +58,14 @@ public class TransactionService implements TransactionServiceImp {
 
 		// Get wallet entity
 		WalletEntity wallet = walletService.getWalletEntity(request.getWalletId(), userId);
+
+		if (!wallet.getIsActive()) {
+			throw new RuntimeException("Wallet is inactive");
+		}
+
+		if (request.getTransactionDate() != null && request.getTransactionDate().isAfter(LocalDateTime.now().plusDays(30))) {
+			throw new RuntimeException("Transaction date exceeds limit");
+		}
 
 		// Validate category
 		CategoryEntity category = categoryRepository.findById(request.getCategoryId()).orElseThrow(
@@ -87,8 +98,7 @@ public class TransactionService implements TransactionServiceImp {
 
 		log.info("Transaction created successfully with user_id: {}", userId);
 
-		// TODO: Publish event to RabbitMQ for analytics and notifications
-		// publishTransactionCreatedEvent(savedTransaction);
+		kafkaTemplate.send("transaction.created", savedTransaction);
 
 		return mapToResponse(savedTransaction);
 	}
@@ -165,7 +175,7 @@ public class TransactionService implements TransactionServiceImp {
 	    TransactionEntity updatedTransaction = transactionRepository.save(transaction);
 	    log.info("Transaction updated successfully with id: {}", updatedTransaction.getId());
 
-	    // TODO: Publish event to RabbitMQ (analytics/notification)
+	    kafkaTemplate.send("transaction.updated", updatedTransaction);
 	    return mapToResponse(updatedTransaction);
 	}
 
@@ -178,23 +188,17 @@ public class TransactionService implements TransactionServiceImp {
 				.orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + transactionId));
 
 		// Revert wallet balance
-		WalletEntity wallet_entity = transaction.getWallet();
-		WalletType wallet_type = wallet_entity.getType();
-		List<WalletEntity> wallet_list = walletRepository.findByUserIdAndType(userId, wallet_type);
-		if (wallet_list.isEmpty()) {
-			for (WalletEntity wallet : wallet_list) {
-				if (transaction.getType() == CategoryType.INCOME) {
-					wallet.setBalance(wallet.getBalance().subtract(transaction.getAmount()));
-				} else {
-					wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
-				}
-			}
+		WalletEntity wallet = transaction.getWallet();
+		if (transaction.getType() == CategoryType.INCOME) {
+			wallet.setBalance(wallet.getBalance().subtract(transaction.getAmount()));
+		} else {
+			wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
 		}
+		walletRepository.save(wallet);
 		transactionRepository.delete(transaction);
 		log.info("Transaction deleted successfully with id: {}", transactionId);
 
-		// TODO: Publish event to RabbitMQ
-		// publishTransactionDeletedEvent(transaction);
+		kafkaTemplate.send("transaction.deleted", transaction);
 	}
 
 	public Page<TransactionResponse> getUserTransactions(Long userId, Pageable pageable) {

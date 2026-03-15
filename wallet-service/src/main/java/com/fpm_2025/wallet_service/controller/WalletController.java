@@ -67,6 +67,14 @@ public class WalletController {
 		return ResponseEntity.ok(BaseResponse.success(wallet, "Wallet retrieved successfully"));
 	}
 
+	@PatchMapping("/{id}/toggle")
+	@Operation(summary = "Toggle wallet active status")
+	public ResponseEntity<BaseResponse<WalletResponse>> toggleWallet(@PathVariable Long id,
+			@AuthenticationPrincipal Long userId) {
+		WalletResponse wallet = walletService.toggleWallet(id, userId);
+		return ResponseEntity.ok(BaseResponse.success(wallet, "Wallet status toggled successfully"));
+	}
+
 	@PutMapping("/{id}")
 	@Operation(summary = "Update wallet")
 	public ResponseEntity<BaseResponse<WalletResponse>> updateWallet(@PathVariable Long id,

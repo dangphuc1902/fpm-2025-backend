@@ -59,6 +59,7 @@ public class WalletService implements WalletServiceImp{
         return mapToResponse(savedWallet);
     }
 
+    @org.springframework.cache.annotation.Cacheable("dashboard")
     public List<WalletResponse> getUserWallets(Long userId) {
     	logger.info("Fetching all wallets for user: {}", userId);
         List<WalletEntity> wallets = walletRepository.findByUserId(userId);
@@ -88,6 +89,19 @@ public class WalletService implements WalletServiceImp{
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
         return mapToResponse(wallet);
+    }
+
+    @Transactional
+    public WalletResponse toggleWallet(Long walletId, Long userId) {
+        logger.info("Toggling wallet status for id: {} user: {}", walletId, userId);
+        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
+
+        wallet.setIsActive(!wallet.getIsActive());
+        WalletEntity updatedWallet = walletRepository.save(wallet);
+        logger.info("Wallet status toggled to: {}", updatedWallet.getIsActive());
+
+        return mapToResponse(updatedWallet);
     }
 
     @Transactional
@@ -135,7 +149,8 @@ public class WalletService implements WalletServiceImp{
             throw new IllegalStateException("Cannot delete wallet with remaining balance. Please transfer funds first.");
         }
 
-        walletRepository.delete(wallet);
+        wallet.setIsDeleted(true);
+        walletRepository.save(wallet);
         logger.info("Wallet deleted successfully with id: {}", walletId);
     }
 
