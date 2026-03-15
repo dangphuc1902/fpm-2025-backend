@@ -23,6 +23,7 @@ import com.fpm_2025.wallet_service.entity.enums.WalletType;
         @Index(name = "idx_wallets_deleted", columnList = "is_deleted"),
         @Index(name = "idx_wallets_user_active", columnList = "user_id, is_active, is_deleted")
 })
+@org.hibernate.annotations.Where(clause = "is_deleted = false")
 public class WalletEntity {
 
     @Id

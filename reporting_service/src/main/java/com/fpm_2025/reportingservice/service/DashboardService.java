@@ -25,6 +25,7 @@ public class DashboardService {
     private final CategorySummaryRepository categorySummaryRepository;
     private final BudgetRepository budgetRepository;
 
+    @org.springframework.cache.annotation.Cacheable(value = "dashboard")
     public DashboardResponse getDashboard(DashboardRequest request) {
         log.info("Getting dashboard for user: {}, month: {}", request.getUserId(), request.getYearMonth());
 
