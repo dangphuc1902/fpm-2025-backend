@@ -91,9 +91,12 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Logout user")
     public ResponseEntity<BaseResponse<Void>> logout(
-            @RequestParam Long userId) {
+            @RequestHeader("Authorization") String authHeader) {
         
-        authService.logout(userId);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            authService.logout(token);
+        }
         
         return ResponseEntity.ok(
             BaseResponse.success(null, "Logout successful")

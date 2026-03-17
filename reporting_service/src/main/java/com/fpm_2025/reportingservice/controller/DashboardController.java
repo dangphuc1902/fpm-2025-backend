@@ -1,10 +1,11 @@
 package com.fpm_2025.reportingservice.controller;
-
 import com.fpm_2025.reportingservice.dto.request.DashboardRequest;
 import com.fpm_2025.reportingservice.dto.response.DashboardResponse;
 import com.fpm_2025.reportingservice.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,8 @@ import java.time.YearMonth;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardService dashboardService;
+    private final DashboardService dashboardService = new DashboardService();
+    private Logger logger  = LoggerFactory.getLogger(DashboardController.class);
 
     @GetMapping
     @Cacheable(value = "dashboard", key = "#userId + '-' + #yearMonth")
@@ -25,7 +27,7 @@ public class DashboardController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(required = false) String yearMonth) {
         
-        log.info("Getting dashboard for user: {}, month: {}", userId, yearMonth);
+    	logger.info("Getting dashboard for user: {}, month: {}", userId, yearMonth);
         
         if (yearMonth == null || yearMonth.isBlank()) {
             yearMonth = YearMonth.now().toString();

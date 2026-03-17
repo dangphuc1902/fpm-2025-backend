@@ -1,9 +1,9 @@
 package com.fpm_2025.reportingservice.event.consumer;
 
-import com.fpm2025.domain.transaction.event.TransactionCreatedEvent;
-import com.fpm2025.messaging.constant.KafkaTopics;
+//import com.fpm2025.domain.transaction.event.TransactionCreatedEvent;
+//import com.fpm2025.messaging.constant.KafkaTopics;
 import com.fpm2025.messaging.kafka.consumer.BaseEventConsumer;
-import com.fpm2025.reporting.service.service.StatisticsService;
+//import com.fpm2025.reporting.service.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

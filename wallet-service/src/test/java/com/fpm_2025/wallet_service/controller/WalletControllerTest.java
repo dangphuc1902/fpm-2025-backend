@@ -45,7 +45,7 @@ public class WalletControllerTest {
         // Arrange
         CreateWalletRequest request = CreateWalletRequest.builder()
                 .name("Savings Wallet")
-                .type(WalletType.SAVINGS)
+                .type(WalletType.BANK)
                 .currency("VND")
                 .initialBalance(BigDecimal.valueOf(1000))
                 .build();
@@ -54,7 +54,7 @@ public class WalletControllerTest {
                 .id(1L)
                 .userId(1L)
                 .name("Savings Wallet")
-                .type(WalletType.SAVINGS)
+                .type(WalletType.BANK)
                 .currency("VND")
                 .balance(BigDecimal.valueOf(1000))
                 .build();
@@ -79,7 +79,7 @@ public class WalletControllerTest {
         // Arrange
         CreateWalletRequest request = CreateWalletRequest.builder()
                 .name("") // Invalid: Blank name
-                .type(WalletType.SAVINGS)
+                .type(WalletType.BANK)
                 .build();
 
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(1L, null, Collections.emptyList());

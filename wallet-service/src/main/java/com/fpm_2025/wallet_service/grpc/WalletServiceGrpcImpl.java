@@ -116,7 +116,7 @@ public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBa
             WalletEntity wallet = walletRepository.findById(walletId)
                     .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
-            wallet.setActive(false);
+            wallet.setIsActive(false);
             walletRepository.save(wallet);
 
             WalletResponse grpcResponse = WalletResponse.newBuilder()

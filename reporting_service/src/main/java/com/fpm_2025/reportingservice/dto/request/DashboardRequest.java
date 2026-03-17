@@ -20,4 +20,5 @@ public class DashboardRequest {
     @NotBlank(message = "Year month is required")
     @Pattern(regexp = "\\d{4}-\\d{2}", message = "Year month must be in format yyyy-MM")
     private String yearMonth;
+
 }

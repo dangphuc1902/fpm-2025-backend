@@ -129,7 +129,7 @@ public class WalletMapper {
         }
 
         if (request.getIsActive() != null) {
-            entity.setActive(request.getIsActive());
+            entity.setIsActive(request.getIsActive());
         }
 
         // Balance KHÔNG được update qua API (chỉ qua transaction)

@@ -151,6 +151,14 @@ public class JwtUtils {
     }
 
     /**
+     * Get remaining token expiration time in milliseconds
+     */
+    public long getRemainingExpiration(String token) {
+        Date expirationDate = extractExpiration(token);
+        return Math.max(0, expirationDate.getTime() - System.currentTimeMillis());
+    }
+
+    /**
      * Refresh token (generate new token with same claims but new expiry)
      */
     public String refreshToken(String token) {
