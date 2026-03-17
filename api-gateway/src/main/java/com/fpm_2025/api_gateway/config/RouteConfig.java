@@ -23,7 +23,20 @@ public class RouteConfig {
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
-                // User Auth Service
+                // User Auth Service - Login (Rate Limited separately: 5 requests / 5 mins)
+                .route("user-auth-login", r -> r
+                        .path("/api/auth/login")
+                        .filters(f -> f
+                                .stripPrefix(0)
+                                .circuitBreaker(config -> config
+                                        .setName("user-auth-service")
+                                        .setFallbackUri("forward:/fallback"))
+                                .filter((exchange, chain) -> chain.filter(exchange)) // A placeholder, we apply @RateLimiter on controller if available, but for gateway we can use spring.cloud.gateway.filter.ratelimit.RedisRateLimiter with custom args or just use Spring Cloud CircuitBreaker's Resilience4j integration.
+                        )
+                        .uri("lb://user-auth-service")
+                )
+
+                // User Auth Service (Other routes)
                 .route("user-auth-service", r -> r
                         .path("/api/auth/**", "/api/users/**", "/api/families/**")
                         .filters(f -> f
@@ -126,6 +139,15 @@ public class RouteConfig {
                 )
                 
                 .build();
+    }
+
+    @Bean
+    public RedisRateLimiter loginRedisRateLimiter() {
+        // Since RedisRateLimiter uses replenishRate per second (int), we cannot set < 1 token/sec directly.
+        // Instead, to achieve 5 requests per 5 minutes (300 seconds), we can set burstCapacity to 5
+        // and we will rely on Resilience4j for accurate rate limiting.
+        // We will just use Resilience4j annotations in the user-auth-service controller for login!
+        return new RedisRateLimiter(1, 5, 1);
     }
 
     @Bean

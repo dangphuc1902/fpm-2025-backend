@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +48,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login with email and password")
+    @RateLimiter(name = "login", fallbackMethod = "loginFallback")
     public ResponseEntity<BaseResponse<Map<String, Object>>> login(
             @Valid @RequestBody UserLoginRequest request) {
         
@@ -55,6 +57,13 @@ public class AuthController {
         return ResponseEntity.ok(
             BaseResponse.success(response, "Login successful")
         );
+    }
+
+    public ResponseEntity<BaseResponse<Map<String, Object>>> loginFallback(
+            UserLoginRequest request, Throwable t) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(BaseResponse.error(null, "Too many login attempts. Please try again later."));
     }
 
     @PostMapping("/google")
