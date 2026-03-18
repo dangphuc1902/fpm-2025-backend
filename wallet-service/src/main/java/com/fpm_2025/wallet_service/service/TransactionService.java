@@ -189,10 +189,10 @@ public class TransactionService implements TransactionServiceImp {
 
 		// Revert wallet balance
 		WalletEntity wallet = transaction.getWallet();
-		if (transaction.getType() == CategoryType.INCOME) {
-			wallet.setBalance(wallet.getBalance().subtract(transaction.getAmount()));
-		} else {
+		if (transaction.getType() == CategoryType.EXPENSE) {
 			wallet.setBalance(wallet.getBalance().add(transaction.getAmount()));
+		} else {
+			wallet.setBalance(wallet.getBalance().subtract(transaction.getAmount()));
 		}
 		walletRepository.save(wallet);
 		transactionRepository.delete(transaction);
