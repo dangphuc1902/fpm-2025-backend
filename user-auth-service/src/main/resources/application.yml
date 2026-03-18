@@ -9,3 +9,10 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
+
+resilience4j.ratelimiter:
+  instances:
+    login:
+      limitForPeriod: 5
+      limitRefreshPeriod: 5m
+      timeoutDuration: 0
