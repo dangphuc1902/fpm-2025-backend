@@ -239,7 +239,7 @@ public class ReportingService {
     /**
      * Get dashboard summary
      */
-    @Cacheable(value = "dashboard-summary", key = "#userId")
+    @Cacheable(value = "dashboard", key = "#userId")
     public DashboardSummary getDashboardSummary(Long userId) {
         log.info("Calculating dashboard summary for user: {}", userId);
 
