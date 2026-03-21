@@ -31,7 +31,9 @@ public class RouteConfig {
                                 .circuitBreaker(config -> config
                                         .setName("user-auth-service")
                                         .setFallbackUri("forward:/fallback"))
-                                .filter((exchange, chain) -> chain.filter(exchange)) // A placeholder, we apply @RateLimiter on controller if available, but for gateway we can use spring.cloud.gateway.filter.ratelimit.RedisRateLimiter with custom args or just use Spring Cloud CircuitBreaker's Resilience4j integration.
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(loginRedisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://user-auth-service")
                 )
@@ -64,21 +66,6 @@ public class RouteConfig {
                                         .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://wallet-service")
-                )
-                
-                // Transaction Service
-                .route("transaction-service", r -> r
-                        .path("/api/transactions/**")
-                        .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("transaction-service")
-                                        .setFallbackUri("forward:/fallback"))
-                                .requestRateLimiter(config -> config
-                                        .setRateLimiter(redisRateLimiter())
-                                        .setKeyResolver(userKeyResolver()))
-                        )
-                        .uri("lb://transaction-service")
                 )
                 
                 // Category Service
