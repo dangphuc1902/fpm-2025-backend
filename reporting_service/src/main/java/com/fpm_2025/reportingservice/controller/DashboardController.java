@@ -1,4 +1,5 @@
 package com.fpm_2025.reportingservice.controller;
+
 import com.fpm_2025.reportingservice.dto.request.DashboardRequest;
 import com.fpm_2025.reportingservice.dto.response.DashboardResponse;
 import com.fpm_2025.reportingservice.service.DashboardService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 @RestController
@@ -18,28 +20,25 @@ import java.time.YearMonth;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardService dashboardService = new DashboardService();
-    private Logger logger  = LoggerFactory.getLogger(DashboardController.class);
+	@Autowired
+	DashboardService dashboardService;
+	private final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
-    @GetMapping
-    @Cacheable(value = "dashboard", key = "#userId + '-' + #yearMonth")
-    public ResponseEntity<DashboardResponse> getDashboard(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestParam(required = false) String yearMonth) {
-        
-    	logger.info("Getting dashboard for user: {}, month: {}", userId, yearMonth);
-        
-        if (yearMonth == null || yearMonth.isBlank()) {
-            yearMonth = YearMonth.now().toString();
-        }
-        
-        DashboardRequest request = DashboardRequest.builder()
-                .userId(userId)
-                .yearMonth(yearMonth)
-                .build();
-        
-        DashboardResponse response = dashboardService.getDashboard(request);
-        
-        return ResponseEntity.ok(response);
-    }
+	@GetMapping
+	@Cacheable(value = "dashboard", key = "#userId + '-' + #yearMonth")
+	public ResponseEntity<DashboardResponse> getDashboard(@RequestHeader("X-User-Id") Long userId,
+			@RequestParam(required = false) String yearMonth) {
+
+		logger.info("Getting dashboard for user: {}, month: {}", userId, yearMonth);
+
+		if (yearMonth == null || yearMonth.isBlank()) {
+			yearMonth = YearMonth.now().toString();
+		}
+
+		DashboardRequest request = DashboardRequest.builder().userId(userId).yearMonth(yearMonth).build();
+
+		DashboardResponse response = dashboardService.getDashboard(request);
+
+		return ResponseEntity.ok(response);
+	}
 }

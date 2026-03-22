@@ -1,4 +1,4 @@
-package com.fpm_2025.reporting_service;
+package com.fpm_2025.reportingservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

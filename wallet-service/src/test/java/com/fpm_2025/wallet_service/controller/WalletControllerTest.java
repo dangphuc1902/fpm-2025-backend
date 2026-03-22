@@ -31,10 +31,10 @@ public class WalletControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Autowired
     private WalletService walletService;
 
-    @MockBean
+    @Autowired
     private JwtService jwtService;
 
     @Autowired

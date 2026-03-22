@@ -11,6 +11,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fpm_2025.reportingservice.dto.request.ReportRequest;
+import com.fpm_2025.reportingservice.dto.response.ReportResponse;
+import com.fpm_2025.reportingservice.domain.valueobject.ExportFormat;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +22,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.fpm_2025.reportingservice.exception.ResourceNotFoundException;
 
 /**
  * Reporting Service Implementation
@@ -50,18 +55,24 @@ public class ReportingService {
      * @return Report metadata with download URL
      */
     @Transactional
-    public ReportResponse generateMonthlyReport(
-            Long userId, 
-            String yearMonth, 
-            ReportFormat format) {
+    public ReportResponse generateMonthlyReport(ReportRequest request) {
         
-        log.info("Generating {} report for user: {}, month: {}", 
-            format, userId, yearMonth);
+        Long userId = request.getUserId();
+        ReportFormat format = ReportFormat.valueOf(request.getFormat().name());
+        
+        log.info("Generating {} report for user: {}, dates: {} to {}", 
+            format, userId, request.getStartDate(), request.getEndDate());
 
         // 1️⃣ Get transaction data for the month
-        YearMonth ym = YearMonth.parse(yearMonth);
-        LocalDateTime startDate = ym.atDay(1).atStartOfDay();
-        LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
+        LocalDateTime startDate = request.getStartDate() != null ? 
+            request.getStartDate().atStartOfDay() : 
+            LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0);
+            
+        LocalDateTime endDate = request.getEndDate() != null ? 
+            request.getEndDate().atTime(23, 59, 59) : 
+            LocalDateTime.now().withHour(23).withMinute(59);
+            
+        String period = startDate.getYear() + "-" + String.format("%02d", startDate.getMonthValue());
 
         List<TransactionData> transactions = transactionClient
             .getTransactionsByDateRange(userId, startDate, endDate);
@@ -81,8 +92,8 @@ public class ReportingService {
         ReportEntity report = ReportEntity.builder()
             .userId(userId)
             .type(format.name())
-            .period(yearMonth)
-            .fileName(generateFileName(userId, yearMonth, format))
+            .period(period)
+            .fileName(generateFileName(userId, period, format))
             .fileSize((long) reportData.length)
             .status(ReportStatus.COMPLETED)
             .build();
@@ -100,6 +111,10 @@ public class ReportingService {
             savedReport.getId());
 
         return mapToResponse(savedReport);
+    }
+
+    public byte[] downloadReport(String fileUrl) {
+        return reportGenerator.downloadFromStorage(fileUrl);
     }
 
     /**
@@ -367,12 +382,12 @@ public class ReportingService {
         return ReportResponse.builder()
             .id(entity.getId())
             .userId(entity.getUserId())
-            .type(entity.getType())
+            .format(ExportFormat.valueOf(entity.getType()))
             .period(entity.getPeriod())
             .fileName(entity.getFileName())
             .fileUrl(entity.getFileUrl())
             .fileSize(entity.getFileSize())
-            .status(entity.getStatus())
+            .status(entity.getStatus().name())
             .createdAt(entity.getCreatedAt())
             .build();
     }

@@ -1,13 +1,12 @@
 package com.fpm_2025.reportingservice.controller;
 
-//import com.fpm_2025.core.annotation.CurrentUser;
-//import com.fpm_2025.core.dto.BaseResponse;
-//import com.fpm_2025.reporting.service.dto.request.ReportRequest;
-//import com.fpm_2025.reporting.service.dto.response.ReportResponse;
-//import com.fpm_2025.reporting.service.service.PdfExportService;
-//import com.fpm_2025.reporting.service.service.ExcelExportService;
-//import com.fpm_2025.reporting.service.service.ReportGenerationService;
-//import com.fpm_2025.security.user.UserPrincipal;
+import com.fpm_2025.reportingservice.dto.response.BaseResponse;
+import com.fpm_2025.reportingservice.security.UserPrincipal;
+import com.fpm_2025.reportingservice.domain.valueobject.ExportFormat;
+import com.fpm_2025.reportingservice.dto.request.ReportRequest;
+import com.fpm_2025.reportingservice.dto.response.ReportResponse;
+import com.fpm_2025.reportingservice.service.ReportingService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -17,24 +16,23 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor
 public class ReportController {
 
-    private final ReportGenerationService reportGenerationService;
-    private final PdfExportService pdfExportService;
-    private final ExcelExportService excelExportService;
+    private final ReportingService reportingService;
 
     @GetMapping("/monthly")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<ReportResponse> getMonthlyReport(
-            @CurrentUser UserPrincipal user,
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
         
         log.info("Getting monthly report for user: {}, month: {}", user.getId(), month);
@@ -43,17 +41,18 @@ public class ReportController {
                 .userId(user.getId())
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
+                .format(ExportFormat.PDF)
                 .build();
         
-        ReportResponse response = reportGenerationService.generateMonthlyReport(request);
+        ReportResponse response = reportingService.generateMonthlyReport(request);
         
-        return BaseResponse.success("Monthly report generated successfully", response);
+        return BaseResponse.success(response);
     }
 
     @GetMapping("/export/pdf")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> exportPdf(
-            @CurrentUser UserPrincipal user,
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
         
         log.info("Exporting PDF report for user: {}, month: {}", user.getId(), month);
@@ -62,9 +61,11 @@ public class ReportController {
                 .userId(user.getId())
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
+                .format(ExportFormat.PDF)
                 .build();
         
-        byte[] pdfData = pdfExportService.generatePdfReport(request);
+        ReportResponse res = reportingService.generateMonthlyReport(request);
+        byte[] pdfData = reportingService.downloadReport(res.getFileUrl());
         
         ByteArrayResource resource = new ByteArrayResource(pdfData);
         
@@ -81,7 +82,7 @@ public class ReportController {
     @GetMapping("/export/excel")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> exportExcel(
-            @CurrentUser UserPrincipal user,
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
         
         log.info("Exporting Excel report for user: {}, month: {}", user.getId(), month);
@@ -90,9 +91,11 @@ public class ReportController {
                 .userId(user.getId())
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
+                .format(ExportFormat.EXCEL)
                 .build();
         
-        byte[] excelData = excelExportService.generateExcelReport(request);
+        ReportResponse res = reportingService.generateMonthlyReport(request);
+        byte[] excelData = reportingService.downloadReport(res.getFileUrl());
         
         ByteArrayResource resource = new ByteArrayResource(excelData);
         
@@ -101,8 +104,14 @@ public class ReportController {
                 month.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")));
         
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(resource);
+    }
+
+    @GetMapping("/insights")
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse<String> getInsights(@AuthenticationPrincipal UserPrincipal user) {
+        return BaseResponse.success("AI Insights upcoming!");
     }
 }

@@ -16,6 +16,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ReportRequest {
     
+    private Long userId;
+    
     @NotNull(message = "Start date is required")
     private LocalDate startDate;
     
@@ -29,14 +31,19 @@ public class ReportRequest {
     @NotNull(message = "Export format is required")
     private ExportFormat format;
     
+    @Builder.Default
     private Boolean includeSummary = true;
     
+    @Builder.Default
     private Boolean includeTransactions = true;
     
+    @Builder.Default
     private Boolean includeCharts = false;
     
+    @Builder.Default
     private Boolean includeBudgetComparison = false;
     
+    @Builder.Default
     private Boolean includeTrends = false;
     
     private String reportName;

@@ -12,6 +12,9 @@ public class AlertThreshold {
     
     public static AlertThreshold defaultThreshold() {
         return new AlertThreshold(
+            new BigDecimal("80"),
+            new BigDecimal("95"),
+            new BigDecimal("100")
         );
     }
     

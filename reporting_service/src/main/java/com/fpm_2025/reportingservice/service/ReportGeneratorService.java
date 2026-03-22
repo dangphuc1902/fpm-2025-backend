@@ -2,6 +2,7 @@ package com.fpm_2025.reportingservice.service;
 
 import com.fpm_2025.reportingservice.domain.*;
 import com.itextpdf.text.*;
+import com.itextpdf.text.Font;
 import com.itextpdf.text.pdf.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -371,7 +372,7 @@ public class ReportGeneratorService {
 
     private CellStyle createHeaderStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
-        Font font = workbook.createFont();
+        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
         font.setBold(true);
         style.setFont(font);
         style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
