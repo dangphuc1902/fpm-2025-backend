@@ -23,6 +23,8 @@ public class CreateWalletRequest {
     @Size(min = 1, max = 100, message = "Wallet name must be between 1 and 100 characters")
     private String name;
 
+    private Long familyId;
+
     public String getName() {
 		return name;
 	}
@@ -63,6 +65,14 @@ public class CreateWalletRequest {
 		this.icon = icon;
 	}
 	
+    public Long getFamilyId() {
+        return familyId;
+    }
+
+    public void setFamilyId(Long familyId) {
+        this.familyId = familyId;
+    }
+
 	@NotNull(message = "Wallet type is required")
 	@Builder.Default
     private WalletType type;

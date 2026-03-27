@@ -2,10 +2,10 @@ spring:
   application:
     name: api-gateway
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888 # Cập nhật để trỏ đến tên dịch vụ trong Docker Compose
 
 server:
-  port: 8080
+  port: 8889
 resilience4j:
   ratelimiter:
     instances:

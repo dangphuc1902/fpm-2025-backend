@@ -33,6 +33,9 @@ public class WalletEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "family_id")
+    private Long familyId;
+
     @Column(nullable = false, length = 100)
     private String name;
 

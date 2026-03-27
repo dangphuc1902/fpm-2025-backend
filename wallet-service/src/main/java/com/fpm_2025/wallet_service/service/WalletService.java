@@ -45,6 +45,7 @@ public class WalletService implements WalletServiceImp{
 
         WalletEntity wallet = WalletEntity.builder()
             .userId(userId)
+            .familyId(request.getFamilyId())
             .name(request.getName())
             .type(request.getType())
             .currency(request.getCurrency())
@@ -65,6 +66,14 @@ public class WalletService implements WalletServiceImp{
         List<WalletEntity> wallets = walletRepository.findByUserId(userId);
         return wallets.stream()
             .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    public List<WalletResponse> getSharedWallets(Long userId) {
+        logger.info("Fetching shared wallets for user: {}", userId);
+        List<com.fpm_2025.wallet_service.entity.WalletPermissionEntity> permissions = walletPermissionRepository.findByUserId(userId);
+        return permissions.stream()
+            .map(p -> mapToResponse(p.getWallet()))
             .collect(Collectors.toList());
     }
 
@@ -199,6 +208,67 @@ public class WalletService implements WalletServiceImp{
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
     }
 
+    @Autowired
+    private com.fpm_2025.wallet_service.repository.WalletPermissionRepository walletPermissionRepository;
+
+    @Transactional
+    public com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse shareWallet(Long walletId, com.fpm_2025.wallet_service.dto.payload.request.ShareWalletRequest request, Long ownerId) {
+        log.info("Owner {} sharing wallet {} with user {}", ownerId, walletId, request.getUserId());
+        
+        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found or not owned by user"));
+        
+        // Cannot share with self
+        if (ownerId.equals(request.getUserId())) {
+            throw new IllegalArgumentException("Cannot share wallet with yourself");
+        }
+
+        if (walletPermissionRepository.existsByWalletIdAndUserId(walletId, request.getUserId())) {
+            throw new DuplicateResourceException("Wallet already shared with this user");
+        }
+
+        com.fpm_2025.wallet_service.entity.WalletPermissionEntity permission = new com.fpm_2025.wallet_service.entity.WalletPermissionEntity();
+        permission.setWallet(wallet);
+        permission.setUserId(request.getUserId());
+        permission.setPermissionLevel(request.getPermissionLevel());
+
+        permission = walletPermissionRepository.save(permission);
+
+        return com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse.builder()
+                .id(permission.getId())
+                .walletId(permission.getWallet().getId())
+                .userId(permission.getUserId())
+                .permissionLevel(permission.getPermissionLevel())
+                .createdAt(permission.getCreatedAt())
+                .build();
+    }
+
+    public List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse> getSharedUsers(Long walletId, Long ownerId) {
+        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found or not owned by user"));
+
+        return walletPermissionRepository.findByWalletId(walletId).stream()
+                .map(p -> com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse.builder()
+                        .id(p.getId())
+                        .walletId(p.getWallet().getId())
+                        .userId(p.getUserId())
+                        .permissionLevel(p.getPermissionLevel())
+                        .createdAt(p.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void removeShare(Long walletId, Long targetUserId, Long ownerId) {
+        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found or not owned by user"));
+
+        com.fpm_2025.wallet_service.entity.WalletPermissionEntity permission = walletPermissionRepository.findByWalletIdAndUserId(walletId, targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Share configuration not found"));
+
+        walletPermissionRepository.delete(permission);
+    }
+
     public long getUserWalletCount(Long userId) {
         return walletRepository.countByUserId(userId);
     }
@@ -208,6 +278,7 @@ public class WalletService implements WalletServiceImp{
         return WalletResponse.builder()
             .id(entity.getId())
             .userId(entity.getUserId())
+            .familyId(entity.getFamilyId())
             .name(entity.getName())
             .type(entity.getType())
             .currency(entity.getCurrency())

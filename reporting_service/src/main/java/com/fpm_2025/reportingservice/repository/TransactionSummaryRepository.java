@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TransactionSummaryRepository extends JpaRepository<TransactionSummaryEntity, Long> {
+    java.util.Optional<TransactionSummaryEntity> findByUserIdAndPeriod(Long userId, String period);
 }

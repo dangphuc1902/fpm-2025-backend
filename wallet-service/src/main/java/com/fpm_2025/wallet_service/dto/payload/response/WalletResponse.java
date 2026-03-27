@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class WalletResponse {
     private Long id;
     private Long userId;
+    private Long familyId;
     private String name;
     private WalletType type;
     private String currency;

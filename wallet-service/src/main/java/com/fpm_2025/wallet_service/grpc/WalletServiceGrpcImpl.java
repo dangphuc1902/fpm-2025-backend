@@ -1,8 +1,8 @@
 package com.fpm_2025.wallet_service.grpc;
 
-import com.fpm2025.wallet.*;
+import com.fpm2025.protocol.common.Money;
+import com.fpm2025.protocol.wallet.*;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -16,142 +16,146 @@ import java.util.stream.Collectors;
 @GrpcService
 @RequiredArgsConstructor
 @Slf4j
-public class WalletServiceGrpcImpl extends WalletServiceGrpc.WalletServiceImplBase {
+public class WalletServiceGrpcImpl extends WalletGrpcServiceGrpc.WalletGrpcServiceImplBase {
 
     private final WalletRepository walletRepository;
 
     @Override
-    public void listWallets(ListWalletsRequest request, StreamObserver<ListWalletsResponse> responseObserver) {
-        log.info("gRPC: ListWallets called for userId: {}", request.getUserId());
-
+    public void getWalletById(WalletIdRequest request, StreamObserver<WalletResponse> responseObserver) {
+        log.info("gRPC: getWalletById called for walletId: {}", request.getWalletId());
         try {
-            Long userId = Long.parseLong(request.getUserId());
-            List<WalletEntity> wallets = walletRepository.findActiveWalletsByUserId(userId);
+            WalletEntity wallet = walletRepository.findById(request.getWalletId())
+                    .orElseThrow(() -> new RuntimeException("Wallet not found"));
+            responseObserver.onNext(mapToGrpcWallet(wallet));
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("gRPC: getWalletById failed", e);
+            responseObserver.onError(e);
+        }
+    }
 
-            List<Wallet> grpcWallets = wallets.stream()
+    @Override
+    public void getWalletsByUserId(UserWalletsRequest request, StreamObserver<WalletsResponse> responseObserver) {
+        log.info("gRPC: getWalletsByUserId called for userId: {}", request.getUserId());
+        try {
+            List<WalletEntity> wallets;
+            if (request.getActiveOnly()) {
+                wallets = walletRepository.findActiveWalletsByUserId(request.getUserId());
+            } else {
+                wallets = walletRepository.findByUserId(request.getUserId());
+            }
+
+            List<WalletResponse> grpcWallets = wallets.stream()
                     .map(this::mapToGrpcWallet)
                     .collect(Collectors.toList());
 
-            ListWalletsResponse response = ListWalletsResponse.newBuilder()
+            WalletsResponse response = WalletsResponse.newBuilder()
                     .addAllWallets(grpcWallets)
                     .build();
 
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
-            log.error("gRPC: ListWallets failed", e);
+            log.error("gRPC: getWalletsByUserId failed", e);
             responseObserver.onError(e);
         }
     }
 
     @Override
-    public void createWallet(CreateWalletRequest request, StreamObserver<WalletResponse> responseObserver) {
-        log.info("gRPC: CreateWallet called for userId: {}", request.getUserId());
-
+    public void updateBalance(UpdateBalanceRequest request, StreamObserver<WalletResponse> responseObserver) {
+        log.info("gRPC: updateBalance called for walletId: {} with operation: {}", request.getWalletId(), request.getOperation());
         try {
-            Long userId = Long.parseLong(request.getUserId());
-
-            WalletEntity wallet = WalletEntity.builder()
-                    .userId(userId)
-                    .name(request.getName())
-                    .type(WalletType.valueOf(request.getType().toUpperCase()))
-                    .balance(BigDecimal.valueOf(request.getInitialBalance()))
-                    .isActive(true)
-                    .build();
-
-            WalletEntity savedWallet = walletRepository.save(wallet);
-
-            Wallet grpcWallet = mapToGrpcWallet(savedWallet);
-
-            WalletResponse grpcResponse = WalletResponse.newBuilder()
-                    .setSuccess(true)
-                    .setWallet(grpcWallet)
-                    .setMessage("Wallet created successfully")
-                    .build();
-
-            responseObserver.onNext(grpcResponse);
-            responseObserver.onCompleted();
-        } catch (Exception e) {
-            log.error("gRPC: CreateWallet failed", e);
-            responseObserver.onError(e);
-        }
-    }
-
-    @Override
-    public void updateWallet(UpdateWalletRequest request, StreamObserver<WalletResponse> responseObserver) {
-        log.info("gRPC: UpdateWallet called for walletId: {}", request.getWalletId());
-
-        try {
-            Long walletId = Long.parseLong(request.getWalletId());
-            WalletEntity wallet = walletRepository.findById(walletId)
+            WalletEntity wallet = walletRepository.findById(request.getWalletId())
                     .orElseThrow(() -> new RuntimeException("Wallet not found"));
 
-            wallet.setName(request.getName());
-            wallet.setType(WalletType.valueOf(request.getType().toUpperCase()));
+            double amountToChange = request.getAmount().getAmount();
+            BigDecimal change = BigDecimal.valueOf(amountToChange);
+
+            if ("SUBTRACT".equalsIgnoreCase(request.getOperation())) {
+                if (wallet.getBalance().compareTo(change) < 0) {
+                    throw new RuntimeException("Insufficient balance");
+                }
+                wallet.setBalance(wallet.getBalance().subtract(change));
+            } else if ("ADD".equalsIgnoreCase(request.getOperation())) {
+                wallet.setBalance(wallet.getBalance().add(change));
+            } else if ("SET".equalsIgnoreCase(request.getOperation())) {
+                wallet.setBalance(change);
+            }
 
             WalletEntity updatedWallet = walletRepository.save(wallet);
 
-            Wallet grpcWallet = mapToGrpcWallet(updatedWallet);
-
-            WalletResponse grpcResponse = WalletResponse.newBuilder()
-                    .setSuccess(true)
-                    .setWallet(grpcWallet)
-                    .setMessage("Wallet updated successfully")
-                    .build();
-
-            responseObserver.onNext(grpcResponse);
+            responseObserver.onNext(mapToGrpcWallet(updatedWallet));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            log.error("gRPC: UpdateWallet failed", e);
+            log.error("gRPC: updateBalance failed", e);
             responseObserver.onError(e);
         }
     }
 
     @Override
-    public void deleteWallet(DeleteWalletRequest request, StreamObserver<WalletResponse> responseObserver) {
-        log.info("gRPC: DeleteWallet called for walletId: {}", request.getWalletId());
-
+    public void validateWalletAccess(WalletAccessRequest request, StreamObserver<WalletAccessResponse> responseObserver) {
+        log.info("gRPC: validateWalletAccess called for walletId: {} and userId: {}", request.getWalletId(), request.getUserId());
         try {
-            Long walletId = Long.parseLong(request.getWalletId());
-            WalletEntity wallet = walletRepository.findById(walletId)
-                    .orElseThrow(() -> new RuntimeException("Wallet not found"));
-
-            wallet.setIsActive(false);
-            walletRepository.save(wallet);
-
-            WalletResponse grpcResponse = WalletResponse.newBuilder()
-                    .setSuccess(true)
-                    .setMessage("Wallet deleted successfully")
+            WalletEntity wallet = walletRepository.findById(request.getWalletId()).orElse(null);
+            
+            boolean hasAccess = false;
+            String permissionLevel = "NONE";
+            
+            if (wallet != null) {
+                // Here you would also check shared wallet permissions
+                if (wallet.getUserId().equals(request.getUserId())) {
+                    hasAccess = true;
+                    permissionLevel = "OWNER";
+                }
+            }
+            
+            WalletAccessResponse response = WalletAccessResponse.newBuilder()
+                    .setHasAccess(hasAccess)
+                    .setPermissionLevel(permissionLevel)
                     .build();
 
-            responseObserver.onNext(grpcResponse);
-            responseObserver.onCompleted();
-        } catch (Exception e) {
-            log.error("gRPC: DeleteWallet failed", e);
-            responseObserver.onError(e);
-        }
-    }
-
-    @Override
-    public void getLedger(GetLedgerRequest request, StreamObserver<GetLedgerResponse> responseObserver) {
-        log.info("gRPC: GetLedger called for walletId: {}", request.getWalletId());
-
-        try {
-            GetLedgerResponse response = GetLedgerResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (Exception e) {
-            log.error("gRPC: GetLedger failed", e);
+            log.error("gRPC: validateWalletAccess failed", e);
             responseObserver.onError(e);
         }
     }
 
-    private Wallet mapToGrpcWallet(WalletEntity entity) {
-        return Wallet.newBuilder()
-                .setWalletId(entity.getId() != null ? entity.getId().toString() : "")
+    @Override
+    public void checkSufficientBalance(BalanceCheckRequest request, StreamObserver<BalanceCheckResponse> responseObserver) {
+        try {
+            WalletEntity wallet = walletRepository.findById(request.getWalletId())
+                    .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+            double requiredAmount = request.getAmount().getAmount();
+            BigDecimal required = BigDecimal.valueOf(requiredAmount);
+            
+            boolean sufficient = wallet.getBalance().compareTo(required) >= 0;
+
+            BalanceCheckResponse response = BalanceCheckResponse.newBuilder()
+                    .setSufficient(sufficient)
+                    .setCurrentBalance(Money.newBuilder().setAmount(wallet.getBalance().doubleValue()).setCurrency(wallet.getCurrency() != null ? wallet.getCurrency() : "VND").build())
+                    .setRequiredAmount(request.getAmount())
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("gRPC: checkSufficientBalance failed", e);
+            responseObserver.onError(e);
+        }
+    }
+
+    private WalletResponse mapToGrpcWallet(WalletEntity entity) {
+        return WalletResponse.newBuilder()
+                .setId(entity.getId() != null ? entity.getId() : 0)
+                .setUserId(entity.getUserId() != null ? entity.getUserId() : 0)
                 .setName(entity.getName() == null ? "" : entity.getName())
-                .setType(entity.getType() != null ? entity.getType().getValue() : "")
-                .setBalance(entity.getBalance() != null ? entity.getBalance().doubleValue() : 0.0)
+                .setType(entity.getType() != null ? entity.getType().name() : "")
+                .setBalance(Money.newBuilder().setAmount(entity.getBalance() != null ? entity.getBalance().doubleValue() : 0.0).setCurrency(entity.getCurrency() != null ? entity.getCurrency() : "VND").build())
+                .setIcon(entity.getIcon() != null ? entity.getIcon() : "")
+                .setIsActive(entity.getIsActive() != null ? entity.getIsActive() : false)
                 .build();
     }
 }

@@ -59,6 +59,13 @@ public class WalletController {
 		return ResponseEntity.ok(BaseResponse.success(wallets, "Wallets retrieved successfully"));
 	}
 
+	@GetMapping("/shared")
+	@Operation(summary = "Get wallets shared with the user")
+	public ResponseEntity<BaseResponse<List<WalletResponse>>> getSharedWallets(@AuthenticationPrincipal Long userId) {
+		List<WalletResponse> wallets = walletService.getSharedWallets(userId);
+		return ResponseEntity.ok(BaseResponse.success(wallets, "Shared wallets retrieved successfully"));
+	}
+
 	@GetMapping("/{id}")
 	@Operation(summary = "Get wallet by ID")
 	public ResponseEntity<BaseResponse<WalletResponse>> getWalletById(@PathVariable Long id,
@@ -103,5 +110,35 @@ public class WalletController {
 	public ResponseEntity<BaseResponse<Long>> getWalletCount(@AuthenticationPrincipal Long userId) {
 		long count = walletService.getUserWalletCount(userId);
 		return ResponseEntity.ok(BaseResponse.success(count, "Wallet count retrieved successfully"));
+	}
+
+	@PostMapping("/{id}/share")
+	@Operation(summary = "Share wallet with a user")
+	public ResponseEntity<BaseResponse<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse>> shareWallet(
+		@PathVariable Long id,
+		@Valid @RequestBody com.fpm_2025.wallet_service.dto.payload.request.ShareWalletRequest request,
+		@AuthenticationPrincipal Long userId) {
+		com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse res = walletService.shareWallet(id, request, userId);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(BaseResponse.success(res, "Wallet shared successfully"));
+	}
+
+	@GetMapping("/{id}/shares")
+	@Operation(summary = "Get all users who have access to this wallet")
+	public ResponseEntity<BaseResponse<List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse>>> getSharedUsers(
+		@PathVariable Long id,
+		@AuthenticationPrincipal Long userId) {
+		List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse> shares = walletService.getSharedUsers(id, userId);
+		return ResponseEntity.ok(BaseResponse.success(shares, "Shared users retrieved successfully"));
+	}
+
+	@DeleteMapping("/{id}/share/{targetUserId}")
+	@Operation(summary = "Remove user access from wallet")
+	public ResponseEntity<BaseResponse<Void>> removeShare(
+		@PathVariable Long id,
+		@PathVariable Long targetUserId,
+		@AuthenticationPrincipal Long userId) {
+		walletService.removeShare(id, targetUserId, userId);
+		return ResponseEntity.ok(BaseResponse.success(null, "Wallet share removed successfully"));
 	}
 }

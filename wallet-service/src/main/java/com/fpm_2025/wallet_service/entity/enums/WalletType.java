@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum WalletType {
 	CASH("CASH"),
     CARD("CARD"),
-    BANK("BANK");
+    BANK("BANK"),
+    SHARED("SHARED"),
+    FAMILY("FAMILY");
 
     private final String value;
 
