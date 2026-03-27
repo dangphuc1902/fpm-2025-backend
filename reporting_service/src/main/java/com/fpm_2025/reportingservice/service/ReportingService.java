@@ -43,8 +43,6 @@ public class ReportingService {
     private final TransactionSummaryRepository summaryRepository;
     private final ReportRepository reportRepository;
     private final ReportGeneratorService reportGenerator;
-    private final TransactionGrpcClient transactionClient;
-    private final WalletGrpcClient walletClient;
 
     /**
      * Generate monthly report for user
@@ -74,11 +72,10 @@ public class ReportingService {
             
         String period = startDate.getYear() + "-" + String.format("%02d", startDate.getMonthValue());
 
-        List<TransactionData> transactions = transactionClient
-            .getTransactionsByDateRange(userId, startDate, endDate);
+        List<TransactionData> transactions = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
         // 2️⃣ Get wallet information
-        List<WalletData> wallets = walletClient.getUserWallets(userId);
+        List<WalletData> wallets = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
         // 3️⃣ Calculate statistics
         MonthlyStatistics stats = calculateMonthlyStatistics(
@@ -161,10 +158,9 @@ public class ReportingService {
         LocalDateTime startDate = ym.atDay(1).atStartOfDay();
         LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
 
-        List<TransactionData> transactions = transactionClient
-            .getTransactionsByDateRange(userId, startDate, endDate);
+        List<TransactionData> transactions = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
-        List<WalletData> wallets = walletClient.getUserWallets(userId);
+        List<WalletData> wallets = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
         return calculateMonthlyStatistics(
             transactions, wallets, startDate, endDate);
@@ -186,8 +182,7 @@ public class ReportingService {
         LocalDateTime startDate = ym.atDay(1).atStartOfDay();
         LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
 
-        List<TransactionData> transactions = transactionClient
-            .getTransactionsByDateRange(userId, startDate, endDate);
+        List<TransactionData> transactions = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
         return transactions.stream()
             .filter(t -> "EXPENSE".equals(t.getType()))
@@ -215,8 +210,7 @@ public class ReportingService {
         LocalDateTime startDateRange = startYm.atDay(1).atStartOfDay();
         LocalDateTime endDateRange = YearMonth.from(now).atEndOfMonth().atTime(23, 59, 59);
 
-        List<TransactionData> allTransactions = transactionClient
-            .getTransactionsByDateRange(userId, startDateRange, endDateRange);
+        List<TransactionData> allTransactions = new java.util.ArrayList<>(); // TODO: Connect to actual gRPC
 
         // 2️⃣ Group transactions by YearMonth
         Map<YearMonth, List<TransactionData>> transactionsByMonth = allTransactions.stream()
