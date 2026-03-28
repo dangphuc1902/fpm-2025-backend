@@ -1,10 +1,16 @@
 package com.fpm_2025.reportingservice.service;
 
 import com.fpm_2025.reportingservice.domain.*;
+import com.fpm_2025.reportingservice.domain.model.Budget;
+import com.fpm_2025.reportingservice.domain.model.CategorySummary;
 import com.fpm_2025.reportingservice.entity.ReportEntity;
 import com.fpm_2025.reportingservice.entity.TransactionSummaryEntity;
+import com.fpm_2025.reportingservice.repository.BudgetRepository;
+import com.fpm_2025.reportingservice.repository.CategorySummaryRepository;
 import com.fpm_2025.reportingservice.repository.ReportRepository;
 import com.fpm_2025.reportingservice.repository.TransactionSummaryRepository;
+import com.fpm_2025.reportingservice.dto.response.BudgetComparisonItem;
+import com.fpm_2025.reportingservice.dto.response.ChartDataResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,11 +22,11 @@ import com.fpm_2025.reportingservice.dto.response.ReportResponse;
 import com.fpm_2025.reportingservice.domain.valueobject.ExportFormat;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import com.fpm_2025.reportingservice.exception.ResourceNotFoundException;
 
@@ -45,6 +51,8 @@ public class ReportingService {
     private final ReportGeneratorService reportGenerator;
     private final TransactionGrpcClient transactionClient;
     private final WalletGrpcClient walletClient;
+    private final CategorySummaryRepository categorySummaryRepository;
+    private final BudgetRepository budgetRepository;
 
     /**
      * Generate monthly report for user
@@ -390,5 +398,228 @@ public class ReportingService {
             .status(entity.getStatus().name())
             .createdAt(entity.getCreatedAt())
             .build();
+    }
+
+    // =========================================================================
+    // GET /api/v1/reports/spending-by-category
+    // =========================================================================
+
+    /**
+     * Aggregate chi tiêu theo danh mục cho 1 tháng.
+     * Ưu tiên dữ liệu từ CategorySummary (DB caching từ Kafka event).
+     * Fallback: gọi gRPC sang transaction-service nếu chưa có data.
+     */
+    @Cacheable(value = "spending-by-category", key = "#userId + '-' + #yearMonth + '-' + #type")
+    public ChartDataResponse getSpendingByCategory(Long userId, String yearMonth, String type) {
+        log.info("getSpendingByCategory: userId={}, month={}, type={}", userId, yearMonth, type);
+
+        CategorySummary.CategorySummaryType summaryType;
+        try {
+            summaryType = CategorySummary.CategorySummaryType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            summaryType = CategorySummary.CategorySummaryType.EXPENSE;
+        }
+
+        // Bước 1: Lấy từ DB (Kafka consumer đã aggregate sẵn)
+        List<CategorySummary> dbSummaries = categorySummaryRepository
+                .findByUserIdAndYearMonthAndType(userId, yearMonth, summaryType);
+
+        List<String> labels;
+        List<BigDecimal> amounts;
+
+        if (!dbSummaries.isEmpty()) {
+            // Dùng data từ DB
+            labels  = dbSummaries.stream().map(CategorySummary::getCategoryName).collect(Collectors.toList());
+            amounts = dbSummaries.stream().map(CategorySummary::getTotalAmount).collect(Collectors.toList());
+        } else {
+            // Fallback: tính toán từ gRPC
+            log.info("No DB summary found, falling back to gRPC for userId={}", userId);
+            YearMonth ym = YearMonth.parse(yearMonth);
+            LocalDateTime start = ym.atDay(1).atStartOfDay();
+            LocalDateTime end   = ym.atEndOfMonth().atTime(23, 59, 59);
+
+            List<TransactionData> txns = transactionClient.getTransactionsByDateRange(userId, start, end);
+            final String filterType = type.toUpperCase();
+
+            Map<String, BigDecimal> grouped = txns.stream()
+                    .filter(t -> filterType.equals(t.getType()))
+                    .collect(Collectors.groupingBy(
+                            TransactionData::getCategoryName,
+                            Collectors.reducing(BigDecimal.ZERO, TransactionData::getAmount, BigDecimal::add)));
+
+            labels  = new ArrayList<>(grouped.keySet());
+            amounts = new ArrayList<>(grouped.values());
+        }
+
+        // Build Pie Chart colors
+        List<String> PALETTE = List.of(
+                "#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7",
+                "#DDA0DD","#FF9F43","#A29BFE","#6C757D","#20C997");
+        List<String> colors = new ArrayList<>();
+        for (int i = 0; i < labels.size(); i++) colors.add(PALETTE.get(i % PALETTE.size()));
+
+        List<Object> data = new ArrayList<>(amounts);
+
+        return ChartDataResponse.builder()
+                .chartType("PIE")
+                .labels(labels)
+                .datasets(List.of(ChartDataResponse.Dataset.builder()
+                        .label(type + " by Category")
+                        .data(data)
+                        .backgroundColor(colors)
+                        .borderColor(colors)
+                        .borderWidth(2)
+                        .build()))
+                .build();
+    }
+
+    // =========================================================================
+    // GET /api/v1/reports/trends
+    // =========================================================================
+
+    /**
+     * So sánh income vs expense theo từng tháng trong N tháng gần nhất.
+     * Return dạng Line Chart.
+     */
+    @Cacheable(value = "monthly-trends", key = "#userId + '-' + #months")
+    public ChartDataResponse getMonthlyTrends(Long userId, int months) {
+        log.info("getMonthlyTrends: userId={}, months={}", userId, months);
+        if (months <= 0 || months > 24) months = 6;
+
+        LocalDate now = LocalDate.now();
+        YearMonth startYm = YearMonth.from(now.minusMonths(months - 1));
+        YearMonth endYm   = YearMonth.from(now);
+
+        // Bước 1: Lấy từ MonthlySummary DB (Kafka consumer cập nhật)
+        String startMonth = startYm.toString();
+        String endMonth   = endYm.toString();
+
+        Map<String, BigDecimal> incomeMap  = new LinkedHashMap<>();
+        Map<String, BigDecimal> expenseMap = new LinkedHashMap<>();
+
+        // Khởi tạo tất cả tháng với 0
+        List<String> monthLabels = new ArrayList<>();
+        for (int i = months - 1; i >= 0; i--) {
+            String m = YearMonth.from(now.minusMonths(i)).toString();
+            monthLabels.add(m);
+            incomeMap.put(m, BigDecimal.ZERO);
+            expenseMap.put(m, BigDecimal.ZERO);
+        }
+
+        // Fallback: gọi gRPC nếu chưa có summary trong DB
+        LocalDateTime gRpcStart = startYm.atDay(1).atStartOfDay();
+        LocalDateTime gRpcEnd   = endYm.atEndOfMonth().atTime(23, 59, 59);
+        List<TransactionData> allTxns = transactionClient.getTransactionsByDateRange(userId, gRpcStart, gRpcEnd);
+
+        for (TransactionData txn : allTxns) {
+            if (txn.getTransactionDate() == null) continue;
+            String m = YearMonth.from(txn.getTransactionDate()).toString();
+            if (!incomeMap.containsKey(m)) continue;
+            if ("INCOME".equals(txn.getType())) {
+                incomeMap.merge(m, txn.getAmount(), BigDecimal::add);
+            } else {
+                expenseMap.merge(m, txn.getAmount(), BigDecimal::add);
+            }
+        }
+
+        List<Object> incomeData  = new ArrayList<>(incomeMap.values());
+        List<Object> expenseData = new ArrayList<>(expenseMap.values());
+
+        return ChartDataResponse.builder()
+                .chartType("LINE")
+                .labels(monthLabels)
+                .datasets(List.of(
+                        ChartDataResponse.Dataset.builder()
+                                .label("Thu nhập")
+                                .data(incomeData)
+                                .backgroundColor(List.of("rgba(40,167,69,0.2)"))
+                                .borderColor(List.of("#28A745"))
+                                .borderWidth(2)
+                                .build(),
+                        ChartDataResponse.Dataset.builder()
+                                .label("Chi tiêu")
+                                .data(expenseData)
+                                .backgroundColor(List.of("rgba(255,107,107,0.2)"))
+                                .borderColor(List.of("#FF6B6B"))
+                                .borderWidth(2)
+                                .build()))
+                .build();
+    }
+
+    // =========================================================================
+    // GET /api/v1/reports/budget-comparison
+    // =========================================================================
+
+    /**
+     * So sánh ngân sách đặt ra vs chi tiêu thực tế theo danh mục.
+     * Kết hợp dữ liệu từ Budget entity và CategorySummary.
+     */
+    public List<BudgetComparisonItem> getBudgetComparison(Long userId, String yearMonth) {
+        log.info("getBudgetComparison: userId={}, month={}", userId, yearMonth);
+
+        // Lấy toàn bộ budget active trong tháng
+        List<Budget> budgets = budgetRepository.findActiveBudgetsByYearMonth(userId, yearMonth);
+
+        // Lấy CategorySummary để biết chi tiêu thực tế
+        List<CategorySummary> summaries = categorySummaryRepository
+                .findByUserIdAndYearMonth(userId, yearMonth);
+
+        // Index theo categoryId
+        Map<Long, BigDecimal> actualByCategory = summaries.stream()
+                .filter(cs -> CategorySummary.CategorySummaryType.EXPENSE.equals(cs.getType()))
+                .collect(Collectors.toMap(
+                        CategorySummary::getCategoryId,
+                        CategorySummary::getTotalAmount,
+                        BigDecimal::add));
+
+        List<BudgetComparisonItem> result = new ArrayList<>();
+
+        // Danh mục có budget
+        Set<Long> budgetedCategories = new HashSet<>();
+        for (Budget b : budgets) {
+            BigDecimal actual = actualByCategory.getOrDefault(b.getCategoryId(), BigDecimal.ZERO);
+            BigDecimal diff   = b.getAmountLimit().subtract(actual);
+            double pct = b.getAmountLimit().compareTo(BigDecimal.ZERO) == 0
+                    ? 0.0
+                    : actual.multiply(BigDecimal.valueOf(100))
+                            .divide(b.getAmountLimit(), 2, RoundingMode.HALF_UP)
+                            .doubleValue();
+
+            String status = pct >= 100 ? "OVER_BUDGET"
+                    : pct >= 95 ? "CRITICAL"
+                    : pct >= 80 ? "WARNING" : "ON_TRACK";
+
+            result.add(BudgetComparisonItem.builder()
+                    .categoryId(b.getCategoryId())
+                    .categoryName(b.getCategoryName())
+                    .budgetLimit(b.getAmountLimit())
+                    .actualSpending(actual)
+                    .difference(diff)
+                    .usagePercent(pct)
+                    .status(status)
+                    .build());
+
+            budgetedCategories.add(b.getCategoryId());
+        }
+
+        // Danh mục có chi tiêu nhưng không có budget
+        for (CategorySummary cs : summaries) {
+            if (CategorySummary.CategorySummaryType.EXPENSE.equals(cs.getType())
+                    && !budgetedCategories.contains(cs.getCategoryId())) {
+                result.add(BudgetComparisonItem.builder()
+                        .categoryId(cs.getCategoryId())
+                        .categoryName(cs.getCategoryName())
+                        .budgetLimit(BigDecimal.ZERO)
+                        .actualSpending(cs.getTotalAmount())
+                        .difference(cs.getTotalAmount().negate())
+                        .usagePercent(null)
+                        .status("NO_BUDGET")
+                        .build());
+            }
+        }
+
+        // Sắp xếp theo thiếu ngân sách nhất (over-budget lên trước)
+        result.sort(Comparator.comparing(BudgetComparisonItem::getDifference));
+        return result;
     }
 }

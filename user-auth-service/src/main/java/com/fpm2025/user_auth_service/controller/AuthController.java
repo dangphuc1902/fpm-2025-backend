@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +33,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "User authentication APIs")
 public class AuthController {
-
-    private final AuthService authService;
+    
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/register")
     @Operation(summary = "Register new user")

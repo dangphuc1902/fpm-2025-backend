@@ -109,6 +109,63 @@ public class ReportController {
                 .body(resource);
     }
 
+    // =========================================================================
+    // GET /api/v1/reports/spending-by-category
+    // Biểu đồ tròn (Pie Chart): chi tiêu theo danh mục trong tháng
+    // =========================================================================
+    @GetMapping("/spending-by-category")
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse<?> getSpendingByCategory(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) String yearMonth,
+            @RequestParam(required = false, defaultValue = "EXPENSE") String type) {
+
+        String month = (yearMonth != null && !yearMonth.isBlank())
+                ? yearMonth
+                : java.time.YearMonth.now().toString();
+
+        log.info("spending-by-category: userId={}, month={}, type={}", user.getId(), month, type);
+
+        var chartData = reportingService.getSpendingByCategory(user.getId(), month, type);
+        return BaseResponse.success(chartData);
+    }
+
+    // =========================================================================
+    // GET /api/v1/reports/trends
+    // Biểu đồ đường: So sánh income vs expense theo N tháng gần nhất (default 6)
+    // =========================================================================
+    @GetMapping("/trends")
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse<?> getTrends(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false, defaultValue = "6") int months) {
+
+        log.info("trends: userId={}, months={}", user.getId(), months);
+
+        var trendData = reportingService.getMonthlyTrends(user.getId(), months);
+        return BaseResponse.success(trendData);
+    }
+
+    // =========================================================================
+    // GET /api/v1/reports/budget-comparison
+    // So sánh ngân sách đặt ra vs thực tế chi tiêu theo danh mục
+    // =========================================================================
+    @GetMapping("/budget-comparison")
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse<?> getBudgetComparison(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) String yearMonth) {
+
+        String month = (yearMonth != null && !yearMonth.isBlank())
+                ? yearMonth
+                : java.time.YearMonth.now().toString();
+
+        log.info("budget-comparison: userId={}, month={}", user.getId(), month);
+
+        var comparisonData = reportingService.getBudgetComparison(user.getId(), month);
+        return BaseResponse.success(comparisonData);
+    }
+
     @GetMapping("/insights")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<String> getInsights(@AuthenticationPrincipal UserPrincipal user) {

@@ -2,9 +2,12 @@
 
 # 1. Chi Tiết Microservices {#services}
 
+> **Cập nhật lần cuối:** 2026-03-27 | Review source code thực tế  
+> **Xem trạng thái chi tiết:** `Backend_Implementation_Status.md` | `Project_Status_Roadmap.md`
+
 ---
 
-## 1.1. **config-service (Port: 8888)**
+## 1.1. **config-service (Port: 8888)** — 🔴 Module chưa tạo (dùng embedded config)
 
 **Format:** YAML
 
@@ -26,7 +29,7 @@
 
 ---
 
-## 1.2. **eureka-server (Port: 8761)**
+## 1.2. **eureka-server (Port: 8761)** — ✅ Hoàn chỉnh
 
 **Format:** YAML
 
@@ -46,7 +49,7 @@
 
 ---
 
-## 1.3. **api-gateway (Port: 8080)**
+## 1.3. **api-gateway (Port: 8080)** — ✅ Cơ bản hoàn chỉnh (thiếu rate limiting, circuit breaker)
 
 **Format:** YAML
 
@@ -83,7 +86,7 @@
 
 ---
 
-## 1.4. **user-service (Port: 8081)**
+## 1.4. **user-auth-service (Port: 8081)** — 🟡 ~75% (thiếu gRPC Server impl, Kafka publish)
 
 **Format:** YAML
 
@@ -139,7 +142,7 @@ rpc GetFamilyMembers(FamilyIdRequest) returns (MembersResponse)
 
 ---
 
-## 1.5. **wallet-service (Port: 8082)**
+## 1.5. **wallet-service (Port: 8082)** — 🟢 ~90% Hoàn thiện
 
 **Format:** YAML
 
@@ -192,7 +195,7 @@ rpc ValidateWalletAccess(...)
 
 ---
 
-## 1.6. **transaction-service (Port: 8083)**
+## 1.6. **transaction-service (Port: 8083)** — 🟡 ~60% (thiếu PUT/DELETE/Search, gRPC logic, consumers)
 
 **Format:** YAML
 
@@ -267,7 +270,7 @@ rpc GetTransactionsByDateRange(...)
 
 ---
 
-## 1.7. **category-service (Port: 8084)**
+## 1.7. **category-service (Port: 8084)** — 🔴 0% Module chưa được tạo
 
 ### **Chức năng**
 
@@ -327,7 +330,7 @@ rpc GetCategoriesByFamily(...)
 
 ---
 
-## 1.8. **notification-service (Port: 8085)**
+## 1.8. **notification-service (Port: 8085)** — 🔴 ~15% (chỉ có RabbitMQ listener, chưa có REST/DB/FCM)
 
 ### **Chức năng**
 
@@ -366,7 +369,7 @@ GET   /api/notifications/history
 
 ---
 
-## 1.9. **ocr-service (Port: 8086)**
+## 1.9. **ocr-service (Port: 8086)** — 🔴 0% Module chưa được tạo
 
 ### **Chức năng**
 
@@ -406,7 +409,7 @@ GET   /api/ocr/{requestId}/result
 
 ---
 
-## 1.10. **ai-service (Port: 8087)**
+## 1.10. **ai-service (Port: 8087)** — 🔴 0% Module chưa được tạo
 
 ### **Chức năng**
 
@@ -452,7 +455,7 @@ GET   /api/ai/insights/{userId}
 
 ---
 
-## 1.11. **reporting-service (Port: 8088)**
+## 1.11. **reporting-service (Port: 8088)** — 🟡 ~65% (thiếu spending-by-category, trends, budget endpoints)
 
 ### **Chức năng**
 
@@ -497,10 +500,22 @@ GET   /api/reports/export/{jobId}/download
 
 ---
 
-Nếu bạn muốn, tôi có thể:
-✅ Generate **table of contents tự động**
-✅ Chuyển thành **từng module riêng**
-✅ Format sang **Mermaid Diagram** (Service Map)
-✅ Generate file `.md` hoàn chỉnh để tải về
+---
 
-Chỉ cần nói **"xuất file markdown"** hoặc **"vẽ diagram"** nhé!
+## Tổng Kết Trạng Thái (2026-03-27)
+
+| Service | Port | Status | Ghi chú |
+|---------|------|--------|----------|
+| config-service | 8888 | 🔴 Chưa tạo | Đang dùng embedded config |
+| eureka-server | 8761 | ✅ Done | Hoàn chỉnh |
+| api-gateway | 8080 | ✅ ~90% | Thiếu rate limit, circuit breaker |
+| user-auth-service | 8081 | 🟡 ~75% | Thiếu gRPC impl, Kafka publish |
+| wallet-service | 8082 | 🟢 ~90% | API phong phú nhất, gRPC done |
+| transaction-service | 8083 | 🟡 ~60% | Thiếu PUT/DELETE/List/Search |
+| category-service | 8084 | 🔴 0% | Module chưa tạo |
+| notification-service | 8085 | 🔴 ~15% | Chỉ có RabbitMQ listener |
+| ocr-service | 8086 | 🔴 0% | Module chưa tạo |
+| ai-service | 8087 | 🔴 0% | Module chưa tạo |
+| reporting-service | 8088 | 🟡 ~65% | Dashboard+Export done, thiếu chart APIs |
+
+> Xem `Backend_Implementation_Status.md` để đánh giá chi tiết từng endpoint.

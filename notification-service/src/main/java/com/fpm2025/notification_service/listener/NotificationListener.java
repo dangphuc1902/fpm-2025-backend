@@ -1,28 +1,135 @@
 package com.fpm2025.notification_service.listener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fpm2025.notification_service.service.NotificationService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
+/**
+ * Listener nhận events từ RabbitMQ và Kafka.
+ *
+ * RabbitMQ: notification từ transaction-service / wallet-service
+ * Kafka:
+ *   - transaction.created: notify user có giao dịch mới
+ *   - transaction.deleted: notify user đã xóa giao dịch
+ *   - user.created: welcome notification
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class NotificationListener {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificationListener.class);
+    private final NotificationService notificationService;
+
+    // =========================================================================
+    // RabbitMQ: Notification queue (từ transaction-service, wallet-service)
+    // =========================================================================
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "notification.queue", durable = "true"),
+            value    = @Queue(value = "notification.queue", durable = "true"),
             exchange = @Exchange(value = "notification.exchange", ignoreDeclarationExceptions = "true"),
-            key = "notification.routing.key"
+            key      = "notification.routing.key"
     ))
     public void handleNotificationMessage(String message) {
-        log.info("--------------------------------------------------");
-        log.info("✉ [EMAIL SIMULATION]: Dang gui Email toi User...");
-        log.info("Noi dung: {}", message);
-        log.info("[OK] Gui email hoan tat!");
-        log.info("--------------------------------------------------");
+        log.info("==============================================");
+        log.info("📨 [RabbitMQ] Received notification task");
+        log.info("   Content: {}", message);
+        log.info("==============================================");
+        // Lưu vào DB history nếu có header userId
+        // (hiện tại message chỉ là String, cần upgrade sang Object nếu muốn lưu history)
+    }
+
+    // =========================================================================
+    // Kafka: transaction.created → Thông báo giao dịch mới
+    // =========================================================================
+
+    @KafkaListener(topics = "transaction.created", groupId = "notification-service")
+    public void handleTransactionCreated(@Payload Map<String, Object> event) {
+        try {
+            Long userId = getLong(event, "userId");
+            if (userId == null) return;
+
+            String type     = (String) event.getOrDefault("type", "EXPENSE");
+            Object amount   = event.get("amount");
+            String desc     = (String) event.getOrDefault("description", "");
+            String currency = (String) event.getOrDefault("currency", "VND");
+
+            String emoji = "INCOME".equals(type) ? "💰" : "💸";
+            String title = emoji + " Giao dịch " + ("INCOME".equals(type) ? "thu nhập" : "chi tiêu");
+            String body  = String.format("%s %s %s", amount, currency,
+                    desc.isBlank() ? "" : "- " + desc);
+
+            notificationService.sendFcm(userId, title, body, "TRANSACTION", Map.of(
+                    "type", type,
+                    "amount", amount != null ? amount : 0
+            ));
+            log.info("Kafka: Processed transaction.created for userId={}", userId);
+        } catch (Exception e) {
+            log.error("Kafka: Error handling transaction.created event", e);
+        }
+    }
+
+    // =========================================================================
+    // Kafka: transaction.deleted → Thông báo xóa giao dịch
+    // =========================================================================
+
+    @KafkaListener(topics = "transaction.deleted", groupId = "notification-service")
+    public void handleTransactionDeleted(@Payload Map<String, Object> event) {
+        try {
+            Long userId = getLong(event, "userId");
+            if (userId == null) return;
+
+            Object txId   = event.get("transactionId");
+            Object amount = event.get("amount");
+
+            notificationService.sendFcm(userId,
+                    "🗑️ Xóa giao dịch",
+                    String.format("Giao dịch #%s (%s VND) đã được xóa", txId, amount),
+                    "TRANSACTION",
+                    Map.of("transactionId", txId != null ? txId : 0));
+        } catch (Exception e) {
+            log.error("Kafka: Error handling transaction.deleted event", e);
+        }
+    }
+
+    // =========================================================================
+    // Kafka: user.created → Welcome notification
+    // =========================================================================
+
+    @KafkaListener(topics = "user.created", groupId = "notification-service")
+    public void handleUserCreated(@Payload Map<String, Object> event) {
+        try {
+            Long userId  = getLong(event, "userId");
+            String name  = (String) event.getOrDefault("username", "bạn");
+            if (userId == null) return;
+
+            notificationService.sendFcm(userId,
+                    "🎉 Chào mừng đến FPM!",
+                    String.format("Xin chào %s! Ví mặc định của bạn đã được tạo.", name),
+                    "SYSTEM",
+                    Map.of("event", "user.created"));
+            log.info("Kafka: Welcome notification sent for userId={}", userId);
+        } catch (Exception e) {
+            log.error("Kafka: Error handling user.created event", e);
+        }
+    }
+
+    // =========================================================================
+    // Helper
+    // =========================================================================
+
+    private Long getLong(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val == null) return null;
+        if (val instanceof Number num) return num.longValue();
+        try { return Long.parseLong(val.toString()); } catch (NumberFormatException e) { return null; }
     }
 }

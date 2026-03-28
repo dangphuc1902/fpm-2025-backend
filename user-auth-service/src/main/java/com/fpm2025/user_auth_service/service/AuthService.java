@@ -9,6 +9,7 @@ import com.fpm2025.user_auth_service.exception.UserAlreadyExistsException;
 import com.fpm2025.user_auth_service.exception.UserEmailNotExistException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,9 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final WebClient.Builder webClientBuilder;
     private final JwtBlacklistService jwtBlacklistService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static final String USER_CREATED_TOPIC = "user.created";
 
     @Transactional
     public Map<String, Object> login(UserLoginRequest request) {
@@ -84,6 +88,9 @@ public class AuthService {
 
         // Generate JWT token
         String token = jwtUtils.generateToken(savedUser.getId(), savedUser.getEmail());
+
+        // [Kafka] Publish user.created event → wallet-service tạo ví mặc định
+        publishUserCreatedEvent(savedUser);
 
         log.info("Registration successful for user: {}", savedUser.getEmail());
 
@@ -199,7 +206,12 @@ public class AuthService {
             // No password for Google users
             .build();
 
-        return userRepository.save(user);
+        UserEntity saved = userRepository.save(user);
+
+        // [Kafka] Publish user.created event → wallet-service tạo ví mặc định
+        publishUserCreatedEvent(saved);
+
+        return saved;
     }
 
     private Map<String, Object> buildAuthResponse(UserEntity user, String token) {
@@ -216,5 +228,26 @@ public class AuthService {
         response.put("expiresIn", jwtUtils.getExpiration());
 
         return response;
+    }
+
+    /**
+     * Publish Kafka event 'user.created' sau khi user đăng ký thành công.
+     * wallet-service sẽ consume event này để tạo ví mặc định (CASH) cho user.
+     */
+    private void publishUserCreatedEvent(UserEntity user) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("userId", user.getId());
+            event.put("email", user.getEmail());
+            event.put("username", user.getUsername());
+            event.put("createdAt", user.getCreatedAt() != null
+                    ? user.getCreatedAt().toString() : LocalDateTime.now().toString());
+
+            kafkaTemplate.send(USER_CREATED_TOPIC, String.valueOf(user.getId()), event);
+            log.info("Kafka: Published user.created event for userId: {}", user.getId());
+        } catch (Exception e) {
+            // Non-blocking: không để Kafka failure làm fail registration
+            log.error("Kafka: Failed to publish user.created event for userId: {}", user.getId(), e);
+        }
     }
 }
