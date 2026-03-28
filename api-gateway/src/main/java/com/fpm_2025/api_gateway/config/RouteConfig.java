@@ -53,7 +53,7 @@ public class RouteConfig {
                 
                 // Wallet Service
                 .route("wallet-service", r -> r
-                        .path("/api/wallets/**")
+                        .path("/api/wallets/**", "/api/transactions/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -64,21 +64,6 @@ public class RouteConfig {
                                         .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://wallet-service")
-                )
-                
-                // Transaction Service
-                .route("transaction-service", r -> r
-                        .path("/api/transactions/**")
-                        .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("transaction-service")
-                                        .setFallbackUri("forward:/fallback"))
-                                .requestRateLimiter(config -> config
-                                        .setRateLimiter(redisRateLimiter())
-                                        .setKeyResolver(userKeyResolver()))
-                        )
-                        .uri("lb://transaction-service")
                 )
                 
                 // Category Service
