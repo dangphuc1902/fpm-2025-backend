@@ -3,6 +3,7 @@ package com.fpm2025.notification_service.controller;
 import com.fpm2025.notification_service.entity.BankNotificationEntity;
 import com.fpm2025.notification_service.entity.FcmTokenEntity;
 import com.fpm2025.notification_service.entity.NotificationHistoryEntity;
+import com.fpm2025.notification_service.service.FcmPushService;
 import com.fpm2025.notification_service.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
@@ -14,19 +15,19 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
 /**
  * REST API cho notification-service.
  *
  * Endpoints:
- * POST /api/v1/notifications/receive            — Nhận bank SMS notification
- * POST /api/v1/notifications/fcm/register       — Đăng ký FCM token
- * GET  /api/v1/notifications/history            — Xem lịch sử
- * PATCH /api/v1/notifications/{id}/read         — Mark 1 notification as read
- * PATCH /api/v1/notifications/read-all          — Mark tất cả as read
- * GET  /api/v1/notifications/unread-count       — Số chưa đọc
+ * POST  /api/v1/notifications/receive            — Nhận bank SMS notification
+ * POST  /api/v1/notifications/fcm/register        — Đăng ký FCM token
+ * GET   /api/v1/notifications/history             — Xem lịch sử
+ * PATCH /api/v1/notifications/{id}/read           — Mark 1 notification as read
+ * PATCH /api/v1/notifications/read-all            — Mark tất cả as read
+ * GET   /api/v1/notifications/unread-count        — Số chưa đọc
+ * GET   /api/v1/notifications/fcm/status          — Kiểm tra FCM mode (production/simulation)
  */
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -35,6 +36,7 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final FcmPushService fcmPushService;
 
     // =========================================================================
     // POST /api/v1/notifications/receive
@@ -70,8 +72,10 @@ public class NotificationController {
                     "id", result.getId(),
                     "bankName", result.getBankName(),
                     "isProcessed", result.getIsProcessed(),
-                    "parsedAmount", result.getParsedAmount(),
-                    "parsedType", result.getParsedType() != null ? result.getParsedType() : ""
+                    "parsedAmount", result.getParsedAmount() != null ? result.getParsedAmount() : 0,
+                    "parsedType", result.getParsedType() != null ? result.getParsedType() : "",
+                    "parsedAccount", result.getParsedAccount() != null ? result.getParsedAccount() : "",
+                    "parsedNote", result.getParsedNote() != null ? result.getParsedNote() : ""
             ));
 
         } catch (Exception e) {
@@ -174,6 +178,23 @@ public class NotificationController {
     public ResponseEntity<?> markAllAsRead(@RequestHeader("X-User-Id") Long userId) {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
+    }
+
+    // =========================================================================
+    // GET /api/v1/notifications/fcm/status
+    // Kiểm tra FCM đang chạy mode nào
+    // =========================================================================
+
+    @GetMapping("/fcm/status")
+    public ResponseEntity<?> getFcmStatus() {
+        boolean isProduction = fcmPushService.isProductionMode();
+        return ResponseEntity.ok(Map.of(
+                "mode", isProduction ? "PRODUCTION" : "SIMULATION",
+                "firebaseConnected", isProduction,
+                "description", isProduction
+                        ? "Firebase Admin SDK connected. Push notifications are sent via FCM."
+                        : "Firebase disabled. Push notifications are logged only (simulation)."
+        ));
     }
 
     // =========================================================================

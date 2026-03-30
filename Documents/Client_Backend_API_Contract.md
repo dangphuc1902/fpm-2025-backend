@@ -7,7 +7,7 @@ Tài liệu này định nghĩa các API (REST) giao tiếp giữa hệ thống 
 *Dự kiến triển khai tại `user-auth-service`*
 
 ### 1.1 Tạo Gia đình (Create Family)
-- **Endpoint**: `POST /api/families`
+- **Endpoint**: `POST /api/v1/families`
 - **Chức năng**: Cho phép một người dùng tạo một Family mới và nghiễm nhiên trở thành Chủ nhóm (Admin/Owner).
 - **Request Body**:
   ```json
@@ -19,12 +19,12 @@ Tài liệu này định nghĩa các API (REST) giao tiếp giữa hệ thống 
 - **Response**: Trả về chi tiết của Family (ID, name, createdAt, role of currentUser).
 
 ### 1.2 Xem danh sách thành viên trong Gia đình (Get Family Members)
-- **Endpoint**: `GET /api/families/{familyId}/members`
+- **Endpoint**: `GET /api/v1/families/{familyId}/members`
 - **Chức năng**: Lấy danh sách toàn bộ các thành viên hiện có.
 - **Response**: List of members `{ userId, fullName, role, joinedAt, avatarUrl }`.
 
 ### 1.3 Mời thành viên (Invite to Family)
-- **Endpoint**: `POST /api/families/{familyId}/invite`
+- **Endpoint**: `POST /api/v1/families/{familyId}/invite`
 - **Chức năng**: Gửi thư/thông báo mời vào nhóm.
 - **Request Body**:
   ```json
@@ -40,7 +40,7 @@ Tài liệu này định nghĩa các API (REST) giao tiếp giữa hệ thống 
 *Dự kiến triển khai tại `wallet-service`*
 
 ### 2.1 Tạo Ví dùng chung (Create Shared Wallet)
-- **Endpoint**: `POST /api/wallets`
+- **Endpoint**: `POST /api/v1/wallets`
 - **Chức năng**: Mở rộng request tạo ví, truyền thêm `familyId` nếu là ví chung của cả nhóm.
 - **Request Body**:
   ```json
@@ -53,7 +53,7 @@ Tài liệu này định nghĩa các API (REST) giao tiếp giữa hệ thống 
   ```
 
 ### 2.2 Cấp quyền/Chia sẻ ví cho User cụ thể
-- **Endpoint**: `POST /api/wallets/{walletId}/permissions`
+- **Endpoint**: `POST /api/v1/wallets/{walletId}/permissions`
 - **Chức năng**: Phân quyền (READ, WRITE) cho một user cụ thể trong trường hợp chỉ share ví cho 1 vài người nhất định.
 - **Request Body**:
   ```json

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -24,8 +24,8 @@ import java.util.Map;
  *
  * Chức năng:
  * 1. Nhận bank SMS notification từ Android app (REST: POST /receive)
- * 2. Parse nội dung SMS qua BankNotificationParser
- * 3. Gửi FCM push notification
+ * 2. Parse nội dung SMS qua BankNotificationParser (regex sâu cho MB, VCB, MoMo)
+ * 3. Gửi FCM push notification thật qua FcmPushService (Firebase Admin SDK)
  * 4. Lưu lịch sử notification
  * 5. Publish Kafka event notification.parsed → transaction-service tạo giao dịch
  */
@@ -38,6 +38,7 @@ public class NotificationService {
     private final BankNotificationRepository bankNotifRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final BankNotificationParser parser;
+    private final FcmPushService fcmPushService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     private static final String PARSED_TOPIC = "notification.parsed";
@@ -69,6 +70,7 @@ public class NotificationService {
                 .rawContent(rawContent)
                 .parsedAmount(result.amount())
                 .parsedType(result.type())
+                .parsedAccount(result.account())
                 .parsedNote(result.note())
                 .isProcessed(false)
                 .checksum(checksum)
@@ -77,33 +79,36 @@ public class NotificationService {
         BankNotificationEntity saved = bankNotifRepository.save(entity);
 
         if (result.parsed()) {
-            log.info("Parsed: bank={}, amount={}, type={}", bankName, result.amount(), result.type());
+            log.info("✅ Parsed successfully: bank={}, amount={}, type={}, account={}, ref={}",
+                    bankName, result.amount(), result.type(), result.account(), result.transactionRef());
 
             // Publish Kafka event → transaction-service tạo giao dịch tự động
             publishParsedEvent(userId, saved, result);
 
             // Gửi push notification xác nhận cho user
-            String title = result.type().equals("INCOME")
+            String title = "INCOME".equals(result.type())
                     ? "💰 Nhận tiền từ " + bankName
                     : "💸 Chi tiêu qua " + bankName;
             String body = String.format("Giao dịch: %,.0f VND - %s",
                     result.amount() != null ? result.amount().doubleValue() : 0,
                     result.note() != null ? result.note() : "");
             sendFcm(userId, title, body, "TRANSACTION", Map.of(
-                    "bankNotifId", saved.getId(),
-                    "amount", result.amount() != null ? result.amount() : 0,
-                    "type", result.type() != null ? result.type() : ""));
+                    "bankNotifId", String.valueOf(saved.getId()),
+                    "amount", result.amount() != null ? result.amount().toPlainString() : "0",
+                    "type", result.type() != null ? result.type() : "",
+                    "transactionRef", result.transactionRef() != null ? result.transactionRef() : ""));
 
             // Mark as processed
             saved.setIsProcessed(true);
             saved.setProcessedAt(LocalDateTime.now());
             bankNotifRepository.save(saved);
         } else {
-            log.warn("Could not parse bank notification from {}: {}", bankName,
-                    rawContent.substring(0, Math.min(50, rawContent.length())));
+            log.warn("⚠️ Could not parse bank notification from {}: {}",
+                    bankName, rawContent.substring(0, Math.min(80, rawContent.length())));
             // Vẫn thông báo user để review thủ công
             sendFcm(userId, "📩 Thông báo mới từ " + bankName,
-                    "Không thể tự động nhận diện giao dịch. Bấm để xem.", "SYSTEM", Map.of());
+                    "Không thể tự động nhận diện giao dịch. Bấm để xem.",
+                    "SYSTEM", Map.of());
         }
 
         return saved;
@@ -114,7 +119,8 @@ public class NotificationService {
     // =========================================================================
 
     @Transactional
-    public FcmTokenEntity registerFcmToken(Long userId, String deviceId, String fcmToken, String deviceType) {
+    public FcmTokenEntity registerFcmToken(Long userId, String deviceId,
+                                           String fcmToken, String deviceType) {
         log.info("Registering FCM token for userId={}, device={}", userId, deviceId);
 
         // Upsert: nếu đã có token cho device này thì update
@@ -169,38 +175,34 @@ public class NotificationService {
     }
 
     // =========================================================================
-    // 4. FCM Push Notification (giả lập)
+    // 4. FCM Push Notification (via FcmPushService — real Firebase hoặc simulation)
     // =========================================================================
 
-    public void sendFcm(Long userId, String title, String body, String type, Map<String, Object> extra) {
-        List<FcmTokenEntity> tokens = fcmTokenRepository.findByUserIdAndIsActiveTrue(userId);
+    public void sendFcm(Long userId, String title, String body,
+                        String type, Map<String, String> data) {
 
-        if (tokens.isEmpty()) {
-            log.warn("No active FCM tokens for userId={}. Notification not sent.", userId);
+        FcmPushService.SendResult result = fcmPushService.sendToUser(userId, title, body, type, data);
+
+        // Determine status for history
+        String status;
+        if ("NO_TOKENS".equals(result.status())) {
+            status = "FAILED";
+        } else if (result.hasSuccess()) {
+            status = fcmPushService.isProductionMode() ? "SENT" : "SIMULATED";
         } else {
-            for (FcmTokenEntity token : tokens) {
-                // TODO: Thay bằng Firebase Admin SDK khi có credentials
-                log.info("======================================");
-                log.info("📱 [FCM SIMULATION] → userId={}", userId);
-                log.info("   Device: {} ({})", token.getDeviceId(), token.getDeviceType());
-                log.info("   Token : {}...{}", token.getFcmToken().substring(0, Math.min(10, token.getFcmToken().length())), "***");
-                log.info("   Title : {}", title);
-                log.info("   Body  : {}", body);
-                log.info("   Extra : {}", extra);
-                log.info("======================================");
-            }
+            status = "FAILED";
         }
 
-        // Lưu lịch sử dù có FCM token hay không
+        // Lưu lịch sử
         NotificationHistoryEntity history = NotificationHistoryEntity.builder()
                 .userId(userId)
                 .title(title)
                 .body(body)
                 .type(type)
-                .payloadJson(extra.isEmpty() ? null : extra.toString())
+                .payloadJson(data != null && !data.isEmpty() ? data.toString() : null)
                 .isRead(false)
                 .sentVia("FCM")
-                .status(tokens.isEmpty() ? "FAILED" : "SENT")
+                .status(status)
                 .build();
 
         historyRepository.save(history);
@@ -208,25 +210,40 @@ public class NotificationService {
 
     // =========================================================================
     // 5. Kafka publish notification.parsed
+    //    Event chứa đầy đủ thông tin parsed → transaction-service consume
     // =========================================================================
 
     private void publishParsedEvent(Long userId, BankNotificationEntity saved,
                                     BankNotificationParser.ParseResult result) {
         try {
-            Map<String, Object> event = Map.of(
-                    "notificationId", saved.getId(),
-                    "userId", userId,
-                    "bankName", saved.getBankName(),
-                    "amount", result.amount() != null ? result.amount() : 0,
-                    "type", result.type() != null ? result.type() : "",
-                    "note", result.note() != null ? result.note() : "",
-                    "account", result.account() != null ? result.account() : "",
-                    "parsedAt", LocalDateTime.now().toString()
-            );
-            kafkaTemplate.send(PARSED_TOPIC, String.valueOf(userId), event);
-            log.info("Kafka: Published {} event for userId={}", PARSED_TOPIC, userId);
+            // Dùng LinkedHashMap thay vì Map.of() để đảm bảo serialization và cho phép null
+            Map<String, Object> event = new LinkedHashMap<>();
+            event.put("eventType", "NOTIFICATION_PARSED");
+            event.put("notificationId", saved.getId());
+            event.put("userId", userId);
+            event.put("bankName", saved.getBankName());
+            event.put("amount", result.amount() != null ? result.amount() : 0);
+            event.put("type", result.type() != null ? result.type() : "");
+            event.put("account", result.account() != null ? result.account() : "");
+            event.put("note", result.note() != null ? result.note() : "");
+            event.put("transactionRef", result.transactionRef() != null ? result.transactionRef() : "");
+            event.put("balance", result.balance() != null ? result.balance() : "");
+            event.put("transactionTime", result.transactionTime() != null ? result.transactionTime() : "");
+            event.put("parsedAt", LocalDateTime.now().toString());
+
+            kafkaTemplate.send(PARSED_TOPIC, String.valueOf(userId), event)
+                    .whenComplete((sendResult, ex) -> {
+                        if (ex == null) {
+                            log.info("✅ Kafka: Published [{}] for userId={}, notifId={}, amount={}, partition={}",
+                                    PARSED_TOPIC, userId, saved.getId(), result.amount(),
+                                    sendResult.getRecordMetadata().partition());
+                        } else {
+                            log.error("❌ Kafka: Failed to publish [{}] for userId={}: {}",
+                                    PARSED_TOPIC, userId, ex.getMessage());
+                        }
+                    });
         } catch (Exception e) {
-            log.error("Kafka: Failed to publish {}: {}", PARSED_TOPIC, e.getMessage());
+            log.error("❌ Kafka: Exception publishing [{}]: {}", PARSED_TOPIC, e.getMessage(), e);
         }
     }
 }

@@ -1,0 +1,33 @@
+Folder PATH listing for volume DangPhuc
+Volume serial number is A9F7-ED10
+D:\WORKSPACE\APP_DEV\FPM_PROJECT\BACKEND\NOTIFICATION-SERVICE\SRC\MAIN\JAVA
+└───com
+    └───fpm2025
+        └───notification_service
+            │   NotificationServiceApplication.java
+            │   
+            ├───config
+            │       FirebaseConfig.java
+            │       KafkaProducerConfig.java
+            │       
+            ├───controller
+            │       NotificationController.java
+            │       
+            ├───entity
+            │       BankNotificationEntity.java
+            │       FcmTokenEntity.java
+            │       NotificationHistoryEntity.java
+            │       
+            ├───listener
+            │       NotificationListener.java
+            │       
+            ├───repository
+            │       BankNotificationRepository.java
+            │       FcmTokenRepository.java
+            │       NotificationHistoryRepository.java
+            │       
+            └───service
+                    BankNotificationParser.java
+                    FcmPushService.java
+                    NotificationService.java
+                    

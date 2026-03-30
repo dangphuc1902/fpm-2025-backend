@@ -25,7 +25,7 @@ public class RouteConfig {
         return builder.routes()
                 // User Auth Service - Login (Rate Limited separately: 5 requests / 5 mins)
                 .route("user-auth-login", r -> r
-                        .path("/api/auth/login")
+                        .path("/api/v1/auth/login")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -38,7 +38,7 @@ public class RouteConfig {
 
                 // User Auth Service (Other routes)
                 .route("user-auth-service", r -> r
-                        .path("/api/auth/**", "/api/users/**", "/api/families/**")
+                        .path("/api/v1/auth/**", "/api/v1/users/**", "/api/v1/families/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -53,7 +53,7 @@ public class RouteConfig {
                 
                 // Wallet Service
                 .route("wallet-service", r -> r
-                        .path("/api/wallets/**")
+                        .path("/api/v1/wallets/**", "/api/v1/categories/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -68,7 +68,7 @@ public class RouteConfig {
                 
                 // Transaction Service
                 .route("transaction-service", r -> r
-                        .path("/api/transactions/**")
+                        .path("/api/v1/transactions/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -81,24 +81,24 @@ public class RouteConfig {
                         .uri("lb://transaction-service")
                 )
                 
-                // Category Service
-                .route("category-service", r -> r
-                        .path("/api/categories/**", "/api/budgets/**")
+                // Budget Service (routed to reporting-service)
+                .route("budget-service", r -> r
+                        .path("/api/v1/budgets/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
-                                        .setName("category-service")
+                                        .setName("reporting-service")
                                         .setFallbackUri("forward:/fallback"))
                                 .requestRateLimiter(config -> config
                                         .setRateLimiter(redisRateLimiter())
                                         .setKeyResolver(userKeyResolver()))
                         )
-                        .uri("lb://category-service")
+                        .uri("lb://reporting-service")
                 )
                 
                 // Reporting Service
                 .route("reporting-service", r -> r
-                        .path("/api/reports/**", "/api/dashboard/**")
+                        .path("/api/v1/reports/**", "/api/v1/dashboard/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -113,7 +113,7 @@ public class RouteConfig {
                 
                 // Sharing Service
                 .route("sharing-service", r -> r
-                        .path("/api/sharing/**")
+                        .path("/api/v1/sharing/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -128,7 +128,7 @@ public class RouteConfig {
                 
                 // Notification Service
                 .route("notification-service", r -> r
-                        .path("/api/notifications/**")
+                        .path("/api/v1/notifications/**")
                         .filters(f -> f
                                 .stripPrefix(0)
                                 .circuitBreaker(config -> config
@@ -136,6 +136,30 @@ public class RouteConfig {
                                         .setFallbackUri("forward:/fallback"))
                         )
                         .uri("lb://notification-service")
+                )
+                
+                // OCR Service
+                .route("ocr-service", r -> r
+                        .path("/api/v1/ocr/**")
+                        .filters(f -> f
+                                .stripPrefix(0)
+                                .circuitBreaker(config -> config
+                                        .setName("ocr-service")
+                                        .setFallbackUri("forward:/fallback"))
+                        )
+                        .uri("lb://ocr-service")
+                )
+                
+                // AI Service
+                .route("ai-service", r -> r
+                        .path("/api/v1/ai/**")
+                        .filters(f -> f
+                                .stripPrefix(0)
+                                .circuitBreaker(config -> config
+                                        .setName("ai-service")
+                                        .setFallbackUri("forward:/fallback"))
+                        )
+                        .uri("lb://ai-service")
                 )
                 
                 .build();

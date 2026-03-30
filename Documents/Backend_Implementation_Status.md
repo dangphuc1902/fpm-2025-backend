@@ -11,14 +11,14 @@
 |---------|---------|----------|-------------|-------------|-------|----------|------------------|
 | `eureka-server` | ✅ | - | - | - | - | - | ✅ Hoàn chỉnh |
 | `api-gateway` | ✅ | Route | - | JWT Filter | - | - | ✅ Cơ bản hoàn chỉnh |
-| `user-auth-service` | ✅ | ✅ Đủ | ❌ Chưa có impl | - | ❌ | - | 🟡 ~75% |
+| `user-auth-service` | ✅ | ✅ Đủ | ✅ Có impl | - | ✅ Publisher | - | 🟢 ~95% |
 | `wallet-service` | ✅ | ✅ Đầy đủ+ | ✅ Có impl | ✅ | ✅ Publisher | ✅ Config | 🟢 ~90% |
-| `transaction-service` | ✅ | ⚠️ Thiếu 5 API | ✅ Stub only | ✅ gRPC→Wallet | ✅ Publisher | ✅ Gửi | 🟡 ~60% |
-| `reporting-service` | ✅ | ✅ Cơ bản | - | ✅ gRPC Client | ✅ Consumer | ⚠️ | 🟡 ~65% |
-| `notification-service` | ✅ | ❌ Chỉ Listener | - | - | ❌ | ✅ Consumer | 🔴 ~15% |
-| `category-service` | ❌ Không tồn tại | - | - | - | - | - | 🔴 0% |
-| `ocr-service` | ❌ Không tồn tại | - | - | - | - | - | 🔴 0% |
-| `ai-service` | ❌ Không tồn tại | - | - | - | - | - | 🔴 0% |
+| `transaction-service` | ✅ | ✅ Đủ CRUD | ✅ Có impl | ✅ Giá trị | ✅ Publisher | ✅ Gửi | 🟢 ~90% |
+| `reporting-service` | ✅ | ✅ Cơ bản+ | - | ✅ gRPC Client | ✅ Consumer | ⚠️ | 🟢 ~85% |
+| `notification-service` | ✅ | ✅ Có REST API | - | - | ✅ Publisher | ✅ Consumer | 🟢 ~90% |
+| `category-service` | 🧩 Gộp vào wallet | - | - | - | - | - | ✅ Xong (Merged) |
+| `ocr-service` | ✅ Tồn tại | ✅ Trích xuất | - | - | - | - | 🟢 ~50% (Stub) |
+| `ai-service` | ✅ Tồn tại | ✅ NLP, Anomaly | - | - | - | - | 🟢 ~50% (Stub) |
 
 ---
 
@@ -33,15 +33,15 @@
 - **Có:** `RouteConfig.java`, `JwtAuthenticationFilter.java`, `LoggingFilter.java`, `CorsConfig.java`, `SecurityConfig.java`
 - **Thiếu:** Rate limiting (Redis), Circuit breaker, config route `/api/families/**`, `/api/categories/**`, `/api/reports/**`
 
-### ⚠️ `config-service` (Port: 8888)
-- **Trạng thái:** **Không thấy module** trong thư mục Backend. Config đang dùng trực tiếp trong từng service.
-- **Cần làm:** Tạo module `config-service` hoặc xác nhận dùng embedded config.
+### ✅ `config-service` (Port: 8888)
+- **Trạng thái:** Hoàn chỉnh (Mã nguồn nằm ở thư mục `config` riêng biệt tại root, thay vì trong `Backend/`).
+- **Chi tiết:** Đã cấu hình và khởi tạo Spring Cloud Config Server.
 
 ---
 
 ## 2. Core Business Services
 
-### 🟡 `user-auth-service` (Port: 8081) — ~75% Hoàn thiện
+### 🟢 `user-auth-service` (Port: 8081) — ~95% Hoàn thiện
 
 **REST APIs đã implement:**
 | Endpoint | Trạng thái |
@@ -62,8 +62,8 @@
 **Entities có:** `UserEntity`, `FamilyEntity`, `FamilyMemberEntity`, `RefreshToken`, `UserPreferencesEntity`, `FamilyRole`
 
 **Thiếu / Chưa hoàn thiện:**
-- ❌ **gRPC Server** (`ValidateToken`, `GetUserById`, `GetFamilyMembers`) — file impl chưa tìm thấy trong source
-- ❌ **Kafka publish** `user.created` event (để wallet-service tạo ví mặc định)
+- ✅ **gRPC Server** (`ValidateToken`, `GetUserById`, `GetUsersByIds`, `GetFamilyMembers`) — đã được implement thành công trong `UserGrpcServiceImpl`.
+- ✅ **Kafka publish** `user.created` event (khi register thành công) để wallet-service tạo ví mặc định.
 - ⚠️ OAuth2 Google flow cần kiểm tra lại `CustomOAuth2UserService.java`
 
 ---
@@ -101,7 +101,7 @@
 
 ---
 
-### 🟡 `transaction-service` (Port: 8083) — ~60% Hoàn thiện
+### 🟢 `transaction-service` (Port: 8083) — ~90% Hoàn thiện
 
 **REST APIs đã implement:**
 | Endpoint | Trạng thái |
@@ -109,9 +109,9 @@
 | `POST /api/v1/transactions` | ✅ Done — có gRPC→Wallet, Kafka, RabbitMQ |
 | `GET /api/v1/transactions/wallet/{walletId}` | ✅ Done (paged) |
 | `GET /api/v1/transactions/{id}` | ✅ Done |
-| `PUT /api/v1/transactions/{id}` | ❌ Chưa implement |
-| `DELETE /api/v1/transactions/{id}` | ❌ Chưa implement |
-| `GET /api/v1/transactions` (list by user) | ❌ Chưa implement |
+| `PUT /api/v1/transactions/{id}` | ✅ Done |
+| `DELETE /api/v1/transactions/{id}` | ✅ Done |
+| `GET /api/v1/transactions` (list by user) | ✅ Done |
 | `GET /api/v1/transactions/search` | ❌ Chưa implement |
 | `POST /api/v1/transactions/voice` | ❌ Chưa implement |
 | `POST /api/v1/transactions/notification` | ❌ Chưa implement |
@@ -119,92 +119,88 @@
 
 **Entities có:** `TransactionEntity`, `RecurringTransactionEntity`, `TransactionAttachmentEntity`
 
-**gRPC Server:** ⚠️ `TransactionServiceGrpcImpl` đã khai báo đủ method nhưng **tất cả đều là TODO stub** — chưa có logic thực sự
+**gRPC Server:** ✅ `TransactionServiceGrpcImpl` đã implement logic thực sự (`getTransactionById`, `getTransactionsByWallet`, `getTransactionsByDateRange`, `getTransactionsByUser`, `createTransaction`, `getTotalSpending`).
 
 **Kafka:** ✅ Publish `transaction.created` trong `createTransaction()`
 
 **RabbitMQ:** ✅ Gửi message tới `notification.exchange`
 
 **Thiếu:**
-- ❌ PUT/DELETE Transaction endpoints
-- ❌ GET list transactions by user (filter, search, paginate)
-- ❌ gRPC Server impl thực sự (chưa gọi `transactionService` trong các method)
 - ❌ Kafka consume `notification.parsed`, `ocr.completed`, `category.assigned`
 - ❌ Voice, Bank notification, OCR endpoints
 
 ---
 
-### 🟡 `reporting-service` (Port: 8088) — ~65% Hoàn thiện
+### 🟢 `reporting-service` (Port: 8088) — ~85% Hoàn thiện
 
 **REST APIs đã implement:**
-| Endpoint | Trạng thái |
-|----------|-----------|
-| `GET /api/dashboard` | ✅ Done (DashboardController + Redis cache) |
+| Endpoint             | Trạng Thái                                  |
+| -------------------- | ------------------------------------------- |
+| `GET /api/v1/dashboard` | ✅ Done (DashboardController + Redis cache) |
 | `GET /api/v1/reports/monthly` | ✅ Done |
 | `GET /api/v1/reports/export/pdf` | ✅ Done |
 | `GET /api/v1/reports/export/excel` | ✅ Done |
 | `GET /api/v1/reports/insights` | ⚠️ Stub — trả về "AI Insights upcoming!" |
-| `GET /api/v1/reports/spending-by-category` | ❌ Chưa implement |
-| `GET /api/v1/reports/trends` | ❌ Chưa implement |
-| `GET /api/v1/reports/budget-comparison` | ❌ Chưa implement |
+| `GET /api/v1/reports/spending-by-category` | ✅ Done |
+| `GET /api/v1/reports/trends` | ✅ Done |
+| `GET /api/v1/reports/budget-comparison` | ✅ Done |
 | `POST /api/v1/reports/export` | ❌ Chưa có async export job |
 | `GET /api/v1/reports/export/{jobId}/download` | ❌ Chưa implement |
 
 **Kafka Consumer:** ✅ `TransactionEventConsumer` — consume `transaction.created`, cập nhật `TransactionSummaryEntity`
 
-**gRPC Client:** ✅ `TransactionGrpcClient` có khai báo (cần verify logic thực sự)
+**gRPC Client:** ✅ `TransactionGrpcClient` đã implement và hoạt động (gọi `getTransactionsByDateRange`, `getTransactionsByWallet`, `getTotalSpending`)
 
 **Entities/Domain có:** `Budget`, `BudgetAlert`, `CategorySummary`, `ExportJob`, `MonthlySummary`, `TransactionSummaryEntity`
 
 **Services có:** `BudgetService`, `DashboardService`, `ReportingService`, `StatisticsService`, `ReportGeneratorService`, `KafkaTransactionConsumer`
 
 **Thiếu:**
-- ❌ Spending by category chart endpoint
-- ❌ Trends endpoint
-- ❌ Budget comparison endpoint
-- ❌ Async export job system hoàn chỉnh
+- ❌ Khả năng query sâu vào chi tiết trend/AI analysis (đang stub).
+- ❌ Async export job system hoàn chỉnh (đang xuất đồng bộ, export/{jobId}/download chưa có)
 - ⚠️ RabbitMQ send `report.generate` chưa rõ
 
 ---
 
-### 🔴 `notification-service` (Port: 8085) — ~15% Hoàn thiện
+### 🟢 `notification-service` (Port: 8085) — ~90% Hoàn thiện
 
-**Có:**
-- `NotificationListener.java` — lắng nghe `notification.queue` từ RabbitMQ → **chỉ log ra console** (giả lập gửi email)
+**Đã thực hiện:**
+- ✅ **Listener:** Lắng nghe `notification.queue` từ RabbitMQ + Kafka consumers (`transaction.created`, `transaction.deleted`, `user.created`, `wallet.created`, `balance.changed`).
+- ✅ **REST APIs:** `NotificationController` đầy đủ: `/receive`, `/fcm/register`, `/history`, `/unread-count`, `/{id}/read`, `/read-all`, `/fcm/status`.
+- ✅ **Database & Entities:** `NotificationHistoryEntity`, `BankNotificationEntity`, `FcmTokenEntity` đầy đủ.
+- ✅ **FCM Firebase Admin SDK 9.3.0:** `FcmPushService` với dual-mode (PRODUCTION khi có credentials, SIMULATION khi không). Hỗ trợ multicast, stale token cleanup, Android notification channel.
+- ✅ **Bank Notification Parser sâu:** Regex patterns cho MB Bank (4 format SMS), VCB (4 format), MoMo (6 format: chuyển/nhận/thanh toán/rút/nạp/hoàn). Vietnamese amount parsing robust (1.500.000 vs 1,500.00). Parse balance, transactionRef, transactionTime.
+- ✅ **Kafka Publisher:** Publish `notification.parsed` event với đầy đủ fields (notificationId, userId, bankName, amount, type, account, note, transactionRef, balance, transactionTime).
 
-**Thiếu hoàn toàn:**
-- ❌ REST APIs: `/api/notifications/receive`, `/api/notifications/fcm/register`, `/api/notifications/history`
-- ❌ Database (`notification_db`) – không có entity/repository
-- ❌ FCM Push Notification (firebase-admin)
-- ❌ Parser thông báo ngân hàng (MB Bank, Momo, VCB, TCB)
-- ❌ Kafka publish `notification.parsed`
-- ❌ Deduplication logic
+**Config classes:**
+- `FirebaseConfig` — khởi tạo Firebase Admin SDK (classpath / filesystem credentials)
+- `KafkaProducerConfig` — idempotent producer (acks=all, retries=3)
 
----
-
-### 🔴 `category-service` (Port: 8084) — 0% (Không tồn tại)
-
-Theo thiết kế trong `microservice_details_fucon.md`, service này cần:
-- REST APIs: CRUD category, budget management
-- gRPC Server: `GetCategoryById`, `AutoCategorize`, `GetCategoriesByFamily`, `CheckBudgetStatus`
-- Kafka: consume `transaction.created`, publish `category.assigned`
-- RabbitMQ: consume `ai.classification.result`
-
-**→ Module chưa được tạo.**
-
-> ⚠️ **Lưu ý:** `wallet-service` đang có `CategoryEntity` và `CategoryController` nội bộ. Cần quyết định: tách ra `category-service` riêng hay giữ luôn trong `wallet-service`.
+**Thiếu:**
+- ⚠️ Unit tests chi tiết cho BankNotificationParser.
+- ⚠️ Kafka consumer từ reporting-service chưa rõ.
 
 ---
 
-### 🔴 `ocr-service` (Port: 8086) — 0% (Không tồn tại)
+### ✅ `category-service` (Đã gộp)
 
-**→ Module chưa được tạo.**
+- **Trạng thái:** Không tạo service mới, sử dụng `wallet-service` (CategoryEntity, CategoryController) như một Category Hub để giảm độ trễ gọi mạng (network calls) và chi phí vận hành. Các service khác sẽ lưu `categoryId` tham chiếu hoặc dùng gRPC.
 
 ---
 
-### 🔴 `ai-service` (Port: 8087) — 0% (Không tồn tại)
+### 🟢 `ocr-service` (Port: 8086) — ~50% Hoàn thiện (Stub)
 
-**→ Module chưa được tạo.**
+- **Trạng thái:** Đã khởi tạo cấu trúc Spring Boot, tích hợp thư viện `tess4j` (Tesseract) và cấu hình `pom.xml`, `application.yml`.
+- **REST APIs:** `POST /api/v1/ocr/extract` để trích xuất hóa đơn. (Sử dụng cơ chế Stubbing/Fallback nếu máy chưa cài thư viện native).
+
+---
+
+### 🟢 `ai-service` (Port: 8087) — ~50% Hoàn thiện (Stub)
+
+- **Trạng thái:** Đã khởi tạo cấu trúc, cấu hình.
+- **REST APIs:**
+  - `POST /api/v1/ai/nlp`: Phân tích câu văn (ví dụ "uống cafe 50k") để trích xuất số tiền, dự đoán danh mục.
+  - `POST /api/v1/ai/anomaly`: Phát hiện giao dịch bất thường dựa trên từ khoá. (Sử dụng mock implementation thay thế cho model ML thực tế).
 
 ---
 
@@ -228,44 +224,44 @@ Theo thiết kế trong `microservice_details_fucon.md`, service này cần:
 ### 🚨 Ưu Tiên Cao (Core hoạt động được)
 
 1. **Hoàn thiện `transaction-service`**
-   - [ ] Implement `PUT /api/v1/transactions/{id}` (update)
-   - [ ] Implement `DELETE /api/v1/transactions/{id}` (delete + publish event)
-   - [ ] Implement `GET /api/v1/transactions` (list by user, filter, paginate)
-   - [ ] Hoàn thiện gRPC `TransactionServiceGrpcImpl` (thay TODO bằng logic thực)
+   - [x] Implement `PUT /api/v1/transactions/{id}` (update)
+   - [x] Implement `DELETE /api/v1/transactions/{id}` (delete + publish event)
+   - [x] Implement `GET /api/v1/transactions` (list by user, filter, paginate)
+   - [x] Hoàn thiện gRPC `TransactionServiceGrpcImpl` (thay TODO bằng logic thực)
 
 2. **Hoàn thiện user-auth gRPC Server**
-   - [ ] Tạo `UserGrpcServiceImpl.java` — implement `ValidateToken`, `GetUserById`
+   - [x] Tạo `UserGrpcServiceImpl.java` — implement `ValidateToken`, `GetUserById`
    - [ ] Kết nối API Gateway dùng gRPC thay vì REST validate
 
 3. **Hoàn thiện `reporting-service`**
-   - [ ] `GET /api/v1/reports/spending-by-category`
-   - [ ] `GET /api/v1/reports/trends`
-   - [ ] Verify `TransactionGrpcClient` hoạt động thực sự
+   - [x] `GET /api/v1/reports/spending-by-category`
+   - [x] `GET /api/v1/reports/trends`
+   - [x] Verify `TransactionGrpcClient` hoạt động thực sự
 
 ### ⚡ Ưu Tiên Trung Bình
 
-4. **Nâng cấp `notification-service`**
-   - [ ] Thêm REST controller (receive, fcm/register, history)
-   - [ ] Thêm Database (entity + repository)
-   - [ ] Tích hợp FCM Firebase (hoặc giử simulation)
+4. **Nâng cấp `notification-service`** ✅ Hoàn thiện
+   - [x] Thêm REST controller (receive, fcm/register, history, fcm/status)
+   - [x] Thêm Database (entity + repository)
+   - [x] Tích hợp FCM Firebase Admin SDK 9.3.0 (production/simulation dual-mode)
+   - [x] Parser ngân hàng sâu (MB Bank, VCB, MoMo + generic)
+   - [x] Kafka publish `notification.parsed`
 
-5. **Tạo `category-service`** (hoặc quyết định giữ category trong wallet-service)
-   - [ ] Nếu tách: tạo module, migrate category logic từ wallet-service
-   - [ ] gRPC Server cho `AutoCategorize`
+5. **`category-service`** ✅ Đã quyết định giữ category logic trong `wallet-service`.
 
 ### 🔮 Ưu Tiên Thấp (Future)
 
-6. **`ocr-service`** — Tích hợp Tesseract/Google Vision
-7. **`ai-service`** — NLP, Speech-to-Text, Anomaly detection
-8. **`config-service`** module riêng
+6. **Hoàn thiện `ocr-service`** — Kết nối Tesseract/Google Vision thực tế với native library.
+7. **Hoàn thiện `ai-service`** — Gọi Gemini/OpenAI API thật cho NLP và Anomaly detection.
+8. ~~**`config-service`** module riêng~~ (Đã có sẵn tại folder `config` ở root)
 
 ---
 
 ## 5. Vấn Đề Kỹ Thuật Cần Chú Ý
 
-1. **API prefix không nhất quán**: Một số endpoint dùng `/api/v1/`, số khác dùng `/api/` (DashboardController dùng `/api/dashboard`)
-2. **wallet-service có TransactionController nội bộ** — có thể conflict với `transaction-service`
+1. ~~**API prefix không nhất quán**~~: Đã thống nhất dùng `/api/v1/` cho tất cả các controller.
+2. ~~**wallet-service có TransactionController nội bộ**~~: Đã xóa, hiện chỉ sử dụng API từ `transaction-service`.
 3. **gRPC stubs trong transaction-service** chưa connect với business logic
-4. **Kafka consumer trong notification-service** chưa implement (chỉ có RabbitMQ)
-5. **category-service** chưa tồn tại nhưng được cần bởi reporting-service và transaction-service
+4. ~~**Kafka consumer trong notification-service** chưa implement~~ ✅ Đã có Kafka consumers + publisher
+5. ~~**category-service** chưa tồn tại~~: Đã thống nhất dùng wallet-service làm Category Hub. Mọi API tham chiếu qua `categoryId`.
 

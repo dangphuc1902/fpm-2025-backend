@@ -73,10 +73,12 @@ public class JwtAuthenticationFilter implements WebFilter {
     }
 
     private boolean isPublicPath(String path) {
-        return path.startsWith("/api/auth/register") ||
-               path.startsWith("/api/auth/login") ||
-               path.startsWith("/api/auth/google") ||
-               path.startsWith("/api/auth/refresh") ||
+        return path.startsWith("/api/v1/auth/register") ||
+               path.startsWith("/api/v1/auth/login") ||
+               path.startsWith("/api/v1/auth/google") ||
+               path.startsWith("/api/v1/auth/refresh") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui") ||
                path.startsWith("/actuator");
     }
 }

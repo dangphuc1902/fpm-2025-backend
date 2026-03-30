@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.YearMonth;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/api/v1/dashboard")
 public class DashboardController {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);

@@ -23,13 +23,19 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         // Public endpoints
-                        .pathMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/auth/google").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/google").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                         
                         // Actuator endpoints
                         .pathMatchers("/actuator/**").permitAll()
+                        
+                        // Swagger/OpenAPI endpoints
+                        .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                        
+                        // Fallback endpoint
+                        .pathMatchers("/fallback").permitAll()
                         
                         // All other requests need authentication
                         .anyExchange().authenticated()

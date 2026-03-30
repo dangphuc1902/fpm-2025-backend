@@ -14,7 +14,8 @@
 	<modules>
 		<module>api-gateway</module>
 		<module>user-auth-service</module>
-		<!-- <module>ocr-service</module> -->
+		<module>ocr-service</module>
+		<module>ai-service</module>
 		<module>notification-service</module>
 		<module>wallet-service</module>
 		<module>reporting_service</module>

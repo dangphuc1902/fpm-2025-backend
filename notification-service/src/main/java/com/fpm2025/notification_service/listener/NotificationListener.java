@@ -21,6 +21,8 @@ import java.util.Map;
  *   - transaction.created: notify user có giao dịch mới
  *   - transaction.deleted: notify user đã xóa giao dịch
  *   - user.created: welcome notification
+ *   - wallet.created: thông báo ví mới được tạo
+ *   - balance.changed: thông báo biến động số dư ví
  */
 @Service
 @RequiredArgsConstructor
@@ -43,8 +45,6 @@ public class NotificationListener {
         log.info("📨 [RabbitMQ] Received notification task");
         log.info("   Content: {}", message);
         log.info("==============================================");
-        // Lưu vào DB history nếu có header userId
-        // (hiện tại message chỉ là String, cần upgrade sang Object nếu muốn lưu history)
     }
 
     // =========================================================================
@@ -65,11 +65,11 @@ public class NotificationListener {
             String emoji = "INCOME".equals(type) ? "💰" : "💸";
             String title = emoji + " Giao dịch " + ("INCOME".equals(type) ? "thu nhập" : "chi tiêu");
             String body  = String.format("%s %s %s", amount, currency,
-                    desc.isBlank() ? "" : "- " + desc);
+                    desc != null && !desc.isBlank() ? "- " + desc : "");
 
             notificationService.sendFcm(userId, title, body, "TRANSACTION", Map.of(
                     "type", type,
-                    "amount", amount != null ? amount : 0
+                    "amount", amount != null ? amount.toString() : "0"
             ));
             log.info("Kafka: Processed transaction.created for userId={}", userId);
         } catch (Exception e) {
@@ -94,7 +94,7 @@ public class NotificationListener {
                     "🗑️ Xóa giao dịch",
                     String.format("Giao dịch #%s (%s VND) đã được xóa", txId, amount),
                     "TRANSACTION",
-                    Map.of("transactionId", txId != null ? txId : 0));
+                    Map.of("transactionId", txId != null ? txId.toString() : "0"));
         } catch (Exception e) {
             log.error("Kafka: Error handling transaction.deleted event", e);
         }
@@ -119,6 +119,55 @@ public class NotificationListener {
             log.info("Kafka: Welcome notification sent for userId={}", userId);
         } catch (Exception e) {
             log.error("Kafka: Error handling user.created event", e);
+        }
+    }
+
+    // =========================================================================
+    // Kafka: wallet.created → Thông báo ví mới
+    // =========================================================================
+
+    @KafkaListener(topics = "wallet.created", groupId = "notification-service")
+    public void handleWalletCreated(@Payload Map<String, Object> event) {
+        try {
+            Long userId = getLong(event, "userId");
+            if (userId == null) return;
+
+            String walletName = (String) event.getOrDefault("walletName", "Ví mới");
+
+            notificationService.sendFcm(userId,
+                    "👛 Ví mới đã tạo",
+                    String.format("Ví '%s' đã được tạo thành công.", walletName),
+                    "SYSTEM",
+                    Map.of("event", "wallet.created"));
+            log.info("Kafka: Wallet created notification sent for userId={}", userId);
+        } catch (Exception e) {
+            log.error("Kafka: Error handling wallet.created event", e);
+        }
+    }
+
+    // =========================================================================
+    // Kafka: balance.changed → Thông báo biến động số dư
+    // =========================================================================
+
+    @KafkaListener(topics = "balance.changed", groupId = "notification-service")
+    public void handleBalanceChanged(@Payload Map<String, Object> event) {
+        try {
+            Long userId = getLong(event, "userId");
+            if (userId == null) return;
+
+            Object newBalance = event.get("newBalance");
+            Object change = event.get("changeAmount");
+
+            notificationService.sendFcm(userId,
+                    "💳 Biến động số dư ví",
+                    String.format("Số dư thay đổi: %s VND. Số dư hiện tại: %s VND", change, newBalance),
+                    "WALLET",
+                    Map.of(
+                            "event", "balance.changed",
+                            "newBalance", newBalance != null ? newBalance.toString() : "0"
+                    ));
+        } catch (Exception e) {
+            log.error("Kafka: Error handling balance.changed event", e);
         }
     }
 

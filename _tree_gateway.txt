@@ -1,0 +1,17 @@
+Folder PATH listing for volume DangPhuc
+Volume serial number is A9F7-ED10
+D:\WORKSPACE\APP_DEV\FPM_PROJECT\BACKEND\API-GATEWAY\SRC\MAIN\JAVA
+└───com
+    └───fpm_2025
+        └───api_gateway
+            │   ApiGatewayApplication.java
+            │   
+            ├───config
+            │       CorsConfig.java
+            │       RouteConfig.java
+            │       SecurityConfig.java
+            │       
+            └───filter
+                    JwtAuthenticationFilter.java
+                    LoggingFilter.java
+                    

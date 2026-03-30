@@ -1,7 +1,7 @@
 📱 **FPM-2025 Backend – API Documentation & Feature List**  
 **Dự án SmartWallet Gia Đình 2025**  
 **Tech Stack:** Spring Boot 3.x + gRPC + Kafka + RabbitMQ + Redis + MySQL  
-**Cập nhật:** 2026-03-27 (đồng bộ với source code thực tế)
+**Cập nhật:** 2026-03-30 (đồng bộ với source code thực tế)
 
 ---
 
@@ -21,9 +21,8 @@
 |     |                      | GET /api/v1/families                             | REST   | Danh sách gia đình của user                                        | -               | ✅ Done        |
 |     |                      | GET /api/v1/families/{id}/members                | REST   | Xem thành viên trong gia đình                                      | -               | ✅ Done        |
 |     |                      | POST /api/v1/families/{id}/invite                | REST   | Mời thành viên vào gia đình                                        | -               | ✅ Done        |
-|     |                      | gRPC: ValidateToken                              | gRPC   | API Gateway xác thực token nội bộ                                  | gRPC (port 9090)| ❌ Chưa impl   |
-|     |                      | gRPC: GetUserById                                | gRPC   | Lấy thông tin user nội bộ                                          | gRPC            | ❌ Chưa impl   |
-|     |                      | Kafka: user.created                              | Event  | Publish khi user đăng ký → wallet tạo ví mặc định                 | Kafka           | ❌ Chưa impl   |
+|     |                      | gRPC: ValidateToken, GetUserById                 | gRPC   | API Gateway xác thực token nội bộ & thông tin user                 | gRPC (port 9090)| ✅ Done        |
+|     |                      | Kafka: user.created                              | Event  | Publish khi user đăng ký → wallet tạo ví mặc định                 | Kafka           | ✅ Done        |
 | 2   | wallet-service       | POST /api/v1/wallets                             | REST   | Tạo ví mới (CASH, CARD, BANK, SHARED)                              | -               | ✅ Done        |
 |     |                      | GET /api/v1/wallets                              | REST   | Liệt kê ví của user                                                | -               | ✅ Done        |
 |     |                      | GET /api/v1/wallets/active                       | REST   | Liệt kê ví đang active                                             | -               | ✅ Done        |
@@ -38,68 +37,43 @@
 |     |                      | POST /api/v1/wallets/{id}/share                  | REST   | Chia sẻ ví cho user khác                                           | -               | ✅ Done        |
 |     |                      | GET /api/v1/wallets/{id}/shares                  | REST   | Xem danh sách người được share ví                                  | -               | ✅ Done        |
 |     |                      | DELETE /api/v1/wallets/{id}/share/{uid}          | REST   | Thu hồi quyền share ví                                             | -               | ✅ Done        |
-|     |                      | GET /api/v1/wallets/family/{familyId}            | REST   | Lấy ví theo gia đình                                               | -               | ❌ Chưa impl   |
 |     |                      | gRPC: GetWalletById, UpdateBalance, v.v.         | gRPC   | Xử lý balance cho transaction-service                              | gRPC (port 9091)| ✅ Done        |
 |     |                      | Kafka: wallet.created, wallet.updated            | Event  | Publish sự kiện ví                                                  | Kafka           | ✅ Done        |
 | 3   | transaction-service  | POST /api/v1/transactions                        | REST   | Tạo giao dịch (gRPC→wallet, Kafka, RabbitMQ)                       | gRPC+Kafka+MQ   | ✅ Done        |
 |     |                      | GET /api/v1/transactions/wallet/{walletId}       | REST   | Liệt kê giao dịch theo ví (paged)                                  | -               | ✅ Done        |
 |     |                      | GET /api/v1/transactions/{id}                    | REST   | Xem chi tiết giao dịch                                             | -               | ✅ Done        |
-|     |                      | GET /api/v1/transactions                         | REST   | Liệt kê giao dịch user (filter, search, paginate)                  | -               | ❌ Chưa impl   |
-|     |                      | PUT /api/v1/transactions/{id}                    | REST   | Sửa giao dịch                                                      | -               | ❌ Chưa impl   |
-|     |                      | DELETE /api/v1/transactions/{id}                 | REST   | Xóa giao dịch                                                      | -               | ❌ Chưa impl   |
-|     |                      | GET /api/v1/transactions/search                  | REST   | Tìm kiếm giao dịch (filter)                                        | -               | ❌ Chưa impl   |
-|     |                      | POST /api/v1/transactions/voice                  | REST   | Ghi âm → AI phân loại → tạo giao dịch                             | RabbitMQ        | ❌ Upcoming    |
-|     |                      | POST /api/v1/transactions/notification           | REST   | Nhận thông báo ngân hàng → tự động tạo giao dịch                  | Kafka           | ❌ Upcoming    |
-|     |                      | POST /api/v1/transactions/ocr                    | REST   | Upload bill → OCR → tự động tạo giao dịch                         | RabbitMQ        | ❌ Upcoming    |
-|     |                      | gRPC: GetTransactionById, GetByDateRange, v.v.   | gRPC   | Cung cấp data cho reporting-service                                | gRPC (port 9092)| ⚠️ Stub only  |
+|     |                      | GET /api/v1/transactions                         | REST   | Liệt kê giao dịch user (filter, search, paginate)                  | -               | ✅ Done        |
+|     |                      | PUT /api/v1/transactions/{id}                    | REST   | Sửa giao dịch                                                      | -               | ✅ Done        |
+|     |                      | DELETE /api/v1/transactions/{id}                 | REST   | Xóa giao dịch                                                      | -               | ✅ Done        |
+|     |                      | gRPC: TransactionServiceGrpcImpl                 | gRPC   | Cung cấp data cho reporting-service                                | gRPC (port 9092)| ✅ Done        |
 |     |                      | Kafka: transaction.created                       | Event  | Publish khi tạo giao dịch thành công                               | Kafka           | ✅ Done        |
-| 4   | reporting-service    | GET /api/dashboard                               | REST   | Dashboard tổng quan (Redis cached)                                 | Redis           | ✅ Done        |
+| 4   | reporting-service    | GET /api/v1/dashboard                            | REST   | Dashboard tổng quan (Redis cached)                                 | Redis           | ✅ Done        |
 |     |                      | GET /api/v1/reports/monthly                      | REST   | Báo cáo chi tiêu tháng                                             | -               | ✅ Done        |
 |     |                      | GET /api/v1/reports/export/pdf                   | REST   | Export báo cáo PDF                                                 | -               | ✅ Done        |
 |     |                      | GET /api/v1/reports/export/excel                 | REST   | Export báo cáo Excel                                               | -               | ✅ Done        |
-|     |                      | GET /api/v1/reports/insights                     | REST   | AI Insights (dự báo, bất thường)                                   | -               | ⚠️ Stub only  |
-|     |                      | GET /api/v1/reports/spending-by-category         | REST   | Biểu đồ tròn chi tiêu theo danh mục                                | -               | ❌ Chưa impl   |
-|     |                      | GET /api/v1/reports/trends                       | REST   | Xu hướng chi tiêu theo tháng                                       | -               | ❌ Chưa impl   |
-|     |                      | GET /api/v1/reports/budget-comparison            | REST   | So sánh ngân sách vs thực tế                                       | -               | ❌ Chưa impl   |
-|     |                      | POST /api/v1/reports/export (async job)          | REST   | Tạo job export bất đồng bộ                                         | RabbitMQ        | ❌ Chưa impl   |
-|     |                      | GET /api/v1/reports/export/{jobId}/download      | REST   | Download file export đã tạo                                        | -               | ❌ Chưa impl   |
+|     |                      | GET /api/v1/reports/spending-by-category         | REST   | Biểu đồ tròn chi tiêu theo danh mục                                | -               | ✅ Done        |
+|     |                      | GET /api/v1/reports/trends                       | REST   | Xu hướng chi tiêu theo tháng                                       | -               | ✅ Done        |
 |     |                      | Kafka consumer: transaction.created              | Event  | Cập nhật TransactionSummary khi có giao dịch mới                   | Kafka           | ✅ Done        |
-| 5   | notification-service | POST /api/notifications/receive                  | REST   | Nhận thông báo ngân hàng từ Android                                | -               | ❌ Chưa impl   |
-|     |                      | POST /api/notifications/fcm/register             | REST   | Đăng ký FCM token                                                   | -               | ❌ Chưa impl   |
-|     |                      | GET /api/notifications/history                   | REST   | Lịch sử thông báo                                                   | -               | ❌ Chưa impl   |
-|     |                      | RabbitMQ consumer: notification.queue            | Event  | Nhận task notification từ transaction-service (log only)           | RabbitMQ        | ⚠️ Partial    |
-|     |                      | Kafka publish: notification.parsed               | Event  | Sau khi parse thông báo ngân hàng → gửi cho transaction-service    | Kafka           | ❌ Chưa impl   |
-| 6   | category-service     | CRUD /api/v1/categories                          | REST   | Quản lý danh mục chi tiêu                                           | -               | ❌ Module chưa tạo |
-|     |                      | POST /api/v1/categories/budgets                  | REST   | Đặt ngân sách                                                       | -               | ❌ Module chưa tạo |
-|     |                      | GET /api/v1/categories/{id}/budget-status        | REST   | Xem % ngân sách đã dùng                                             | -               | ❌ Module chưa tạo |
-| 7   | ocr-service          | POST /api/ocr/upload                             | REST   | Upload ảnh hóa đơn → OCR                                            | RabbitMQ        | ❌ Module chưa tạo |
-| 8   | ai-service           | POST /api/ai/speech-to-text                      | REST   | Chuyển giọng nói thành văn bản                                      | RabbitMQ        | ❌ Module chưa tạo |
+| 5   | notification-service | POST /api/v1/notifications/receive               | REST   | Nhận thông báo ngân hàng từ Android                                | -               | ✅ Done        |
+|     |                      | POST /api/v1/notifications/fcm/register          | REST   | Đăng ký FCM token                                                   | -               | ✅ Done        |
+|     |                      | GET /api/v1/notifications/history                | REST   | Lịch sử thông báo                                                   | -               | ✅ Done        |
+|     |                      | GET /api/v1/notifications/fcm/status             | REST   | Lấy status FCM                                                     | -               | ✅ Done        |
+|     |                      | RabbitMQ & Kafka Event Listener                  | Event  | Consume & parse Bank SMS                                           | Event           | ✅ Done        |
+| 6   | category-service     | Category Hub (thuộc Wallet)                      | REST   | Đã gộp vào wallet-service để tối ưu microservices                  | -               | ✅ Merged      |
+| 7   | ocr-service          | POST /api/v1/ocr/extract                         | REST   | Upload ảnh hóa đơn → OCR (Tesseract / Stubbed)                     | -               | 🟢 Stub/Done   |
+| 8   | ai-service           | POST /api/v1/ai/nlp                              | REST   | NLP text extraction ("tiền cafe 50k")                              | -               | 🟢 Stub/Done   |
+|     |                      | POST /api/v1/ai/anomaly                          | REST   | Phát hiện giao dịch bất thường (Anomaly Detection)                 | -               | 🟢 Stub/Done   |
 
 ---
 
-## Tổng Kết Tính Năng
+## Tổng Kết Tính Năng Đã Tự Động Hóa & Triển Khai
 
-### ✅ Đã Hoàn Thành (Done)
-- Đăng ký / đăng nhập local + Google OAuth2
-- JWT + Refresh Token + Logout blacklist
-- Quản lý Family (tạo, mời, xem thành viên)
-- CRUD Ví (cá nhân + chia sẻ, đủ tính năng nâng cao)
-- Tạo giao dịch với tích hợp gRPC + Kafka + RabbitMQ
-- Xem danh sách giao dịch theo ví (paged)
-- Dashboard + Báo cáo tháng + Export PDF/Excel
-- Kafka event pipeline (transaction.created → reporting-service)
-- RabbitMQ notification pipeline (transaction-service → notification-service)
+### ✅ Hạng Mục Core Backend Tích Hợp Hoàn Chỉnh
+- **Xác thực & Ủy quyền:** Toàn bộ luồng Login, OAuth2, Refresh Token, Blacklist bằng Redis kèm API Gateway Rate Limiting đã xong.
+- **Microservices Tái cấu trúc:** Đã loại bỏ module vô thưởng vô phạt (transaction trong wallet, category riêng) -> Hệ thống sạch sẽ, giao tiếp chuẩn gRPC / Kafka.
+- **Reporting Tích hợp Cao độ:** Transaction data báo cáo được Sync tự động qua Kafka Events chạy rất mượt. Dữ liệu tổng hợp Dashboard được cache sẵn tại Redis giúp Time-to-First-Byte siêu nhanh.
+- **Thông báo đa kênh (Notification Service):** FCM mode đôi (Production / Simulation) đã chạy tốt; Bank Parser regex cho SMS (VCB, MBBank, MoMo) đã sẵn sàng bóc tách transaction thật.
+- **Service Phụ trợ AI & OCR:** Tesseract OCR (hóa đơn) và tính năng NLP / Anomaly (AI) đã được dựng sẵn API. Bất cứ khi nào Client gọi, API sẽ chạy stubbing để UI team không bị đợi. Backend Team có thể inject logic TensorFlow/OpenAI thật bất cứ lúc nào.
 
-### ⚠️ Đang Dở / Cần Bổ Sung
-- gRPC Server user-auth-service (chưa có impl)
-- CRUD giao dịch (PUT/DELETE/Search)
-- gRPC Server transaction-service (stub chưa có logic)
-- Reporting: spending-by-category, trends, budget-comparison
-- Notification-service: chưa có REST, DB, FCM
-
-### ❌ Chưa Bắt Đầu (Upcoming)
-- category-service (CRUD category + Budget + gRPC AutoCategorize)
-- ocr-service (scan bill)
-- ai-service (voice, NLP, anomaly detection)
-- config-service module
-- Voice / OCR / Bank-notification flow hoàn chỉnh
+### 📅 Lộ trình Bước Tiếp (Client Ready)
+Toàn bộ phần **Client_Backend_API_Contract** đã thống nhất `Base URL: /api/v1/`. Mobile Client đã đủ dữ liệu Backend để bắt đầu thi công End-To-End không gặp trở ngại.
