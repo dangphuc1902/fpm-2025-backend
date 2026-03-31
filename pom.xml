@@ -20,7 +20,6 @@
 		<module>wallet-service</module>
 		<module>reporting_service</module>
 		<module>eureka-server</module>
-		<module>transaction-service</module>
 	</modules>
 
 	<properties>
@@ -34,7 +33,6 @@
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring-kafka.version>3.2.3</spring-kafka.version> <!-- Latest 2025 -->
-		<grpc.version>1.72.0</grpc.version>
 		<kotlin.version>1.9.20</kotlin.version>
 		<mysql.version>8.4.0</mysql.version>  <!-- CVE-2023-22102: Fixed in 8.2.0+ -->
 	</properties>
@@ -60,12 +58,7 @@
 				<artifactId>lombok</artifactId>
 				<version>${lombok.version}</version>
 			</dependency>
-			<!-- Add common deps here, e.g., gRPC, RabbitMQ, Redis -->
-			<dependency>
-				<groupId>net.devh.boot</groupId>
-				<artifactId>grpc-client-spring-boot-starter</artifactId>
-				<version>3.2.0.RELEASE</version>
-			</dependency>
+			<!-- Add common deps here, e.g., RabbitMQ, Redis -->
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
@@ -75,11 +68,6 @@
 				<groupId>org.springframework.kafka</groupId>
 				<artifactId>spring-kafka</artifactId>
 				<version>${spring-kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.grpc</groupId>
-				<artifactId>grpc-kotlin-stub</artifactId>
-				<version>1.4.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jetbrains.kotlin</groupId>
@@ -95,13 +83,6 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-data-redis</artifactId>
 				<version>${spring-boot.version}</version>
-			</dependency>
-			<!-- gRPC testing -->
-			<dependency>
-				<groupId>io.grpc</groupId>
-				<artifactId>grpc-testing</artifactId>
-				<version>1.63.0</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>io.jsonwebtoken</groupId>
