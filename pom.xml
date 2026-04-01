@@ -20,7 +20,6 @@
 		<module>wallet-service</module>
 		<module>reporting_service</module>
 		<module>eureka-server</module>
-		<module>transaction-service</module>
 	</modules>
 
 	<properties>

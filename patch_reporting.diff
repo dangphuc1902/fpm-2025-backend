@@ -1,0 +1,59 @@
+--- reporting_service/src/main/java/com/fpm_2025/reportingservice/service/ReportingService.java
++++ reporting_service/src/main/java/com/fpm_2025/reportingservice/service/ReportingService.java
+@@ -62,10 +62,8 @@
+         LocalDateTime endDate = startDate.withDayOfMonth(startDate.lengthOfMonth()).atTime(23, 59, 59);
+         String period = startDate.getYear() + "-" + String.format("%02d", startDate.getMonthValue());
+
+-        List<TransactionData> transactions = transactionClient
+-            .getTransactionsByDateRange(userId, startDate, endDate);
+-
+-        // 2️⃣ Get wallet information
+-        List<WalletData> wallets = walletClient.getUserWallets(userId);
++        List<TransactionData> transactions = Collections.emptyList();
++
++        // 2️⃣ Get wallet information
++        List<WalletData> wallets = Collections.emptyList();
+
+@@ -82,10 +80,8 @@
+         LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
+
+-        List<TransactionData> transactions = transactionClient
+-            .getTransactionsByDateRange(userId, startDate, endDate);
+-
+-        List<WalletData> wallets = walletClient.getUserWallets(userId);
++        List<TransactionData> transactions = Collections.emptyList();
++
++        List<WalletData> wallets = Collections.emptyList();
+
+@@ -93,8 +89,8 @@
+         LocalDateTime endDate = ym.atEndOfMonth().atTime(23, 59, 59);
+
+-        List<TransactionData> transactions = transactionClient
+-            .getTransactionsByDateRange(userId, startDate, endDate);
++        List<TransactionData> transactions = Collections.emptyList();
+
+@@ -107,8 +103,8 @@
+         LocalDateTime endDateRange = YearMonth.from(now).atEndOfMonth().atTime(23, 59, 59);
+
+-        List<TransactionData> allTransactions = transactionClient
+-            .getTransactionsByDateRange(userId, startDateRange, endDateRange);
++        List<TransactionData> allTransactions = Collections.emptyList();
+
+@@ -124,8 +120,8 @@
+             LocalDateTime end   = ym.atEndOfMonth().atTime(23, 59, 59);
+
+-            List<TransactionData> txns = transactionClient.getTransactionsByDateRange(userId, start, end);
++            List<TransactionData> txns = Collections.emptyList();
+             final String filterType = type.toUpperCase();
+
+@@ -141,8 +137,8 @@
+         LocalDateTime gRpcStart = startYm.atDay(1).atStartOfDay();
+         LocalDateTime gRpcEnd   = endYm.atEndOfMonth().atTime(23, 59, 59);
+-        List<TransactionData> allTxns = transactionClient.getTransactionsByDateRange(userId, gRpcStart, gRpcEnd);
++        List<TransactionData> allTxns = Collections.emptyList();
+
+@@ -204,10 +200,10 @@
+         // Get wallets total balance
+-        List<WalletData> wallets = walletClient.getUserWallets(userId);
++        List<WalletData> wallets = Collections.emptyList();
+         BigDecimal totalBalance = wallets.stream()
