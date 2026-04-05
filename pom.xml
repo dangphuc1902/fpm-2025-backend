@@ -28,7 +28,7 @@
 			com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}
 		</configuration-protocArtifact>
 		<java.version>21</java.version>
-		<lombok.version>1.18.36</lombok.version>
+		<lombok.version>1.18.40</lombok.version>
 		<spring-boot.version>3.5.5</spring-boot.version>  <!-- Latest 2025 -->
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>

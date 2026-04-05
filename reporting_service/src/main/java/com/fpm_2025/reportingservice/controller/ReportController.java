@@ -161,10 +161,55 @@ public class ReportController {
                 : java.time.YearMonth.now().toString();
 
         log.info("budget-comparison: userId={}, month={}", user.getId(), month);
-
-        var comparisonData = reportingService.getBudgetComparison(user.getId(), month);
-        return BaseResponse.success(comparisonData);
-    }
+ 
+         var comparisonData = reportingService.getBudgetComparison(user.getId(), month);
+         return BaseResponse.success(comparisonData);
+     }
+ 
+     @PostMapping("/export")
+     @PreAuthorize("isAuthenticated()")
+     public BaseResponse<Long> exportAsync(
+             @AuthenticationPrincipal UserPrincipal user,
+             @RequestBody ReportRequest request) {
+         
+         log.info("Requesting async export for user: {}, format: {}", user.getId(), request.getFormat());
+         request.setUserId(user.getId());
+         
+         Long jobId = reportingService.submitExportJob(user.getId(), request);
+         return BaseResponse.success(jobId, "Export job submitted successfully. Use its ID to check status.");
+     }
+ 
+     @GetMapping("/export/{jobId}")
+     @PreAuthorize("isAuthenticated()")
+     public BaseResponse<com.fpm_2025.reportingservice.domain.model.ExportJob> getExportStatus(
+             @AuthenticationPrincipal UserPrincipal user,
+             @PathVariable Long jobId) {
+         
+         return BaseResponse.success(reportingService.getExportJobStatus(jobId, user.getId()));
+     }
+ 
+     @GetMapping("/export/{jobId}/download")
+     @PreAuthorize("isAuthenticated()")
+     public ResponseEntity<Resource> downloadExportResult(
+             @AuthenticationPrincipal UserPrincipal user,
+             @PathVariable Long jobId) {
+         
+         com.fpm_2025.reportingservice.domain.model.ExportJob job = reportingService.getExportJobStatus(jobId, user.getId());
+         
+         if (!"DONE".equals(job.getStatus().name())) {
+             return ResponseEntity.badRequest().build();
+         }
+         
+         byte[] data = reportingService.downloadReport(job.getFileUrl());
+         ByteArrayResource resource = new ByteArrayResource(data);
+         
+         String contentType = job.getFormat() == ExportFormat.PDF ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+         
+         return ResponseEntity.ok()
+                 .contentType(MediaType.parseMediaType(contentType))
+                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + job.getFileName() + "\"")
+                 .body(resource);
+     }
 
     @GetMapping("/insights")
     @PreAuthorize("isAuthenticated()")

@@ -273,6 +273,38 @@ public class WalletService implements WalletServiceImp{
         return walletRepository.countByUserId(userId);
     }
 
+    public List<WalletResponse> getFamilyWallets(Long familyId) {
+        log.info("Fetching all wallets for family: {}", familyId);
+        return walletRepository.findByFamilyId(familyId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void createDefaultWallet(Long userId) {
+        log.info("Creating default wallet for new user: {}", userId);
+        
+        // Already checked if exists? For safety, re-check
+        if (walletRepository.existsByUserIdAndName(userId, "Ví Tiền Mặt")) {
+            log.warn("Default wallet already exists for user: {}", userId);
+            return;
+        }
+
+        WalletEntity wallet = WalletEntity.builder()
+                .userId(userId)
+                .name("Ví Tiền Mặt")
+                .type(WalletType.CASH)
+                .currency("VND")
+                .balance(BigDecimal.ZERO)
+                .icon("cash_icon")
+                .isActive(true)
+                .isDeleted(false)
+                .build();
+
+        walletRepository.save(wallet);
+        log.info("Default wallet created for user: {}", userId);
+    }
+
     // Mapping method
     private WalletResponse mapToResponse(WalletEntity entity) {
         return WalletResponse.builder()

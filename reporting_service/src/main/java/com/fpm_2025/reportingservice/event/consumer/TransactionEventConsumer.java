@@ -19,10 +19,20 @@ public class TransactionEventConsumer {
 
     private final ObjectMapper objectMapper;
     private final TransactionSummaryRepository summaryRepository;
+    private final org.springframework.cache.CacheManager cacheManager;
 
-    public TransactionEventConsumer(ObjectMapper objectMapper, TransactionSummaryRepository summaryRepository) {
+    public TransactionEventConsumer(ObjectMapper objectMapper, TransactionSummaryRepository summaryRepository,
+                                    org.springframework.cache.CacheManager cacheManager) {
         this.objectMapper = objectMapper;
         this.summaryRepository = summaryRepository;
+        this.cacheManager = cacheManager;
+    }
+
+    private void clearDashboardCache() {
+        if (cacheManager != null && cacheManager.getCache("dashboard") != null) {
+            cacheManager.getCache("dashboard").clear();
+            log.info("Reporting Dashboard cache cleared due to transaction event");
+        }
     }
 
     @KafkaListener(topics = "transaction.created", groupId = "reporting-group")
@@ -53,8 +63,25 @@ public class TransactionEventConsumer {
             summaryRepository.save(summary);
             log.info("Kafka: Updated reporting summary for userId={} period={}", event.getUserId(), period);
 
+            // Clear cache to reflect new data on dashboard
+            clearDashboardCache();
+
         } catch (Exception e) {
             log.error("Kafka: Failed to process transaction.created event", e);
         }
+    }
+
+    @KafkaListener(topics = "transaction.updated", groupId = "reporting-group")
+    public void consumeTransactionUpdated(String message) {
+        log.info("Kafka: Received transaction.updated event, clearing cache...");
+        clearDashboardCache();
+        // Additional logic to update summary if needed...
+    }
+
+    @KafkaListener(topics = "transaction.deleted", groupId = "reporting-group")
+    public void consumeTransactionDeleted(String message) {
+        log.info("Kafka: Received transaction.deleted event, clearing cache...");
+        clearDashboardCache();
+        // Additional logic...
     }
 }

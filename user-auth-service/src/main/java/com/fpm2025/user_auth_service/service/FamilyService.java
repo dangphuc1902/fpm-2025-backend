@@ -12,4 +12,9 @@ public interface FamilyService {
     List<FamilyMemberResponse> getFamilyMembers(Long familyId, Long userId);
     FamilyMemberResponse inviteMember(Long familyId, Long inviterId, InviteMemberRequest request);
     List<FamilyResponse> getUserFamilies(Long userId);
+    
+    // Invitation Management
+    void acceptInvitation(Long invitationId, String userEmail);
+    void rejectInvitation(Long invitationId, String userEmail);
+    List<com.fpm2025.user_auth_service.entity.FamilyInvitationEntity> getUserInvitations(String userEmail);
 }

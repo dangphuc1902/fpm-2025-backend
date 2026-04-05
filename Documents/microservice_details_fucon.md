@@ -1,521 +1,62 @@
----
+# 📌 Chi Tiết Kiến Trúc Microservices – FPM-2025
 
-# 1. Chi Tiết Microservices {#services}
+> **Cập nhật:** 2026-04-04 (Đồng bộ thực tế triển khai)
 
-> **Cập nhật lần cuối:** 2026-03-27 | Review source code thực tế  
-> **Xem trạng thái chi tiết:** `Backend_Implementation_Status.md` | `Project_Status_Roadmap.md`
-
----
-
-## 1.1. **config-service (Port: 8888)** — 🔴 Module chưa tạo (dùng embedded config)
-
-**Format:** YAML
-
-### **Chức năng**
-
-* Centralized configuration
-* Environment-specific configs
-* Refresh configs without restart
-
-### **Tech**
-
-* Spring Cloud Config Server
-* Git repository backend
-
-### **Dependencies**
-
-* spring-cloud-config-server
-* spring-boot-actuator
+Dự án **FPM-2025** (Family Personal Management) được xây dựng trên kiến trúc Microservices hiện đại, tối ưu cho khả năng mở rộng và hiệu năng cao.
 
 ---
 
-## 1.2. **eureka-server (Port: 8761)** — ✅ Hoàn chỉnh
+## 1. Danh Sách Các Services & Phân Bổ Cổng (Ports)
 
-**Format:** YAML
-
-### **Chức năng**
-
-* Service discovery & registration
-* Health checks
-* Load balancing metadata
-
-### **Tech**
-
-* Spring Cloud Netflix Eureka
-
-### **Dependencies**
-
-* spring-cloud-starter-netflix-eureka-server
+| Service Name | Port (REST) | Port (gRPC) | Nhiệm Vụ Chính |
+|--------------|-------------|-------------|----------------|
+| **`eureka-server`** | 8761 | - | Service Discovery (Registry) |
+| **`api-gateway`** | 8080 | - | Central Entry Point, Security, Routing |
+| **`config-service`** | 8888 | - | Centralized Configuration Management |
+| **`user-auth-service`** | 8081 | 9090 | Authentication (OAuth2/JWT), Family & User Management |
+| **`wallet-service`** | 8082 | 9091 | Wallet CRUD, Shared Wallets, Category Hub (Manager) |
+| **`transaction-service`**| 8083 | 9092 | Transaction Processing, Audit logs, Balance Sync |
+| **`reporting_service`** | 8084 | - | Dashboard, Statistics, PDF/Excel Exports, Budgets |
+| **`notification-service`**| 8085 | - | FCM Push, Bank SMS Parser (MB, VCB, MoMo) |
+| **`ocr-service`** | 8086 | - | Receipt Processing (Tesseract OCR) |
+| **`ai-service`** | 8087 | - | NLP (Intent Extraction), Anomaly Detection |
 
 ---
 
-## 1.3. **api-gateway (Port: 8080)** — ✅ Cơ bản hoàn chỉnh (thiếu rate limiting, circuit breaker)
+## 2. Công Nghệ Chủ Chốt (Core Stack)
 
-**Format:** YAML
-
-### **Chức năng**
-
-* Single entry point
-* JWT authentication filter
-* Rate limiting
-* Request routing
-* Circuit breaker
-
-### **Tech**
-
-* Spring Cloud Gateway
-* Spring Security
-* Redis (rate limiting)
-
-### **Routes**
-
-```
-/api/auth/**            → user-service  
-/api/wallets/**         → wallet-service  
-/api/transactions/**    → transaction-service  
-/api/categories/**      → category-service  
-/api/reports/**         → reporting-service  
-/api/ocr/**             → ocr-service
-```
-
-### **Dependencies**
-
-* spring-cloud-starter-gateway
-* spring-cloud-starter-circuitbreaker-reactor-resilience4j
-* spring-boot-starter-data-redis-reactive
+- **Framework**: Spring Boot 3.5.5, Spring Cloud (Eureka, Gateway, Config).
+- **Communication**: 
+  - **REST**: Cho external client (Mobile) gọi qua Gateway.
+  - **gRPC**: Cho internal call giữa các service (Transaction → Wallet, Gateway → Auth).
+  - **Kafka**: Cho async event-driven (User Created → Default Wallet, Transaction Created → Reporting Summary).
+- **Persistence**: PostgreSQL (Separate DB per service), Redis (Caching balance, stats, JWT blacklist).
+- **Security**: JWT (HS256), Spring Security, OAuth2 Google.
 
 ---
 
-## 1.4. **user-auth-service (Port: 8081)** — 🟡 ~75% (thiếu gRPC Server impl, Kafka publish)
+## 3. Luồng Nghiệp Vụ Đặc Sắc (Unique Flows)
 
-**Format:** YAML
+### 🧺 Category Hub (Tích hợp trong Wallet)
+Thay vì tách riêng `category-service`, chúng tôi tích hợp danh mục vào `wallet-service` để giảm Network Latency. Các service khác truy cập danh mục qua gRPC hoặc lưu `categoryId` tham chiếu.
 
-### **Chức năng**
+### 🏦 Bank Notification Parser (Notification Service)
+Hệ thống có khả năng tự động bóc tách tin nhắn biến động số dư từ 3 kênh phổ biến nhất Việt Nam: MB Bank, Vietcombank, MoMo. Sau khi parse, hệ thống publish event lên Kafka để `transaction-service` tự động ghi chép chi tiêu mà không cần người dùng nhập tay.
 
-* User registration/login
-* Google OAuth2 integration
-* JWT token generation
-* Profile management
-* Family/Group management
-* Member invitations
-
-### **Database:** `user_db`
-
-**Tables**
-
-* `users`
-* `families`
-* `family_members`
-* `refresh_tokens`
-
-### **APIs (REST)**
-
-```
-POST   /api/auth/register
-POST   /api/auth/login
-POST   /api/auth/google
-POST   /api/auth/refresh
-GET    /api/users/me
-PUT    /api/users/me
-POST   /api/families
-GET    /api/families/{id}/members
-POST   /api/families/{id}/invite
-```
-
-### **gRPC Services**
-
-```
-rpc GetUserById(UserIdRequest) returns (UserResponse)
-rpc ValidateToken(TokenRequest) returns (TokenValidationResponse)
-rpc GetFamilyMembers(FamilyIdRequest) returns (MembersResponse)
-```
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-security
-* spring-boot-starter-oauth2-client
-* spring-boot-starter-data-jpa
-* postgresql
-* jjwt
-* grpc-spring-boot-starter
+### 🏛️ Bảo Mật & Hạ Tầng (Step 2 Completed)
+Chương trình đã chuyển đổi 100% sang **MySQL** (Port 3306) để tối ưu hóa quản lý giao dịch. API Gateway đã được vũ trang hóa bằng **Redis Rate Limiting**, đảm bảo chống Spam/Brute-force hiệu quả.
 
 ---
 
-## 1.5. **wallet-service (Port: 8082)** — 🟢 ~90% Hoàn thiện
+## 4. Quản Lý Dữ Liệu (External Tools)
 
-**Format:** YAML
-
-### **Chức năng**
-
-* CRUD wallets
-* Balance management
-* Multi-currency
-* Shared wallets
-
-### **Database:** `wallet_db`
-
-**Tables**
-
-* `wallets`
-* `wallet_permissions`
-
-### **APIs (REST)**
-
-```
-POST   /api/wallets
-GET    /api/wallets
-GET    /api/wallets/{id}
-PUT    /api/wallets/{id}
-DELETE /api/wallets/{id}
-GET    /api/wallets/family/{familyId}
-```
-
-### **gRPC**
-
-```
-rpc GetWalletById(...)
-rpc UpdateBalance(...)
-rpc ValidateWalletAccess(...)
-```
-
-### **Events Published (Kafka)**
-
-* wallet.created
-* wallet.updated
-* balance.changed
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* grpc-spring-boot-starter
-* spring-kafka
+- **MySQL**: `localhost:3306` (Dockerized).
+- **Redis**: `localhost:6379`.
+- **Kafka**: `localhost:9092` (Zookeeper `2181`).
+- **Kafdrop**: `localhost:9000` (Giao diện web quản lý Kafka topics).
 
 ---
 
-## 1.6. **transaction-service (Port: 8083)** — 🟡 ~60% (thiếu PUT/DELETE/Search, gRPC logic, consumers)
-
-**Format:** YAML
-
-### **Chức năng**
-
-* CRUD transactions
-* Voice input
-* Banking notifications
-* OCR integration
-* Attachments
-* Filtering / searching
-
-### **Database:** `transaction_db`
-
-**Tables**
-
-* `transactions`
-* `attachments`
-* `recurring_transactions`
-
-### **APIs (REST)**
-
-```
-POST   /api/transactions
-POST   /api/transactions/voice
-POST   /api/transactions/notification
-POST   /api/transactions/ocr
-GET    /api/transactions
-GET    /api/transactions/{id}
-PUT    /api/transactions/{id}
-DELETE /api/transactions/{id}
-GET    /api/transactions/search
-```
-
-### **gRPC**
-
-```
-rpc GetTransactionById(...)
-rpc GetTransactionsByWallet(...)
-rpc GetTransactionsByDateRange(...)
-```
-
-### **Kafka**
-
-**Publish**
-
-* transaction.created
-* transaction.updated
-* transaction.deleted
-
-**Consume**
-
-* notification.parsed
-* ocr.completed
-* category.assigned
-
-### **RabbitMQ**
-
-**Send**
-
-* voice.transcription
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* grpc-spring-boot-starter
-* spring-kafka
-* spring-boot-starter-amqp
-* spring-cloud-starter-openfeign
-
----
-
-## 1.7. **category-service (Port: 8084)** — 🔴 0% Module chưa được tạo
-
-### **Chức năng**
-
-* Category management
-* AI auto-categorization
-* Custom categories
-* Budget management
-* Icon & color customization
-
-### **Database:** `category_db`
-
-### **REST APIs**
-
-```
-POST    /api/categories
-GET     /api/categories
-GET     /api/categories/{id}
-PUT     /api/categories/{id}
-DELETE  /api/categories/{id}
-POST    /api/categories/budgets
-GET     /api/categories/{id}/budget-status
-```
-
-### **gRPC**
-
-```
-rpc GetCategoryById(...)
-rpc AutoCategorize(...)
-rpc GetCategoriesByFamily(...)
-```
-
-### **Kafka**
-
-**Consume**
-
-* transaction.created
-
-**Publish**
-
-* category.assigned
-
-### **RabbitMQ**
-
-**Consume**
-
-* ai.classification.result
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* grpc-spring-boot-starter
-* spring-kafka
-* spring-boot-starter-amqp
-* spring-data-redis
-
----
-
-## 1.8. **notification-service (Port: 8085)** — 🔴 ~15% (chỉ có RabbitMQ listener, chưa có REST/DB/FCM)
-
-### **Chức năng**
-
-* Receive Android banking notifications
-* Parse banking formats
-* Extract merchant/amount/time
-* Deduplicate
-* Push FCM notifications
-
-### **Database:** `notification_db`
-
-### **REST APIs**
-
-```
-POST  /api/notifications/receive
-POST  /api/notifications/fcm/register
-GET   /api/notifications/history
-```
-
-### **Kafka Publish**
-
-* notification.parsed
-
-### **RabbitMQ Send**
-
-* fcm.send
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* spring-kafka
-* spring-boot-starter-amqp
-* firebase-admin
-
----
-
-## 1.9. **ocr-service (Port: 8086)** — 🔴 0% Module chưa được tạo
-
-### **Chức năng**
-
-* Image upload
-* OCR (Tesseract / Google Vision)
-* Extract bill data
-* Multi-format support
-
-### **Database:** `ocr_db`
-
-### **REST APIs**
-
-```
-POST  /api/ocr/upload
-GET   /api/ocr/{requestId}/status
-GET   /api/ocr/{requestId}/result
-```
-
-### **Kafka Publish**
-
-* ocr.completed
-
-### **RabbitMQ Consume**
-
-* ocr.process.request
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* spring-kafka
-* spring-boot-starter-amqp
-* tess4j
-* google-cloud-vision
-* spring-boot-starter-cloud-aws
-
----
-
-## 1.10. **ai-service (Port: 8087)** — 🔴 0% Module chưa được tạo
-
-### **Chức năng**
-
-* Speech-to-text
-* NLP categorization
-* Predictive analytics
-* Spending anomaly detection
-* Insights generation
-
-### **Database:** `ai_db`
-
-### **REST APIs**
-
-```
-POST  /api/ai/speech-to-text
-POST  /api/ai/categorize
-GET   /api/ai/predict/{userId}/next-month
-GET   /api/ai/anomalies/{userId}
-GET   /api/ai/insights/{userId}
-```
-
-### **RabbitMQ Consume**
-
-* voice.transcription
-* ai.classification.request
-
-### **AI Models**
-
-* Google Cloud Speech-to-Text
-* Vietnamese BERT
-* TensorFlow Lite
-* Isolation Forest
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* spring-boot-starter-data-jpa
-* postgresql
-* spring-boot-starter-amqp
-* google-cloud-speech
-* deeplearning4j / djl
-* python-bridge
-
----
-
-## 1.11. **reporting-service (Port: 8088)** — 🟡 ~65% (thiếu spending-by-category, trends, budget endpoints)
-
-### **Chức năng**
-
-* Dashboard analytics
-* Spending charts
-* Trends
-* Budget vs actual
-* Export PDF/Excel
-* Scheduled reports
-
-### **Database:** `reporting_db`
-
-### **REST APIs**
-
-```
-GET   /api/reports/dashboard
-GET   /api/reports/spending-by-category
-GET   /api/reports/trends
-GET   /api/reports/budget-comparison
-POST  /api/reports/export
-GET   /api/reports/export/{jobId}/download
-```
-
-### **gRPC Calls**
-
-* transaction-service.GetTransactionsByDateRange
-* category-service.GetCategoriesByFamily
-* wallet-service.GetWalletById
-
-### **RabbitMQ Send**
-
-* report.generate
-
-### **Dependencies**
-
-* spring-boot-starter-web
-* grpc-spring-boot-starter
-* spring-boot-starter-amqp
-* spring-data-redis
-* apache-poi
-* openpdf
-
----
-
----
-
-## Tổng Kết Trạng Thái (2026-03-27)
-
-| Service | Port | Status | Ghi chú |
-|---------|------|--------|----------|
-| config-service | 8888 | 🔴 Chưa tạo | Đang dùng embedded config |
-| eureka-server | 8761 | ✅ Done | Hoàn chỉnh |
-| api-gateway | 8080 | ✅ ~90% | Thiếu rate limit, circuit breaker |
-| user-auth-service | 8081 | 🟡 ~75% | Thiếu gRPC impl, Kafka publish |
-| wallet-service | 8082 | 🟢 ~90% | API phong phú nhất, gRPC done |
-| transaction-service | 8083 | 🟡 ~60% | Thiếu PUT/DELETE/List/Search |
-| category-service | 8084 | 🔴 0% | Module chưa tạo |
-| notification-service | 8085 | 🔴 ~15% | Chỉ có RabbitMQ listener |
-| ocr-service | 8086 | 🔴 0% | Module chưa tạo |
-| ai-service | 8087 | 🔴 0% | Module chưa tạo |
-| reporting-service | 8088 | 🟡 ~65% | Dashboard+Export done, thiếu chart APIs |
-
-> Xem `Backend_Implementation_Status.md` để đánh giá chi tiết từng endpoint.
+## 5. Quy Định API
+Tất cả các API REST phải tuân thủ prefix: `http://{gateway}:8080/api/v1/{service-route}/...`
+Ví dụ: `GET http://localhost:8080/api/v1/wallets/active`

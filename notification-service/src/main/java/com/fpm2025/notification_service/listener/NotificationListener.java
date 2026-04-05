@@ -172,6 +172,42 @@ public class NotificationListener {
     }
 
     // =========================================================================
+    // Kafka: budget.alerts → Cảnh báo ngân sách (80%, 100%)
+    // =========================================================================
+
+    @KafkaListener(topics = "budget.alerts", groupId = "notification-service")
+    public void handleBudgetAlert(@Payload Map<String, Object> event) {
+        try {
+            Long userId = getLong(event, "userId");
+            if (userId == null) return;
+
+            String categoryName = (String) event.getOrDefault("categoryName", "Danh mục");
+            Number threshold   = (Number) event.getOrDefault("thresholdPercent", 0);
+            Object amountUsed  = event.get("amountUsed");
+            Object amountLimit = event.get("amountLimit");
+
+            String emoji = threshold.intValue() >= 100 ? "🚨" : "⚠️";
+            String title = emoji + " Cảnh báo ngân sách " + categoryName;
+            
+            String body;
+            if (threshold.intValue() >= 100) {
+                body = String.format("Bạn đã vượt quá hạn mức chi tiêu (%s/%s)!", amountUsed, amountLimit);
+            } else {
+                body = String.format("Bạn đã sử dụng %d%% hạn mức chi tiêu cho %s (%s/%s).", 
+                        threshold.intValue(), categoryName, amountUsed, amountLimit);
+            }
+
+            notificationService.sendFcm(userId, title, body, "BUDGET", Map.of(
+                    "budgetId", event.getOrDefault("budgetId", "0").toString(),
+                    "threshold", threshold.toString()
+            ));
+            log.info("Kafka: Processed budget.alert for userId={}, threshold={}%", userId, threshold);
+        } catch (Exception e) {
+            log.error("Kafka: Error handling budget.alerts event", e);
+        }
+    }
+
+    // =========================================================================
     // Helper
     // =========================================================================
 

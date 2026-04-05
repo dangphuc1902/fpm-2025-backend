@@ -28,6 +28,9 @@ public class WalletController {
 	@Autowired
 	private WalletService walletService;
 
+    @Autowired
+    private com.fpm_2025.wallet_service.grpc.client.UserGrpcClient userGrpcClient;
+
 	@PostMapping
 	@Operation(summary = "Create new wallet")
 	public ResponseEntity<BaseResponse<WalletResponse>> createWallet(@Valid @RequestBody CreateWalletRequest request,
@@ -141,4 +144,20 @@ public class WalletController {
 		walletService.removeShare(id, targetUserId, userId);
 		return ResponseEntity.ok(BaseResponse.success(null, "Wallet share removed successfully"));
 	}
+
+    @GetMapping("/family/{familyId}")
+    @Operation(summary = "Get all wallets for a specific family")
+    public ResponseEntity<BaseResponse<List<WalletResponse>>> getFamilyWallets(
+            @PathVariable Long familyId,
+            @AuthenticationPrincipal Long userId) {
+        
+        // 1️ Kiểm tra xem user có thuộc family này không (qua gRPC gọi user-auth-service)
+        if (!userGrpcClient.isUserInFamily(userId, familyId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new BaseResponse<>(403, "You are not a member of this family", null));
+        }
+
+        List<WalletResponse> wallets = walletService.getFamilyWallets(familyId);
+        return ResponseEntity.ok(BaseResponse.success(wallets, "Family wallets retrieved successfully"));
+    }
 }

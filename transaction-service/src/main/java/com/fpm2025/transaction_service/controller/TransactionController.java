@@ -4,6 +4,7 @@ import com.fpm2025.transaction_service.dto.BaseResponse;
 import com.fpm2025.transaction_service.dto.TransactionRequest;
 import com.fpm2025.transaction_service.dto.TransactionResponse;
 import com.fpm2025.transaction_service.dto.UpdateTransactionRequest;
+import com.fpm2025.transaction_service.dto.BankNotificationRequest;
 import com.fpm2025.transaction_service.entity.enums.TransactionType;
 import com.fpm2025.transaction_service.service.TransactionService;
 
@@ -42,6 +43,19 @@ public class TransactionController {
         TransactionResponse response = transactionService.createTransaction(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Transaction created successfully"));
+    }
+
+    // =====================================================================
+    // POST /api/v1/transactions/notification — Từ bank notification
+    // =====================================================================
+    @PostMapping("/notification")
+    @Operation(summary = "Automatically process a parsed bank notification")
+    public ResponseEntity<BaseResponse<TransactionResponse>> processNotification(
+            @Valid @RequestBody com.fpm2025.transaction_service.dto.BankNotificationRequest request,
+            @AuthenticationPrincipal Long userId) {
+
+        TransactionResponse response = transactionService.processBankNotification(userId, request);
+        return ResponseEntity.ok(BaseResponse.success(response, "Automated transaction created from notification"));
     }
 
     // =====================================================================
@@ -119,5 +133,32 @@ public class TransactionController {
 
         transactionService.deleteTransaction(userId, id);
         return ResponseEntity.ok(BaseResponse.success(null, "Transaction deleted successfully"));
+    }
+
+    // =====================================================================
+    // ATTACHMENTS
+    // =====================================================================
+
+    @PostMapping("/{id}/attachments")
+    @Operation(summary = "Upload an attachment (receipt/image) for a transaction")
+    public ResponseEntity<BaseResponse<com.fpm2025.transaction_service.entity.TransactionAttachmentEntity>> uploadAttachment(
+            @PathVariable Long id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @AuthenticationPrincipal Long userId) {
+
+        com.fpm2025.transaction_service.entity.TransactionAttachmentEntity response = 
+                transactionService.uploadAttachment(userId, id, file);
+        return ResponseEntity.ok(BaseResponse.success(response, "Attachment uploaded successfully"));
+    }
+
+    @DeleteMapping("/{id}/attachments/{attachmentId}")
+    @Operation(summary = "Delete a transaction attachment")
+    public ResponseEntity<BaseResponse<Void>> deleteAttachment(
+            @PathVariable Long id,
+            @PathVariable Long attachmentId,
+            @AuthenticationPrincipal Long userId) {
+
+        transactionService.deleteAttachment(userId, id, attachmentId);
+        return ResponseEntity.ok(BaseResponse.success(null, "Attachment deleted successfully"));
     }
 }

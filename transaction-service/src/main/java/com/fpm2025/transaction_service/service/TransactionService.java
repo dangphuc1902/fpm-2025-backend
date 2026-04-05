@@ -229,6 +229,48 @@ public class TransactionService {
     }
 
     // =====================================================================
+    // ATTACHMENTS
+    // =====================================================================
+
+    @Transactional
+    public com.fpm2025.transaction_service.entity.TransactionAttachmentEntity uploadAttachment(
+            Long userId, Long transactionId, org.springframework.web.multipart.MultipartFile file) {
+        
+        log.info("Uploading attachment for transaction {} user {}", transactionId, userId);
+        
+        // Check transaction ownership
+        TransactionEntity tx = transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found or access denied"));
+
+        // Simulate file upload logic (Real storage: S3, Cloudinary, etc.)
+        String fileUrl = "https://fpm-storage.local/uploads/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        
+        com.fpm2025.transaction_service.entity.TransactionAttachmentEntity attachment = 
+            com.fpm2025.transaction_service.entity.TransactionAttachmentEntity.builder()
+                .transactionId(transactionId)
+                .fileName(file.getOriginalFilename())
+                .fileType(file.getContentType())
+                .fileUrl(fileUrl)
+                .fileSize(file.getSize())
+                .build();
+                
+        return attachmentRepository.save(attachment);
+    }
+
+    @Transactional
+    public void deleteAttachment(Long userId, Long transactionId, Long attachmentId) {
+        log.info("Deleting attachment {} for transaction {}", attachmentId, transactionId);
+        
+        // Check transaction ownership
+        transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found or access denied"));
+                
+        attachmentRepository.deleteById(attachmentId);
+    }
+
+    private final com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository;
+
+    // =====================================================================
     // gRPC Helper Methods (dùng bởi TransactionServiceGrpcImpl)
     // =====================================================================
 
@@ -337,5 +379,58 @@ public class TransactionService {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Tự động xử lý notification từ ngân hàng (đã parse) để tạo transaction.
+     */
+    @Transactional
+    public TransactionResponse processBankNotification(Long userId, com.fpm2025.transaction_service.dto.BankNotificationRequest request) {
+        log.info("Processing bank notification for userId={}: bank={}, amount={}", 
+                userId, request.getBankName(), request.getAmount());
+
+        // 1. Tìm walletId phù hợp
+        Long walletId = resolveWalletIdByAccount(userId, request.getAccount(), request.getBankName());
+        
+        if (walletId == null) {
+            throw new RuntimeException("Could not identify target wallet for account: " + request.getAccount());
+        }
+
+        // 2. Build TransactionRequest
+        TransactionRequest txRequest = TransactionRequest.builder()
+                .walletId(walletId)
+                .amount(request.getAmount())
+                .currency("VND")
+                .type("INCOME".equalsIgnoreCase(request.getType()) ? TransactionType.INCOME : TransactionType.EXPENSE)
+                .transactionDate(LocalDateTime.now())
+                .description(request.getNote() != null ? request.getNote() : "Auto: " + request.getBankName())
+                .note("Ref: " + request.getTransactionRef())
+                .build();
+
+        // 3. Sử dụng logic tạo transaction chính để đảm bảo cập nhật ví
+        return createTransaction(userId, txRequest);
+    }
+
+    private Long resolveWalletIdByAccount(Long userId, String account, String bankName) {
+        try {
+            com.fpm2025.protocol.wallet.UserWalletsRequest req = com.fpm2025.protocol.wallet.UserWalletsRequest.newBuilder()
+                    .setUserId(userId)
+                    .setActiveOnly(true)
+                    .build();
+            com.fpm2025.protocol.wallet.WalletsResponse response = walletGrpcStub.getWalletsByUserId(req);
+
+            if (response.getWalletsCount() == 0) return null;
+
+            // Heuristic: tìm ví có tên khớp hoặc lấy ví đầu tiên
+            for (var w : response.getWalletsList()) {
+                if (account != null && !account.isEmpty() && w.getName().contains(account)) return w.getId();
+                if (bankName != null && !bankName.isEmpty() && w.getName().toLowerCase().contains(bankName.toLowerCase())) return w.getId();
+            }
+
+            return response.getWalletsList().get(0).getId();
+        } catch (Exception e) {
+            log.error("Failed to resolve wallet via gRPC for bank notification", e);
+            return null;
+        }
     }
 }

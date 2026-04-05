@@ -24,6 +24,9 @@ public class BudgetService {
     
     private final BudgetRepository budgetRepository;
     private final BudgetAlertRepository budgetAlertRepository;
+    private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static final String TOPIC_BUDGET_ALERTS = "budget.alerts";
     
     @Transactional
     public Budget createBudget(Long userId, BudgetRequest request) {
@@ -131,7 +134,21 @@ public class BudgetService {
             .build();
         
         budgetAlertRepository.save(alert);
-        log.warn("Budget alert created: category={}, threshold={}%, used={}/{}", 
+        
+        // Publish to Kafka for notification-service
+        com.fpm_2025.reportingservice.dto.BudgetAlertEvent event = com.fpm_2025.reportingservice.dto.BudgetAlertEvent.builder()
+            .userId(budget.getUserId())
+            .budgetId(budget.getId())
+            .categoryName(budget.getCategoryName())
+            .thresholdPercent(thresholdPercent)
+            .amountLimit(budget.getAmountLimit())
+            .amountUsed(budget.getAmountUsed())
+            .triggeredAt(LocalDateTime.now())
+            .build();
+            
+        kafkaTemplate.send(TOPIC_BUDGET_ALERTS, String.valueOf(budget.getUserId()), event);
+        
+        log.warn("Budget alert created and published: category={}, threshold={}%, used={}/{}", 
             budget.getCategoryName(), thresholdPercent, 
             budget.getAmountUsed(), budget.getAmountLimit());
     }

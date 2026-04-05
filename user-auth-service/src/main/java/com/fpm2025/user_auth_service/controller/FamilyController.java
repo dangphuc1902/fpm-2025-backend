@@ -69,4 +69,37 @@ public class FamilyController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Member invited successfully"));
     }
+
+    // =====================================================================
+    // INVITATIONS MANAGEMENT (For the invitee)
+    // =====================================================================
+
+    @GetMapping("/invitations")
+    @Operation(summary = "Get pending invitations for the user")
+    public ResponseEntity<BaseResponse<List<com.fpm2025.user_auth_service.entity.FamilyInvitationEntity>>> getInvitations(
+            @RequestParam String email) {
+        
+        List<com.fpm2025.user_auth_service.entity.FamilyInvitationEntity> response = familyService.getUserInvitations(email);
+        return ResponseEntity.ok(BaseResponse.success(response, "Invitations retrieved"));
+    }
+
+    @PostMapping("/invitations/{id}/accept")
+    @Operation(summary = "Accept a family invitation")
+    public ResponseEntity<BaseResponse<Void>> acceptInvitation(
+            @PathVariable Long id,
+            @RequestParam String email) {
+        
+        familyService.acceptInvitation(id, email);
+        return ResponseEntity.ok(BaseResponse.success(null, "Invitation accepted"));
+    }
+
+    @PostMapping("/invitations/{id}/reject")
+    @Operation(summary = "Reject a family invitation")
+    public ResponseEntity<BaseResponse<Void>> rejectInvitation(
+            @PathVariable Long id,
+            @RequestParam String email) {
+        
+        familyService.rejectInvitation(id, email);
+        return ResponseEntity.ok(BaseResponse.success(null, "Invitation rejected"));
+    }
 }

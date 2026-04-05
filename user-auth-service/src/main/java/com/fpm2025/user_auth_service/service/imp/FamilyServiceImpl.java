@@ -27,6 +27,7 @@ public class FamilyServiceImpl implements FamilyService {
     private final FamilyRepository familyRepository;
     private final FamilyMemberRepository familyMemberRepository;
     private final UserRepository userRepository;
+    private final com.fpm2025.user_auth_service.repository.FamilyInvitationRepository familyInvitationRepository;
 
     @Override
     @Transactional
@@ -78,53 +79,78 @@ public class FamilyServiceImpl implements FamilyService {
     @Override
     @Transactional
     public FamilyMemberResponse inviteMember(Long familyId, Long inviterId, InviteMemberRequest request) {
-        List<FamilyMemberEntity> currentMembers = familyMemberRepository.findByFamilyId(familyId);
-        
-        FamilyMemberEntity inviter = currentMembers.stream()
-                .filter(m -> m.getUser().getId().equals(inviterId))
-                .findFirst()
+        FamilyEntity family = familyRepository.findById(familyId)
+                .orElseThrow(() -> new RuntimeException("Family not found"));
+
+        FamilyMemberEntity inviter = familyMemberRepository.findByFamilyIdAndUserId(familyId, inviterId)
                 .orElseThrow(() -> new RuntimeException("You are not a member of this family"));
                 
         if (inviter.getRole() != FamilyRole.OWNER && inviter.getRole() != FamilyRole.ADMIN) {
             throw new RuntimeException("Only Owners and Admins can invite new members");
         }
 
-        UserEntity userToInvite = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User with email " + request.getEmail() + " not found. They must register first."));
-
-        if (familyMemberRepository.existsByFamilyIdAndUserId(familyId, userToInvite.getId())) {
-            throw new RuntimeException("User is already a member of this family");
-        }
-
-        FamilyEntity family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Family not found"));
-
-        FamilyRole roleToAssign;
-        try {
-            roleToAssign = FamilyRole.valueOf(request.getRole());
-        } catch (IllegalArgumentException e) {
-            roleToAssign = FamilyRole.MEMBER;
-        }
-
-        if (roleToAssign == FamilyRole.OWNER) {
-             throw new RuntimeException("Cannot assign OWNER role via invite");
-        }
-
-        FamilyMemberEntity newMember = FamilyMemberEntity.builder()
+        // Thay vì add trực tiếp, tạo lời mời
+        com.fpm2025.user_auth_service.entity.FamilyInvitationEntity invitation = com.fpm2025.user_auth_service.entity.FamilyInvitationEntity.builder()
                 .family(family)
-                .user(userToInvite)
-                .role(roleToAssign)
+                .inviterId(inviterId)
+                .inviteeEmail(request.getEmail())
+                .role(FamilyRole.valueOf(request.getRole() != null ? request.getRole() : "MEMBER"))
+                .status("PENDING")
                 .build();
-        newMember = familyMemberRepository.save(newMember);
-
+        
+        familyInvitationRepository.save(invitation);
+        
+        // TODO: Gửi Kafka event cho notification-service để báo cho user
+        
         return FamilyMemberResponse.builder()
-                .userId(userToInvite.getId())
-                .email(userToInvite.getEmail())
-                .username(userToInvite.getUsername())
-                .avatarUrl(userToInvite.getAvatarUrl())
-                .role(newMember.getRole().name())
+                .email(request.getEmail())
+                .role(invitation.getRole().name())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void acceptInvitation(Long invitationId, String userEmail) {
+        com.fpm2025.user_auth_service.entity.FamilyInvitationEntity invitation = familyInvitationRepository.findByIdAndInviteeEmail(invitationId, userEmail)
+                .orElseThrow(() -> new RuntimeException("Invitation not found or not for you"));
+        
+        if (!"PENDING".equals(invitation.getStatus())) {
+            throw new RuntimeException("Invitation is already " + invitation.getStatus());
+        }
+
+        UserEntity user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found. Please register first."));
+
+        // Add to family
+        FamilyMemberEntity newMember = FamilyMemberEntity.builder()
+                .family(invitation.getFamily())
+                .user(user)
+                .role(invitation.getRole())
                 .joinedAt(LocalDateTime.now())
                 .build();
+        
+        familyMemberRepository.save(newMember);
+
+        // Update invitation status
+        invitation.setStatus("ACCEPTED");
+        invitation.setRespondedAt(LocalDateTime.now());
+        familyInvitationRepository.save(invitation);
+    }
+
+    @Override
+    @Transactional
+    public void rejectInvitation(Long invitationId, String userEmail) {
+        com.fpm2025.user_auth_service.entity.FamilyInvitationEntity invitation = familyInvitationRepository.findByIdAndInviteeEmail(invitationId, userEmail)
+                .orElseThrow(() -> new RuntimeException("Invitation not found or not for you"));
+        
+        invitation.setStatus("REJECTED");
+        invitation.setRespondedAt(LocalDateTime.now());
+        familyInvitationRepository.save(invitation);
+    }
+
+    @Override
+    public List<com.fpm2025.user_auth_service.entity.FamilyInvitationEntity> getUserInvitations(String userEmail) {
+        return familyInvitationRepository.findByInviteeEmailAndStatus(userEmail, "PENDING");
     }
 
     @Override

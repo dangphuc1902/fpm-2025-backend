@@ -23,8 +23,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: admin
+    password: admin
 
   # ── Kafka ────────────────────────────────────────────────
   kafka:
@@ -54,8 +54,8 @@ eureka:
 # Đặt file service account JSON tại đường dẫn bên dưới.
 # Tải từ Firebase Console > Project Settings > Service Accounts > Generate New Private Key
 firebase:
-  credentials-path: ${FIREBASE_CREDENTIALS_PATH:firebase-service-account.json}
-  enabled: ${FIREBASE_ENABLED:false}
+  enabled: true
+  credentials-path: firebase-service-account.json
 
 # ── Logging ──────────────────────────────────────────────
 logging:

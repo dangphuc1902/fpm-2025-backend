@@ -25,7 +25,6 @@
 		<poi.version>5.2.5</poi.version>
 		<itext.version>7.2.5</itext.version>
 		<hibernate-types.version>2.21.1</hibernate-types.version>
-		<lombok.version>1.18.30</lombok.version>
 	</properties>
 
 	<!-- ========================================

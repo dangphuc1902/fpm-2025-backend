@@ -27,11 +27,20 @@ public class AiController {
     }
 
     @PostMapping("/anomaly")
-    @Operation(summary = "Phát hiện nội dung bất thường", description = "Detect giao dịch đáng ngờ dựa trên mô hình học máy (Mocked)")
+    @Operation(summary = "Phát hiện nội dung bất thường", description = "Detect giao dịch đáng ngờ dựa trên mô hình học máy (Gemini AI)")
     public ResponseEntity<AiResponse> checkAnomaly(@RequestBody AiRequest request) {
         if (request.getText() == null || request.getText().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(aiService.detectAnomaly(request));
+    }
+
+    @PostMapping("/chat")
+    @Operation(summary = "Trò chuyện với trợ lý Gemini", description = "Hỏi bất kỳ câu hỏi nào về tài chính hoặc sử dụng app, Gemini sẽ trả lời.")
+    public ResponseEntity<AiResponse> chat(@RequestBody AiRequest request) {
+        if (request.getText() == null || request.getText().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(aiService.chat(request));
     }
 }

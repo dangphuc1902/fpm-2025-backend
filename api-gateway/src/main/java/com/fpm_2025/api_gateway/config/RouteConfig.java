@@ -23,15 +23,30 @@ public class RouteConfig {
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
-                // User Auth Service - Login (Rate Limited separately: 5 requests / 5 mins)
+                // User Auth Service - Login (Rate Limited separately: 5 burst requests)
                 .route("user-auth-login", r -> r
                         .path("/api/v1/auth/login")
                         .filters(f -> f
-                                .stripPrefix(0)
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(loginRedisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
                                 .circuitBreaker(config -> config
                                         .setName("user-auth-service")
                                         .setFallbackUri("forward:/fallback"))
-                                .filter((exchange, chain) -> chain.filter(exchange)) // A placeholder, we apply @RateLimiter on controller if available, but for gateway we can use spring.cloud.gateway.filter.ratelimit.RedisRateLimiter with custom args or just use Spring Cloud CircuitBreaker's Resilience4j integration.
+                        )
+                        .uri("lb://user-auth-service")
+                )
+
+                // User Auth Service - Register (Rate Limited)
+                .route("user-auth-register", r -> r
+                        .path("/api/v1/auth/register")
+                        .filters(f -> f
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(loginRedisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
+                                .circuitBreaker(config -> config
+                                        .setName("user-auth-service")
+                                        .setFallbackUri("forward:/fallback"))
                         )
                         .uri("lb://user-auth-service")
                 )
@@ -40,7 +55,6 @@ public class RouteConfig {
                 .route("user-auth-service", r -> r
                         .path("/api/v1/auth/**", "/api/v1/users/**", "/api/v1/families/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("user-auth-service")
                                         .setFallbackUri("forward:/fallback"))
@@ -55,7 +69,6 @@ public class RouteConfig {
                 .route("wallet-service", r -> r
                         .path("/api/v1/wallets/**", "/api/v1/categories/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("wallet-service")
                                         .setFallbackUri("forward:/fallback"))
@@ -70,7 +83,6 @@ public class RouteConfig {
                 .route("transaction-service", r -> r
                         .path("/api/v1/transactions/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("transaction-service")
                                         .setFallbackUri("forward:/fallback"))
@@ -81,26 +93,10 @@ public class RouteConfig {
                         .uri("lb://transaction-service")
                 )
                 
-                // Budget Service (routed to reporting-service)
-                .route("budget-service", r -> r
-                        .path("/api/v1/budgets/**")
-                        .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("reporting-service")
-                                        .setFallbackUri("forward:/fallback"))
-                                .requestRateLimiter(config -> config
-                                        .setRateLimiter(redisRateLimiter())
-                                        .setKeyResolver(userKeyResolver()))
-                        )
-                        .uri("lb://reporting-service")
-                )
-                
-                // Reporting Service
+                // Budget & Reporting Service
                 .route("reporting-service", r -> r
-                        .path("/api/v1/reports/**", "/api/v1/dashboard/**")
+                        .path("/api/v1/reports/**", "/api/v1/dashboard/**", "/api/v1/budgets/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("reporting-service")
                                         .setFallbackUri("forward:/fallback"))
@@ -109,31 +105,18 @@ public class RouteConfig {
                                         .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://reporting-service")
-                )
-                
-                // Sharing Service
-                .route("sharing-service", r -> r
-                        .path("/api/v1/sharing/**")
-                        .filters(f -> f
-                                .stripPrefix(0)
-                                .circuitBreaker(config -> config
-                                        .setName("sharing-service")
-                                        .setFallbackUri("forward:/fallback"))
-                                .requestRateLimiter(config -> config
-                                        .setRateLimiter(redisRateLimiter())
-                                        .setKeyResolver(userKeyResolver()))
-                        )
-                        .uri("lb://sharing-service")
                 )
                 
                 // Notification Service
                 .route("notification-service", r -> r
                         .path("/api/v1/notifications/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("notification-service")
                                         .setFallbackUri("forward:/fallback"))
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(redisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://notification-service")
                 )
@@ -142,10 +125,12 @@ public class RouteConfig {
                 .route("ocr-service", r -> r
                         .path("/api/v1/ocr/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("ocr-service")
                                         .setFallbackUri("forward:/fallback"))
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(redisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://ocr-service")
                 )
@@ -154,10 +139,12 @@ public class RouteConfig {
                 .route("ai-service", r -> r
                         .path("/api/v1/ai/**")
                         .filters(f -> f
-                                .stripPrefix(0)
                                 .circuitBreaker(config -> config
                                         .setName("ai-service")
                                         .setFallbackUri("forward:/fallback"))
+                                .requestRateLimiter(config -> config
+                                        .setRateLimiter(redisRateLimiter())
+                                        .setKeyResolver(userKeyResolver()))
                         )
                         .uri("lb://ai-service")
                 )

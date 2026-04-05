@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class WalletServiceGrpcImpl extends WalletGrpcServiceGrpc.WalletGrpcServiceImplBase {
 
     private final WalletRepository walletRepository;
+    private final com.fpm_2025.wallet_service.repository.WalletPermissionRepository walletPermissionRepository;
 
     @Override
     public void getWalletById(WalletIdRequest request, StreamObserver<WalletResponse> responseObserver) {
@@ -102,10 +103,19 @@ public class WalletServiceGrpcImpl extends WalletGrpcServiceGrpc.WalletGrpcServi
             String permissionLevel = "NONE";
             
             if (wallet != null) {
-                // Here you would also check shared wallet permissions
+                // 1. Check if user is the OWNER
                 if (wallet.getUserId().equals(request.getUserId())) {
                     hasAccess = true;
                     permissionLevel = "OWNER";
+                } else {
+                    // 2. Check if user has SHARED PERMISSION
+                    java.util.Optional<com.fpm_2025.wallet_service.entity.WalletPermissionEntity> permission = 
+                        walletPermissionRepository.findByWalletIdAndUserId(request.getWalletId(), request.getUserId());
+                        
+                    if (permission.isPresent()) {
+                        hasAccess = true;
+                        permissionLevel = permission.get().getPermissionLevel();
+                    }
                 }
             }
             

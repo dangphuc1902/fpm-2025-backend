@@ -43,4 +43,8 @@ public interface WalletServiceImp {
     void updateBalance(WalletEntity wallet, BigDecimal newBalance);
 	// Cập nhật số dư ví từ sự kiện giao dịch được tạo
     void updateBalanceFromTransaction(TransactionCreatedEvent event);
+    // Lấy tất cả ví theo familyId
+    List<WalletResponse> getFamilyWallets(Long familyId);
+    // Tạo ví mặc định cho user mới
+    void createDefaultWallet(Long userId);
 }

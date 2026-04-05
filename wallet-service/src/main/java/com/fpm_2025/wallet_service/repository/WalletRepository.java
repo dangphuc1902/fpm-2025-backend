@@ -18,4 +18,5 @@ public interface WalletRepository extends JpaRepository<WalletEntity, Long>{
     Optional<WalletEntity> findByIdAndUserId(Long id,Long userId);
     BigDecimal getTotalBalanceByUserId(Long userId);
     long countByUserId(Long userId);
+    List<WalletEntity> findByFamilyId(Long familyId);
 }

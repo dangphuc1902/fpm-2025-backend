@@ -53,6 +53,7 @@ public class ReportingService {
     private final WalletGrpcClient walletClient;
     private final CategorySummaryRepository categorySummaryRepository;
     private final BudgetRepository budgetRepository;
+    private final com.fpm_2025.reportingservice.repository.ExportJobRepository exportJobRepository;
 
     /**
      * Generate monthly report for user
@@ -621,5 +622,84 @@ public class ReportingService {
         // Sắp xếp theo thiếu ngân sách nhất (over-budget lên trước)
         result.sort(Comparator.comparing(BudgetComparisonItem::getDifference));
         return result;
+    }
+
+    /**
+     * Submit an asynchronous export job
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public Long submitExportJob(Long userId, com.fpm_2025.reportingservice.dto.request.ReportRequest request) {
+        log.info("Submitting async export job for user: {}, format: {}", 
+            userId, request.getFormat());
+        
+        com.fpm_2025.reportingservice.domain.model.ExportJob job = com.fpm_2025.reportingservice.domain.model.ExportJob.builder()
+            .userId(userId)
+            .format(request.getFormat())
+            .period(request.getStartDate().getYear() + "-" + String.format("%02d", request.getStartDate().getMonthValue()))
+            .status(com.fpm_2025.reportingservice.domain.valueobject.ExportStatus.PENDING)
+            .build();
+            
+        com.fpm_2025.reportingservice.domain.model.ExportJob savedJob = exportJobRepository.save(job);
+        
+        // Trigger async processing
+        processExportJobAsync(savedJob.getId(), request);
+        
+        return savedJob.getId();
+    }
+
+    /**
+     * Process export job asynchronously
+     */
+    @org.springframework.scheduling.annotation.Async
+    @org.springframework.transaction.annotation.Transactional
+    public void processExportJobAsync(Long jobId, com.fpm_2025.reportingservice.dto.request.ReportRequest request) {
+        log.info("Processing export job {} asynchronously", jobId);
+        
+        com.fpm_2025.reportingservice.domain.model.ExportJob job = exportJobRepository.findById(jobId)
+            .orElseThrow(() -> new RuntimeException("Job not found: " + jobId));
+            
+        try {
+            job.markAsProcessing();
+            exportJobRepository.save(job);
+
+            // Reuse logic from generateMonthlyReport
+            Long userId = request.getUserId();
+            com.fpm_2025.reportingservice.domain.valueobject.ExportFormat format = request.getFormat();
+            java.time.LocalDateTime startDate = request.getStartDate().atStartOfDay();
+            java.time.LocalDateTime endDate = request.getEndDate().atTime(23, 59, 59);
+
+            List<com.fpm_2025.reportingservice.domain.TransactionData> transactions = transactionClient
+                .getTransactionsByDateRange(userId, startDate, endDate);
+            List<com.fpm_2025.reportingservice.domain.WalletData> wallets = walletClient.getUserWallets(userId);
+            com.fpm_2025.reportingservice.domain.MonthlyStatistics stats = calculateMonthlyStatistics(transactions, wallets, startDate, endDate);
+
+            byte[] reportData = reportGenerator.generate(transactions, stats, wallets, 
+                com.fpm_2025.reportingservice.domain.ReportFormat.valueOf(format.name()));
+
+            String fileName = generateFileName(userId, job.getPeriod(), 
+                com.fpm_2025.reportingservice.domain.ReportFormat.valueOf(format.name()));
+            String fileUrl = reportGenerator.uploadToStorage(reportData, fileName);
+
+            job.markAsDone(fileName, fileUrl, (long) reportData.length);
+            exportJobRepository.save(job);
+            
+            log.info("Export job {} completed successfully", jobId);
+            
+        } catch (Exception e) {
+            log.error("Export job {} failed", jobId, e);
+            job.markAsFailed(e.getMessage());
+            exportJobRepository.save(job);
+        }
+    }
+
+    public com.fpm_2025.reportingservice.domain.model.ExportJob getExportJobStatus(Long jobId, Long userId) {
+        com.fpm_2025.reportingservice.domain.model.ExportJob job = exportJobRepository.findById(jobId)
+            .orElseThrow(() -> new com.fpm_2025.reportingservice.exception.ResourceNotFoundException("Job not found: " + jobId));
+            
+        if (!job.getUserId().equals(userId)) {
+            throw new SecurityException("Unauthorized access to export job");
+        }
+        
+        return job;
     }
 }
