@@ -7,7 +7,7 @@ import com.fpm_2025.wallet_service.repository.WalletRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.grpc.server.service.GrpcService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -114,7 +114,7 @@ public class WalletServiceGrpcImpl extends WalletGrpcServiceGrpc.WalletGrpcServi
                         
                     if (permission.isPresent()) {
                         hasAccess = true;
-                        permissionLevel = permission.get().getPermissionLevel();
+                        permissionLevel = permission.get().getPermissionLevel().name();
                     }
                 }
             }

@@ -2,7 +2,6 @@ package com.fpm_2025.wallet_service.grpc.client;
 
 import com.fpm2025.protocol.user.*;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +13,16 @@ import java.util.List;
 @Service
 public class UserGrpcClient {
 
-    @GrpcClient("user-auth-service")
-    private UserGrpcServiceGrpc.UserGrpcServiceBlockingStub stub;
+    private final UserGrpcServiceGrpc.UserGrpcServiceBlockingStub stub;
+
+    public UserGrpcClient(@org.springframework.beans.factory.annotation.Value("${grpc.client.user-auth-service.address:localhost:9091}") String address) {
+        log.info("[gRPC] Initializing UserGrpcClient for address: {}", address);
+        this.stub = UserGrpcServiceGrpc.newBlockingStub(
+                io.grpc.ManagedChannelBuilder.forTarget(address)
+                        .usePlaintext()
+                        .build()
+        );
+    }
 
     /**
      * Kiểm tra một user có thuộc familyId hay không thông qua gRPC.

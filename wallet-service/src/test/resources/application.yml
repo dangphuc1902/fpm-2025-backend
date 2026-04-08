@@ -1,2 +1,40 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+  kafka:
+    listener:
+      auto-startup: false
+  redis:
+    repositories:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+  instance:
+    enabled: false
+
 jwt:
   secret: "test-secret-key-at-least-256-bits-long-for-hmac-sha-256-algorithm"

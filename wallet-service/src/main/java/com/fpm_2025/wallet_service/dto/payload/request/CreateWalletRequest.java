@@ -75,8 +75,9 @@ public class CreateWalletRequest {
 
 	@NotNull(message = "Wallet type is required")
 	@Builder.Default
-    private WalletType type;
+    private WalletType type = WalletType.CASH;
 
+    @Builder.Default
     @Size(max = 3, message = "Currency code must be 3 characters")
     private String currency = "VND";
     

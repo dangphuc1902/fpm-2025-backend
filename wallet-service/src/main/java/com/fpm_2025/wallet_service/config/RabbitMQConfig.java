@@ -66,21 +66,24 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding walletCreatedBinding(Queue walletCreatedQueue, TopicExchange walletExchange) {
+    public Binding walletCreatedBinding(@org.springframework.beans.factory.annotation.Qualifier("walletCreatedQueue") Queue walletCreatedQueue, 
+                                       @org.springframework.beans.factory.annotation.Qualifier("walletExchange") TopicExchange walletExchange) {
         return BindingBuilder.bind(walletCreatedQueue)
                 .to(walletExchange)
                 .with(WALLET_CREATED_KEY);
     }
 
     @Bean
-    public Binding walletUpdatedBinding(Queue walletUpdatedQueue, TopicExchange walletExchange) {
+    public Binding walletUpdatedBinding(@org.springframework.beans.factory.annotation.Qualifier("walletUpdatedQueue") Queue walletUpdatedQueue, 
+                                       @org.springframework.beans.factory.annotation.Qualifier("walletExchange") TopicExchange walletExchange) {
         return BindingBuilder.bind(walletUpdatedQueue)
                 .to(walletExchange)
                 .with(WALLET_UPDATED_KEY);
     }
 
     @Bean
-    public Binding transactionCreatedBinding(Queue transactionCreatedQueue, TopicExchange transactionExchange) {
+    public Binding transactionCreatedBinding(@org.springframework.beans.factory.annotation.Qualifier("transactionCreatedQueue") Queue transactionCreatedQueue, 
+                                            @org.springframework.beans.factory.annotation.Qualifier("transactionExchange") TopicExchange transactionExchange) {
         return BindingBuilder.bind(transactionCreatedQueue)
                 .to(transactionExchange)
                 .with(TRANSACTION_CREATED_KEY);

@@ -1,18 +1,10 @@
 package com.fpm_2025.wallet_service.config;
 
-import net.devh.boot.grpc.server.security.authentication.BearerAuthenticationReader;
-import net.devh.boot.grpc.server.security.authentication.GrpcAuthenticationReader;
-import org.springframework.context.annotation.Bean;
+import com.fpm2025.protocol.user.UserGrpcServiceGrpc;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.grpc.client.GrpcClientFactory;
 
 @Configuration
 public class GrpcConfig {
-
-    @Bean
-    public GrpcAuthenticationReader grpcAuthenticationReader() {
-        return new BearerAuthenticationReader(token -> {
-            // JWT validation logic here if needed for gRPC
-            return null;
-        });
-    }
+    // Standard gRPC configuration for Spring gRPC server
 }

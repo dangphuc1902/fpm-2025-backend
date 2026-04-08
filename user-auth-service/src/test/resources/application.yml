@@ -1,2 +1,18 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+eureka:
+  client:
+    enabled: false
+
 jwt:
   secret: "test-secret-key-at-least-256-bits-long-for-hmac-sha-256-algorithm"
+  expiration: 86400000
+
+app:
+  jwt:
+    refreshTokenExpirationMs: 604800000

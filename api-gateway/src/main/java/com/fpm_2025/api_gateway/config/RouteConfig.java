@@ -12,6 +12,7 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -161,6 +162,7 @@ public class RouteConfig {
         return new RedisRateLimiter(1, 5, 1);
     }
 
+    @Primary
     @Bean
     public RedisRateLimiter redisRateLimiter() {
         // 100 requests per minute per user

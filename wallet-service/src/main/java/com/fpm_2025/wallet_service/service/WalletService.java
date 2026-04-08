@@ -322,7 +322,7 @@ public class WalletService implements WalletServiceImp{
             .build();
     }
     public WalletEntity getWalletEntityByUserIdAndWalletType(Long userId, WalletType type) {
-        return walletRepository.findByUserIdAndWalletType(userId, type)
+        return walletRepository.findOneByUserIdAndType(userId, type)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format("Wallet not found for userId=%d and type=%s", userId, type)
                 ));
