@@ -2,9 +2,9 @@ package com.fpm_2025.wallet_service.dto.mapper;
 
 import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
+import com.fpm2025.domain.dto.response.WalletResponse;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
-import com.fpm_2025.wallet_service.entity.enums.*;
+import com.fpm2025.domain.enums.*;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

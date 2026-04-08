@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
+import com.fpm2025.domain.enums.WalletType;
 import java.util.Optional;
 
 public interface WalletRepository extends JpaRepository<WalletEntity, Long>{

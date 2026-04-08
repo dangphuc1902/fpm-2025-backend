@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
+import com.fpm2025.domain.enums.WalletType;
 
 @Getter
 @Setter

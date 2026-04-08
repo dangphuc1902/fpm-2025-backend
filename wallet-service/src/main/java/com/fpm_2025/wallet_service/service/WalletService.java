@@ -1,14 +1,16 @@
 package com.fpm_2025.wallet_service.service;
 
+import com.fpm2025.domain.dto.request.ShareWalletRequest;
+import com.fpm2025.domain.dto.response.WalletResponse;
+import com.fpm2025.domain.dto.response.WalletPermissionResponse;
+import com.fpm2025.domain.enums.*;
+import com.fpm2025.domain.event.TransactionCreatedEvent;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
-import com.fpm_2025.wallet_service.entity.enums.*;
-import com.fpm_2025.wallet_service.event.model.TransactionCreatedEvent;
 import com.fpm_2025.wallet_service.exception.ResourceNotFoundException;
 import com.fpm_2025.wallet_service.exception.DuplicateResourceException;
 import com.fpm_2025.wallet_service.exception.InsufficientBalanceException;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
 import com.fpm_2025.wallet_service.service.imp.WalletServiceImp;
 
@@ -24,21 +26,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class WalletService implements WalletServiceImp{
-	@Autowired
+public class WalletService implements WalletServiceImp {
+    
+    @Autowired
     private WalletRepository walletRepository;
-	
-    Logger logger  = LoggerFactory.getLogger(WalletService.class);
+    
+    @Autowired
+    private com.fpm_2025.wallet_service.repository.WalletPermissionRepository walletPermissionRepository;
 
+    Logger logger = LoggerFactory.getLogger(WalletService.class);
+
+    @Override
     @Transactional
     public WalletResponse createWallet(CreateWalletRequest request, Long userId) {
-    	logger.info("Creating wallet for user: {}, wallet name: {}", userId, request.getName());
+        logger.info("Creating wallet for user: {}, wallet name: {}", userId, request.getName());
 
-        // Check if wallet with same name exists for user
         if (walletRepository.existsByUserIdAndName(userId, request.getName())) {
             throw new DuplicateResourceException("Wallet with name '" + request.getName() + "' already exists for this user");
         }
@@ -60,15 +67,16 @@ public class WalletService implements WalletServiceImp{
         return mapToResponse(savedWallet);
     }
 
-    @org.springframework.cache.annotation.Cacheable("dashboard")
+    @Override
     public List<WalletResponse> getUserWallets(Long userId) {
-    	logger.info("Fetching all wallets for user: {}", userId);
+        logger.info("Fetching all wallets for user: {}", userId);
         List<WalletEntity> wallets = walletRepository.findByUserId(userId);
         return wallets.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
+    @Override
     public List<WalletResponse> getSharedWallets(Long userId) {
         logger.info("Fetching shared wallets for user: {}", userId);
         List<com.fpm_2025.wallet_service.entity.WalletPermissionEntity> permissions = walletPermissionRepository.findByUserId(userId);
@@ -77,29 +85,33 @@ public class WalletService implements WalletServiceImp{
             .collect(Collectors.toList());
     }
 
+    @Override
     public List<WalletResponse> getUserActiveWallets(Long userId) {
-    	logger.info("Fetching active wallets for user: {}", userId);
+        logger.info("Fetching active wallets for user: {}", userId);
         List<WalletEntity> wallets = walletRepository.findActiveWalletsByUserId(userId);
         return wallets.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
+    @Override
     public List<WalletResponse> getUserWalletsByType(Long userId, WalletType type) {
-    	logger.info("Fetching wallets by type: {} for user: {}", type, userId);
+        logger.info("Fetching wallets by type: {} for user: {}", type, userId);
         List<WalletEntity> wallets = walletRepository.findByUserIdAndType(userId, type);
         return wallets.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
+    @Override
     public WalletResponse getWalletById(Long walletId, Long userId) {
-    	logger.info("Fetching wallet with id: {} for user: {}", walletId, userId);
+        logger.info("Fetching wallet with id: {} for user: {}", walletId, userId);
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
         return mapToResponse(wallet);
     }
 
+    @Override
     @Transactional
     public WalletResponse toggleWallet(Long walletId, Long userId) {
         logger.info("Toggling wallet status for id: {} user: {}", walletId, userId);
@@ -113,14 +125,14 @@ public class WalletService implements WalletServiceImp{
         return mapToResponse(updatedWallet);
     }
 
+    @Override
     @Transactional
     public WalletResponse updateWallet(Long walletId, UpdateWalletRequest request, Long userId) {
-    	logger.info("Updating wallet with id: {} for user: {}", walletId, userId);
+        logger.info("Updating wallet with id: {} for user: {}", walletId, userId);
 
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
 
-        // Check for duplicate name if name is being changed
         if (request.getName() != null && !request.getName().equals(wallet.getName())) {
             if (walletRepository.existsByUserIdAndName(userId, request.getName())) {
                 throw new DuplicateResourceException("Wallet with name '" + request.getName() + "' already exists");
@@ -146,14 +158,14 @@ public class WalletService implements WalletServiceImp{
         return mapToResponse(updatedWallet);
     }
 
+    @Override
     @Transactional
     public void deleteWallet(Long walletId, Long userId) {
-    	logger.info("Deleting wallet with id: {} for user: {}", walletId, userId);
+        logger.info("Deleting wallet with id: {} for user: {}", walletId, userId);
 
-    	WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
+        WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
 
-        // Check if wallet has balance
         if (wallet.getBalance().compareTo(BigDecimal.ZERO) > 0) {
             throw new IllegalStateException("Cannot delete wallet with remaining balance. Please transfer funds first.");
         }
@@ -163,15 +175,17 @@ public class WalletService implements WalletServiceImp{
         logger.info("Wallet deleted successfully with id: {}", walletId);
     }
 
+    @Override
     public BigDecimal getTotalBalance(Long userId) {
-    	logger.info("Calculating total balance for user: {}", userId);
+        logger.info("Calculating total balance for user: {}", userId);
         BigDecimal total = walletRepository.getTotalBalanceByUserId(userId);
         return total != null ? total : BigDecimal.ZERO;
     }
 
+    @Override
     @Transactional
     public WalletResponse updateBalance(Long walletId, Long userId, BigDecimal amount, boolean isAddition) {
-    	logger.info("Updating balance for wallet: {}, amount: {}, isAddition: {}", walletId, amount, isAddition);
+        logger.info("Updating balance for wallet: {}, amount: {}, isAddition: {}", walletId, amount, isAddition);
 
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
@@ -182,7 +196,6 @@ public class WalletService implements WalletServiceImp{
         } else {
             newBalance = wallet.getBalance().subtract(amount);
             
-            // Check if balance would go negative
             if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
                 throw new InsufficientBalanceException("Insufficient balance in wallet. Current: " 
                     + wallet.getBalance() + ", Required: " + amount);
@@ -196,68 +209,46 @@ public class WalletService implements WalletServiceImp{
         return mapToResponse(updatedWallet);
     }
 
-    // Validate wallet access (used by other services)
+    @Override
     public boolean validateWalletAccess(Long walletId, Long userId) {
         return walletRepository.findByIdAndUserId(walletId, userId).isPresent();
     }
 
-    // Get wallet entity (internal use)
+    @Override
     @Transactional(readOnly = true)
     public WalletEntity getWalletEntity(Long walletId, Long userId) {
         return walletRepository.findByIdAndUserId(walletId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
     }
 
-    @Autowired
-    private com.fpm_2025.wallet_service.repository.WalletPermissionRepository walletPermissionRepository;
-
+    @Override
     @Transactional
-    public com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse shareWallet(Long walletId, com.fpm_2025.wallet_service.dto.payload.request.ShareWalletRequest request, Long ownerId) {
-        log.info("Owner {} sharing wallet {} with user {}", ownerId, walletId, request.getUserId());
+    public WalletPermissionResponse shareWallet(Long walletId, ShareWalletRequest request, Long ownerId) {
+        log.info("Owner {} sharing wallet {} with email {}", ownerId, walletId, request.getEmail());
         
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found or not owned by user"));
         
-        // Cannot share with self
-        if (ownerId.equals(request.getUserId())) {
-            throw new IllegalArgumentException("Cannot share wallet with yourself");
-        }
-
-        if (walletPermissionRepository.existsByWalletIdAndUserId(walletId, request.getUserId())) {
-            throw new DuplicateResourceException("Wallet already shared with this user");
-        }
-
-        com.fpm_2025.wallet_service.entity.WalletPermissionEntity permission = new com.fpm_2025.wallet_service.entity.WalletPermissionEntity();
-        permission.setWallet(wallet);
-        permission.setUserId(request.getUserId());
-        permission.setPermissionLevel(request.getPermissionLevel());
-
-        permission = walletPermissionRepository.save(permission);
-
-        return com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse.builder()
-                .id(permission.getId())
-                .walletId(permission.getWallet().getId())
-                .userId(permission.getUserId())
-                .permissionLevel(permission.getPermissionLevel())
-                .createdAt(permission.getCreatedAt())
-                .build();
+        throw new UnsupportedOperationException("Email resolution not implemented in this migration turn.");
     }
 
-    public List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse> getSharedUsers(Long walletId, Long ownerId) {
+    @Override
+    public List<WalletPermissionResponse> getSharedUsers(Long walletId, Long ownerId) {
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found or not owned by user"));
 
         return walletPermissionRepository.findByWalletId(walletId).stream()
-                .map(p -> com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse.builder()
+                .map(p -> WalletPermissionResponse.builder()
                         .id(p.getId())
                         .walletId(p.getWallet().getId())
                         .userId(p.getUserId())
-                        .permissionLevel(p.getPermissionLevel())
+                        .permissionLevel(WalletPermissionLevel.valueOf(p.getPermissionLevel()))
                         .createdAt(p.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Transactional
     public void removeShare(Long walletId, Long targetUserId, Long ownerId) {
         WalletEntity wallet = walletRepository.findByIdAndUserId(walletId, ownerId)
@@ -269,10 +260,12 @@ public class WalletService implements WalletServiceImp{
         walletPermissionRepository.delete(permission);
     }
 
+    @Override
     public long getUserWalletCount(Long userId) {
         return walletRepository.countByUserId(userId);
     }
 
+    @Override
     public List<WalletResponse> getFamilyWallets(Long familyId) {
         log.info("Fetching all wallets for family: {}", familyId);
         return walletRepository.findByFamilyId(familyId).stream()
@@ -280,11 +273,11 @@ public class WalletService implements WalletServiceImp{
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Transactional
     public void createDefaultWallet(Long userId) {
         log.info("Creating default wallet for new user: {}", userId);
         
-        // Already checked if exists? For safety, re-check
         if (walletRepository.existsByUserIdAndName(userId, "Ví Tiền Mặt")) {
             log.warn("Default wallet already exists for user: {}", userId);
             return;
@@ -305,7 +298,6 @@ public class WalletService implements WalletServiceImp{
         log.info("Default wallet created for user: {}", userId);
     }
 
-    // Mapping method
     private WalletResponse mapToResponse(WalletEntity entity) {
         return WalletResponse.builder()
             .id(entity.getId())
@@ -321,6 +313,8 @@ public class WalletService implements WalletServiceImp{
             .updatedAt(entity.getUpdatedAt())
             .build();
     }
+
+    @Override
     public WalletEntity getWalletEntityByUserIdAndWalletType(Long userId, WalletType type) {
         return walletRepository.findOneByUserIdAndType(userId, type)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -328,31 +322,28 @@ public class WalletService implements WalletServiceImp{
                 ));
     }
 
+    @Override
     public void updateBalance(WalletEntity wallet, BigDecimal newBalance) {
         wallet.setBalance(newBalance);
         walletRepository.save(wallet);
     }
-    /**
-     * Cập nhật số dư ví dựa theo giao dịch mới tạo (TransactionCreatedEvent).
-     */
+
+    @Override
     @Transactional
     public void updateBalanceFromTransaction(TransactionCreatedEvent event) {
         log.info("[WalletService] Updating balance from transactionId={} walletId={} amount={} type={}",
                 event.getTransactionId(), event.getWalletId(), event.getAmount(), event.getType());
 
-        // 1️ Lấy ví tương ứng
         WalletEntity wallet = walletRepository.findById(event.getWalletId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Wallet not found for id: " + event.getWalletId()));
 
-        // 2️ Kiểm tra loại giao dịch và cập nhật số dư
         BigDecimal oldBalance = wallet.getBalance();
         BigDecimal newBalance;
 
-        if (CategoryType.valueOf(event.getType()) == CategoryType.INCOME) {
+        if (CategoryType.valueOf(event.getType().toUpperCase()) == CategoryType.INCOME) {
             newBalance = oldBalance.add(event.getAmount());
-        } else if (CategoryType.valueOf(event.getType()) == CategoryType.EXPENSE) {
-            // Kiểm tra đủ tiền
+        } else if (CategoryType.valueOf(event.getType().toUpperCase()) == CategoryType.EXPENSE) {
             if (oldBalance.compareTo(event.getAmount()) < 0) {
                 throw new IllegalStateException("Insufficient balance in wallet id=" + event.getWalletId());
             }
@@ -361,11 +352,9 @@ public class WalletService implements WalletServiceImp{
             throw new IllegalArgumentException("Unknown transaction type: " + event.getType());
         }
 
-        // 3️ Ghi lại số dư mới
         wallet.setBalance(newBalance);
         walletRepository.save(wallet);
 
-        // 4️ Log kết quả
         log.info("[WalletService] Wallet id={} balance updated from {} -> {}",
                 event.getWalletId(), oldBalance, newBalance);
     }

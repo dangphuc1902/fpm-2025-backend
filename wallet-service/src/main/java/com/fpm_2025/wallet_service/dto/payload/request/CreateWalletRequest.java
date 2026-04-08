@@ -1,5 +1,5 @@
 package com.fpm_2025.wallet_service.dto.payload.request;
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
+import com.fpm2025.domain.enums.WalletType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

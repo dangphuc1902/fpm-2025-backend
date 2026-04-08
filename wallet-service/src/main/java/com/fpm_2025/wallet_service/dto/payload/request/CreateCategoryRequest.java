@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.dto.payload.request;
 
-import com.fpm_2025.wallet_service.entity.enums.CategoryType;
+import com.fpm2025.domain.enums.CategoryType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

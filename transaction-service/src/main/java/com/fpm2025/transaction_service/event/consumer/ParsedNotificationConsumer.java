@@ -1,8 +1,8 @@
 package com.fpm2025.transaction_service.event.consumer;
 
-import com.fpm2025.transaction_service.dto.TransactionRequest;
-import com.fpm2025.transaction_service.entity.enums.TransactionType;
-import com.fpm2025.transaction_service.event.model.ParsedNotificationEvent;
+import com.fpm2025.domain.dto.request.TransactionRequest;
+import com.fpm2025.domain.enums.CategoryType;
+import com.fpm2025.domain.event.ParsedNotificationEvent;
 import com.fpm2025.transaction_service.service.TransactionService;
 import com.fpm2025.protocol.wallet.UserWalletsRequest;
 import com.fpm2025.protocol.wallet.WalletGrpcServiceGrpc;
@@ -49,9 +49,9 @@ public class ParsedNotificationConsumer {
                     .walletId(walletId)
                     .amount(event.getAmount())
                     .currency("VND")
-                    .type("INCOME".equalsIgnoreCase(event.getType()) ? TransactionType.INCOME : TransactionType.EXPENSE)
-                    .categoryId(null) // Sẽ do AI hoặc user phân loại sau, hiện tại để null
-                    .transactionDate(LocalDateTime.now()) // Có thể lấy từ event.getTransactionTime() nếu parse được chuẩn
+                    .type("INCOME".equalsIgnoreCase(event.getType()) ? CategoryType.INCOME : CategoryType.EXPENSE)
+                    .categoryId(null)
+                    .transactionDate(LocalDateTime.now())
                     .description(event.getNote() != null ? event.getNote() : "Giao dịch tự động từ " + event.getBankName())
                     .note("Ref: " + event.getTransactionRef())
                     .build();
@@ -76,13 +76,11 @@ public class ParsedNotificationConsumer {
 
             if (response.getWalletsCount() == 0) return null;
 
-            // Heuristic 1: Tìm ví có tên chứa bankName hoặc account
             for (var w : response.getWalletsList()) {
                 if (account != null && !account.isEmpty() && w.getName().contains(account)) return w.getId();
                 if (bankName != null && !bankName.isEmpty() && w.getName().toLowerCase().contains(bankName.toLowerCase())) return w.getId();
             }
 
-            // Heuristic 2: Lấy ví đầu tiên (Thường là ví mặc định của user)
             return response.getWalletsList().get(0).getId();
         } catch (Exception e) {
             log.error("Failed to resolve wallet via gRPC: {}", e.getMessage());

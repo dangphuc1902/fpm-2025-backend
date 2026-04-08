@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.dto.payload.request;
 
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
+import com.fpm2025.domain.enums.WalletType;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

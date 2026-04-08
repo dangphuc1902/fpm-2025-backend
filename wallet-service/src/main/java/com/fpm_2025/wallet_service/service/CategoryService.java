@@ -1,11 +1,11 @@
 package com.fpm_2025.wallet_service.service;
 
+import com.fpm2025.domain.dto.response.CategoryResponse;
+import com.fpm2025.domain.enums.CategoryType;
 import com.fpm_2025.wallet_service.entity.CategoryEntity;
-import com.fpm_2025.wallet_service.entity.enums.CategoryType;
 import com.fpm_2025.wallet_service.exception.ResourceNotFoundException;
 import com.fpm_2025.wallet_service.exception.DuplicateResourceException;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateCategoryRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.CategoryResponse;
 import com.fpm_2025.wallet_service.repository.CategoryRepository;
 import com.fpm_2025.wallet_service.service.imp.CategoryServiceImp;
 
@@ -30,6 +30,7 @@ public class CategoryService implements CategoryServiceImp {
     private final CategoryRepository categoryRepository;
     private final Logger logger = LoggerFactory.getLogger(CategoryService.class);
 
+    @Override
     @Transactional
     public CategoryResponse createCategory(CreateCategoryRequest request) {
         logger.info("Creating new category: {}", request.getName());
@@ -67,6 +68,7 @@ public class CategoryService implements CategoryServiceImp {
         return mapToResponse(savedCategory);
     }
 
+    @Override
     public List<CategoryResponse> getAllCategories() {
         logger.info("Fetching all categories");
         List<CategoryEntity> categories = categoryRepository.findAll();
@@ -75,6 +77,7 @@ public class CategoryService implements CategoryServiceImp {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<CategoryResponse> getCategoriesByType(CategoryType type) {
         logger.info("Fetching categories by type: {}", type);
         List<CategoryEntity> categories = categoryRepository.findByType(type);
@@ -83,6 +86,7 @@ public class CategoryService implements CategoryServiceImp {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<CategoryResponse> getRootCategories() {
         logger.info("Fetching root categories");
         List<CategoryEntity> categories = categoryRepository.findByParentIdIsNull();
@@ -91,6 +95,7 @@ public class CategoryService implements CategoryServiceImp {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<CategoryResponse> getRootCategoriesByType(CategoryType type) {
         logger.info("Fetching root categories by type: {}", type);
         List<CategoryEntity> categories = categoryRepository.findRootCategoriesByType(type);
@@ -99,6 +104,7 @@ public class CategoryService implements CategoryServiceImp {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public CategoryResponse getCategoryById(Long id) {
         logger.info("Fetching category with id: {}", id);
         CategoryEntity category = categoryRepository.findById(id)
@@ -106,6 +112,7 @@ public class CategoryService implements CategoryServiceImp {
         return mapToResponse(category);
     }
 
+    @Override
     public CategoryResponse getCategoryWithChildren(Long id) {
         logger.info("Fetching category with children, id: {}", id);
         CategoryEntity category = categoryRepository.findByIdWithChildren(id)
@@ -113,6 +120,7 @@ public class CategoryService implements CategoryServiceImp {
         return mapToResponseWithChildren(category);
     }
 
+    @Override
     public List<CategoryResponse> getSubCategories(Long parentId) {
         logger.info("Fetching sub-categories for parent id: {}", parentId);
 
@@ -126,6 +134,7 @@ public class CategoryService implements CategoryServiceImp {
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Transactional
     public void deleteCategory(Long id) {
         logger.info("Deleting category with id: {}", id);
@@ -168,5 +177,4 @@ public class CategoryService implements CategoryServiceImp {
                 .children(children)
                 .build();
     }
-
 }

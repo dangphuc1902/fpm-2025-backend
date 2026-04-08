@@ -1,7 +1,7 @@
 package com.fpm2025.transaction_service.entity;
 
 import com.fpm2025.transaction_service.entity.enums.TransactionStatus;
-import com.fpm2025.transaction_service.entity.enums.TransactionType;
+import com.fpm2025.domain.enums.CategoryType;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,7 +42,7 @@ public class TransactionEntity {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private TransactionType type;
+    private CategoryType type;
 
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;

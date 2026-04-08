@@ -5,7 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fpm_2025.wallet_service.entity.enums.CategoryType;
+import com.fpm2025.domain.enums.CategoryType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

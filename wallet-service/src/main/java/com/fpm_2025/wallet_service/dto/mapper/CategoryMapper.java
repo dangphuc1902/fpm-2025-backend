@@ -1,9 +1,9 @@
 package com.fpm_2025.wallet_service.dto.mapper;
 
 import com.fpm_2025.wallet_service.dto.payload.request.CreateCategoryRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.CategoryResponse;
+import com.fpm2025.domain.dto.response.CategoryResponse;
 import com.fpm_2025.wallet_service.entity.CategoryEntity;
-import com.fpm_2025.wallet_service.entity.enums.CategoryType;
+import com.fpm2025.domain.enums.CategoryType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

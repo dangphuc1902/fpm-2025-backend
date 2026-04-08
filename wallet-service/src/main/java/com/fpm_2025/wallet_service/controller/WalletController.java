@@ -1,11 +1,12 @@
 package com.fpm_2025.wallet_service.controller;
 
 import com.fpm2025.domain.common.BaseResponse;
+import com.fpm2025.domain.dto.request.ShareWalletRequest;
+import com.fpm2025.domain.dto.response.WalletResponse;
+import com.fpm2025.domain.dto.response.WalletPermissionResponse;
+import com.fpm2025.domain.enums.WalletType;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
 import com.fpm_2025.wallet_service.dto.payload.request.UpdateWalletRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.*;
-import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
 import com.fpm_2025.wallet_service.service.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -118,21 +119,21 @@ public class WalletController {
 
 	@PostMapping("/{id}/share")
 	@Operation(summary = "Share wallet with a user")
-	public ResponseEntity<BaseResponse<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse>> shareWallet(
+	public ResponseEntity<BaseResponse<WalletPermissionResponse>> shareWallet(
 		@PathVariable Long id,
-		@Valid @RequestBody com.fpm_2025.wallet_service.dto.payload.request.ShareWalletRequest request,
+		@Valid @RequestBody ShareWalletRequest request,
 		@AuthenticationPrincipal Long userId) {
-		com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse res = walletService.shareWallet(id, request, userId);
+		WalletPermissionResponse res = walletService.shareWallet(id, request, userId);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(BaseResponse.success(res, "Wallet shared successfully"));
 	}
 
 	@GetMapping("/{id}/shares")
 	@Operation(summary = "Get all users who have access to this wallet")
-	public ResponseEntity<BaseResponse<List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse>>> getSharedUsers(
+	public ResponseEntity<BaseResponse<List<WalletPermissionResponse>>> getSharedUsers(
 		@PathVariable Long id,
 		@AuthenticationPrincipal Long userId) {
-		List<com.fpm_2025.wallet_service.dto.payload.response.WalletPermissionResponse> shares = walletService.getSharedUsers(id, userId);
+		List<WalletPermissionResponse> shares = walletService.getSharedUsers(id, userId);
 		return ResponseEntity.ok(BaseResponse.success(shares, "Shared users retrieved successfully"));
 	}
 
@@ -152,7 +153,6 @@ public class WalletController {
             @PathVariable Long familyId,
             @AuthenticationPrincipal Long userId) {
         
-        // 1️ Kiểm tra xem user có thuộc family này không (qua gRPC gọi user-auth-service)
         if (!userGrpcClient.isUserInFamily(userId, familyId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new BaseResponse<>(403, "You are not a member of this family", null));

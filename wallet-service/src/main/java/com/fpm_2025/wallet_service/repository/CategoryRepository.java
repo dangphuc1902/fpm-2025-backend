@@ -1,7 +1,7 @@
 package com.fpm_2025.wallet_service.repository;
 
 import com.fpm_2025.wallet_service.entity.CategoryEntity;
-import com.fpm_2025.wallet_service.entity.enums.CategoryType;
+import com.fpm2025.domain.enums.CategoryType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

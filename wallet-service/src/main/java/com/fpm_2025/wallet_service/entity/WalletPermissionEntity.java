@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.entity;
 
-import com.fpm_2025.wallet_service.entity.enums.WalletPermissionLevel;
+import com.fpm2025.domain.enums.WalletPermissionLevel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

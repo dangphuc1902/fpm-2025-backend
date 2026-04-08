@@ -1,7 +1,7 @@
 package com.fpm_2025.reportingservice.event.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fpm_2025.reportingservice.dto.TransactionEventDto;
+import com.fpm2025.domain.event.TransactionCreatedEvent;
 import com.fpm_2025.reportingservice.entity.TransactionSummaryEntity;
 import com.fpm_2025.reportingservice.repository.TransactionSummaryRepository;
 import org.slf4j.Logger;
@@ -10,6 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @Service
@@ -36,15 +38,14 @@ public class TransactionEventConsumer {
     }
 
     @KafkaListener(topics = "transaction.created", groupId = "reporting-group")
-    public void consumeTransactionCreated(String message) {
+    public void consumeTransactionCreated(TransactionCreatedEvent event) {
         try {
-            log.info("Kafka: Received transaction.created event: {}", message);
-            TransactionEventDto event = objectMapper.readValue(message, TransactionEventDto.class);
+            log.info("Kafka: Received transaction.created event for userId={}", event.getUserId());
 
-            // Period string like "2025-03"
-            String period = event.getTransactionDate().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            // Convert Instant to LocalDateTime for period formatting
+            LocalDateTime date = LocalDateTime.ofInstant(event.getTimestamp(), ZoneId.systemDefault());
+            String period = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
-            // Get or create summary record for this user/period
             TransactionSummaryEntity summary = summaryRepository.findByUserIdAndPeriod(event.getUserId(), period)
                     .orElse(TransactionSummaryEntity.builder()
                             .userId(event.getUserId())
@@ -53,7 +54,6 @@ public class TransactionEventConsumer {
                             .totalExpense(BigDecimal.ZERO)
                             .build());
 
-            // Accumulate income or expense
             if ("INCOME".equalsIgnoreCase(event.getType())) {
                 summary.setTotalIncome(summary.getTotalIncome().add(event.getAmount()));
             } else if ("EXPENSE".equalsIgnoreCase(event.getType())) {
@@ -63,7 +63,6 @@ public class TransactionEventConsumer {
             summaryRepository.save(summary);
             log.info("Kafka: Updated reporting summary for userId={} period={}", event.getUserId(), period);
 
-            // Clear cache to reflect new data on dashboard
             clearDashboardCache();
 
         } catch (Exception e) {
@@ -75,13 +74,11 @@ public class TransactionEventConsumer {
     public void consumeTransactionUpdated(String message) {
         log.info("Kafka: Received transaction.updated event, clearing cache...");
         clearDashboardCache();
-        // Additional logic to update summary if needed...
     }
 
     @KafkaListener(topics = "transaction.deleted", groupId = "reporting-group")
     public void consumeTransactionDeleted(String message) {
         log.info("Kafka: Received transaction.deleted event, clearing cache...");
         clearDashboardCache();
-        // Additional logic...
     }
 }
