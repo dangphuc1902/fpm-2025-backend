@@ -7,7 +7,7 @@ import com.fpm2025.user_auth_service.entity.UserEntity;
 import com.fpm2025.user_auth_service.repository.FamilyMemberRepository;
 import com.fpm2025.user_auth_service.repository.FamilyRepository;
 import com.fpm2025.user_auth_service.repository.UserRepository;
-import com.fpm2025.user_auth_service.util.JwtUtils;
+import com.fpm2025.security.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import io.grpc.Status;
@@ -43,7 +43,7 @@ public class UserGrpcServiceImpl extends UserGrpcServiceGrpc.UserGrpcServiceImpl
     private FamilyMemberRepository familyMemberRepository;
 
     @Autowired
-    private JwtUtils jwtUtils;
+    private JwtTokenProvider jwtTokenProvider;
 
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
@@ -68,7 +68,7 @@ public class UserGrpcServiceImpl extends UserGrpcServiceGrpc.UserGrpcServiceImpl
             }
 
             // Kiểm tra token hợp lệ
-            if (!jwtUtils.isTokenValid(token)) {
+            if (!jwtTokenProvider.validateToken(token)) {
                 responseObserver.onNext(TokenValidationResponse.newBuilder()
                         .setValid(false)
                         .setMessage("Token is expired or invalid")
@@ -77,8 +77,8 @@ public class UserGrpcServiceImpl extends UserGrpcServiceGrpc.UserGrpcServiceImpl
                 return;
             }
 
-            Long userId = jwtUtils.extractUserId(token);
-            String email = jwtUtils.extractEmail(token);
+            Long userId = jwtTokenProvider.extractUserId(token);
+            String email = jwtTokenProvider.extractEmail(token);
 
             // Verify user tồn tại trong DB
             boolean userExists = userRepository.existsByEmail(email);

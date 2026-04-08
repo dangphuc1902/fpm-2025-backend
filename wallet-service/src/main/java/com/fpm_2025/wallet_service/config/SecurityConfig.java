@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.config;
 
-import com.fpm_2025.wallet_service.filter.JwtAuthenticationFilter;
+import com.fpm2025.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

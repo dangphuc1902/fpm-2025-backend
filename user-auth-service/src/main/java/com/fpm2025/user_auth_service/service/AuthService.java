@@ -4,7 +4,7 @@ import com.fpm2025.user_auth_service.entity.UserEntity;
 import com.fpm2025.user_auth_service.payload.request.UserLoginRequest;
 import com.fpm2025.user_auth_service.payload.request.UserRegisterRequest;
 import com.fpm2025.user_auth_service.repository.UserRepository;
-import com.fpm2025.user_auth_service.util.JwtUtils;
+import com.fpm2025.security.jwt.JwtTokenProvider;
 import com.fpm2025.user_auth_service.exception.UserAlreadyExistsException;
 import com.fpm2025.user_auth_service.exception.UserEmailNotExistException;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
+    private final JwtTokenProvider jwtTokenProvider;
     private final WebClient.Builder webClientBuilder;
     private final JwtBlacklistService jwtBlacklistService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -60,7 +60,7 @@ public class AuthService {
         userRepository.save(user);
 
         // Generate JWT token
-        String token = jwtUtils.generateToken(user.getId(), user.getEmail());
+        String token = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), null);
 
         log.info("Login successful for user: {}", user.getEmail());
 
@@ -87,7 +87,7 @@ public class AuthService {
         UserEntity savedUser = userRepository.save(user);
 
         // Generate JWT token
-        String token = jwtUtils.generateToken(savedUser.getId(), savedUser.getEmail());
+        String token = jwtTokenProvider.generateAccessToken(savedUser.getId(), savedUser.getEmail(), null);
 
         // [Kafka] Publish user.created event → wallet-service tạo ví mặc định
         publishUserCreatedEvent(savedUser);
@@ -124,7 +124,7 @@ public class AuthService {
             userRepository.save(user);
 
             // Generate JWT token
-            String token = jwtUtils.generateToken(user.getId(), user.getEmail());
+            String token = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), null);
 
             log.info("Google login successful for user: {}", user.getEmail());
 
@@ -143,8 +143,8 @@ public class AuthService {
             if (jwtBlacklistService.isTokenBlacklisted(token)) {
                 throw new RuntimeException("Token is blacklisted");
             }
-            Long userId = jwtUtils.extractUserId(token);
-            String email = jwtUtils.extractEmail(token);
+            Long userId = jwtTokenProvider.extractUserId(token);
+            String email = jwtTokenProvider.extractEmail(token);
 
             UserEntity user = userRepository.findById(Math.toIntExact(userId))
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -169,8 +169,8 @@ public class AuthService {
     @Transactional
     public void logout(String token) {
         log.info("Logout request");
-        Long userId = jwtUtils.extractUserId(token);
-        long remainingTime = jwtUtils.getRemainingExpiration(token);
+        Long userId = jwtTokenProvider.extractUserId(token);
+        long remainingTime = jwtTokenProvider.getRemainingExpiration(token);
         jwtBlacklistService.blacklistToken(token, remainingTime);
         log.info("User {} logged out, token blacklisted.", userId);
     }
@@ -225,7 +225,7 @@ public class AuthService {
 
         response.put("token", token);
         response.put("user", userInfo);
-        response.put("expiresIn", jwtUtils.getExpiration());
+        response.put("expiresIn", jwtTokenProvider.getExpiration());
 
         return response;
     }

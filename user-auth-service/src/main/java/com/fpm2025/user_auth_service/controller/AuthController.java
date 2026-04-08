@@ -2,7 +2,7 @@ package com.fpm2025.user_auth_service.controller;
 
 import com.fpm2025.user_auth_service.payload.request.UserLoginRequest;
 import com.fpm2025.user_auth_service.payload.request.UserRegisterRequest;
-import com.fpm2025.user_auth_service.payload.response.BaseResponse;
+import com.fpm2025.domain.common.BaseResponse;
 import com.fpm2025.user_auth_service.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

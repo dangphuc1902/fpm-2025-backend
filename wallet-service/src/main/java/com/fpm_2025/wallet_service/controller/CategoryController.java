@@ -1,5 +1,6 @@
 package com.fpm_2025.wallet_service.controller;
 
+import com.fpm2025.domain.common.BaseResponse;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateCategoryRequest;
 import com.fpm_2025.wallet_service.dto.payload.response.*;
 import com.fpm_2025.wallet_service.dto.payload.response.CategoryResponse;

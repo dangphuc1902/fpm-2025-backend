@@ -2,7 +2,7 @@ package com.fpm2025.user_auth_service.controller;
 
 import com.fpm2025.user_auth_service.payload.request.CreateFamilyRequest;
 import com.fpm2025.user_auth_service.payload.request.InviteMemberRequest;
-import com.fpm2025.user_auth_service.payload.response.BaseResponse;
+import com.fpm2025.domain.common.BaseResponse;
 import com.fpm2025.user_auth_service.payload.response.FamilyMemberResponse;
 import com.fpm2025.user_auth_service.payload.response.FamilyResponse;
 import com.fpm2025.user_auth_service.service.FamilyService;
