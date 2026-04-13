@@ -3,7 +3,9 @@ package com.fpm2025.transaction_service.grpc;
 import com.fpm2025.protocol.common.Money;
 import com.fpm2025.protocol.common.PageResponse;
 import com.fpm2025.protocol.transaction.*;
-import com.fpm2025.transaction_service.dto.TransactionRequest;
+import com.fpm2025.domain.dto.request.TransactionRequest;
+import com.fpm2025.domain.dto.response.TransactionResponse;
+import com.fpm2025.domain.enums.CategoryType;
 import com.fpm2025.transaction_service.entity.TransactionEntity;
 import com.fpm2025.transaction_service.service.TransactionService;
 
@@ -27,12 +29,9 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
 
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
-    // =========================================================================
-    // 1. GetTransactionById
-    // =========================================================================
     @Override
     public void getTransactionById(TransactionIdRequest request,
-                                   StreamObserver<TransactionResponse> responseObserver) {
+                                   StreamObserver<com.fpm2025.protocol.transaction.TransactionResponse> responseObserver) {
         log.info("gRPC: getTransactionById called for id: {}", request.getTransactionId());
         try {
             TransactionEntity entity = transactionService.findById(request.getTransactionId());
@@ -46,9 +45,6 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // 2. GetTransactionsByWallet
-    // =========================================================================
     @Override
     public void getTransactionsByWallet(WalletTransactionsRequest request,
                                         StreamObserver<TransactionsResponse> responseObserver) {
@@ -65,13 +61,10 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
                 builder.addTransactions(toProto(e));
             }
 
-            // FIX #1: Bỏ setPageSize nếu proto không có field đó
-            // Chỉ set các field thực sự tồn tại trong PageResponse proto
             builder.setPageInfo(PageResponse.newBuilder()
                     .setCurrentPage(page)
                     .setTotalPages(pagedResult.getTotalPages())
                     .setTotalElements((int) pagedResult.getTotalElements())
-                    // .setPageSize(size) // ← XÓA dòng này nếu proto không có field page_size
                     .build());
 
             responseObserver.onNext(builder.build());
@@ -82,9 +75,6 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // 3. GetTransactionsByDateRange
-    // =========================================================================
     @Override
     public void getTransactionsByDateRange(DateRangeRequest request,
                                            StreamObserver<TransactionsResponse> responseObserver) {
@@ -110,11 +100,6 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // 4. GetTransactionsByUser
-    // FIX #2: listTransactions() trả về Page<DTO>, không phải Page<proto>
-    // Phải dùng dto.TransactionResponse, không nhầm với proto TransactionResponse
-    // =========================================================================
     @Override
     public void getTransactionsByUser(UserTransactionsRequest request,
                                       StreamObserver<TransactionsResponse> responseObserver) {
@@ -123,13 +108,12 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
             int page = Math.max(0, request.getPage());
             int size = request.getSize() > 0 ? request.getSize() : 20;
 
-            // pagedResult chứa DTO, đặt tên rõ ràng để tránh nhầm lẫn
             var pagedResult = transactionService.listTransactions(
                     request.getUserId(), null, null, null, null, null, page, size);
 
             TransactionsResponse.Builder builder = TransactionsResponse.newBuilder();
 
-            for (com.fpm2025.transaction_service.dto.TransactionResponse r : pagedResult.getContent()) {
+            for (TransactionResponse r : pagedResult.getContent()) {
                 builder.addTransactions(dtoToProto(r));
             }
 
@@ -137,7 +121,6 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
                     .setCurrentPage(page)
                     .setTotalPages(pagedResult.getTotalPages())
                     .setTotalElements((int) pagedResult.getTotalElements())
-                    // .setPageSize(size) // ← XÓA nếu proto không có
                     .build());
 
             responseObserver.onNext(builder.build());
@@ -148,20 +131,16 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // 5. CreateTransaction
-    // =========================================================================
     @Override
-    public void createTransaction(CreateTransactionRequest request,
-                                  StreamObserver<TransactionResponse> responseObserver) {
+    public void createTransaction(com.fpm2025.protocol.transaction.CreateTransactionRequest request,
+                                  StreamObserver<com.fpm2025.protocol.transaction.TransactionResponse> responseObserver) {
         log.info("gRPC: createTransaction called by external service (source: {})", request.getSource());
         try {
             TransactionRequest dto = new TransactionRequest();
             dto.setWalletId(request.getWalletId());
             dto.setAmount(BigDecimal.valueOf(request.getAmount().getAmount()));
             dto.setCurrency(request.getAmount().getCurrency());
-            dto.setType(com.fpm2025.transaction_service.entity.enums.TransactionType
-                    .valueOf(request.getType()));
+            dto.setType(CategoryType.valueOf(request.getType().toUpperCase()));
             dto.setDescription(request.getDescription());
             dto.setCategoryId(request.getCategoryId() != 0 ? request.getCategoryId() : null);
             dto.setNote(request.getNote());
@@ -173,8 +152,7 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
             }
             dto.setIsRecurring(false);
 
-            com.fpm2025.transaction_service.dto.TransactionResponse created =
-                    transactionService.createTransaction(request.getUserId(), dto);
+            TransactionResponse created = transactionService.createTransaction(request.getUserId(), dto);
 
             responseObserver.onNext(dtoToProto(created));
             responseObserver.onCompleted();
@@ -184,9 +162,6 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // 6. GetTotalSpending
-    // =========================================================================
     @Override
     public void getTotalSpending(SpendingRequest request,
                                  StreamObserver<SpendingResponse> responseObserver) {
@@ -202,14 +177,14 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
             List<TransactionEntity> entities = transactionService.findByUserAndDateRange(
                     request.getUserId(), start, end, null);
             long expenseCount = entities.stream()
-                    .filter(e -> "EXPENSE".equals(e.getType().name()))
+                    .filter(e -> CategoryType.EXPENSE == e.getType())
                     .count();
 
             SpendingResponse response = SpendingResponse.newBuilder()
                     .setTotalAmount(Money.newBuilder()
                             .setAmount(total.doubleValue())
                             .setCurrency("VND")
-                            .build())
+                    .build())
                     .setTransactionCount((int) expenseCount)
                     .build();
 
@@ -221,25 +196,19 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    // =========================================================================
-    // Mapper: Entity → Proto
-    // =========================================================================
-    private TransactionResponse toProto(TransactionEntity e) {
-        return TransactionResponse.newBuilder()
+    private com.fpm2025.protocol.transaction.TransactionResponse toProto(TransactionEntity e) {
+        return com.fpm2025.protocol.transaction.TransactionResponse.newBuilder()
                 .setId(e.getId() != null ? e.getId() : 0L)
                 .setWalletId(e.getWalletId() != null ? e.getWalletId() : 0L)
                 .setUserId(e.getUserId() != null ? e.getUserId() : 0L)
                 .setAmount(Money.newBuilder()
                         .setAmount(e.getAmount() != null ? e.getAmount().doubleValue() : 0.0)
-                        // FIX #3: getCurrency() từ Entity string, không cần .name()
                         .setCurrency(e.getCurrency() != null ? e.getCurrency() : "VND")
                         .build())
-                // FIX #4: getType() là Enum trên Entity → dùng .name()
                 .setType(e.getType() != null ? e.getType().name() : "")
                 .setDescription(e.getDescription() != null ? e.getDescription() : "")
                 .setCategoryId(e.getCategoryId() != null ? e.getCategoryId() : 0L)
                 .setNote(e.getNote() != null ? e.getNote() : "")
-                // FIX #5: localDateTime.format(formatter), không phải String.format(formatter)
                 .setTransactionDate(e.getTransactionDate() != null
                         ? e.getTransactionDate().format(ISO_FORMATTER) : "")
                 .setCreatedAt(e.getCreatedAt() != null
@@ -247,23 +216,15 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
                 .build();
     }
 
-    // =========================================================================
-    // Mapper: DTO → Proto
-    // FIX #6: DTO dùng BigDecimal amount, String type (hoặc Enum) — xử lý đúng type
-    // =========================================================================
-    private TransactionResponse dtoToProto(com.fpm2025.transaction_service.dto.TransactionResponse r) {
-        return TransactionResponse.newBuilder()
+    private com.fpm2025.protocol.transaction.TransactionResponse dtoToProto(TransactionResponse r) {
+        return com.fpm2025.protocol.transaction.TransactionResponse.newBuilder()
                 .setId(r.getId() != null ? r.getId() : 0L)
                 .setWalletId(r.getWalletId() != null ? r.getWalletId() : 0L)
                 .setUserId(r.getUserId() != null ? r.getUserId() : 0L)
                 .setAmount(Money.newBuilder()
-                        // FIX: r.getAmount() là BigDecimal → gọi .doubleValue()
                         .setAmount(r.getAmount() != null ? r.getAmount().doubleValue() : 0.0)
-                        // FIX: DTO không có getCurrency() → dùng default "VND"
-                        // Nếu DTO có currency thì thêm lại: r.getCurrency()
-                        .setCurrency("VND")
+                        .setCurrency(r.getCurrency() != null ? r.getCurrency() : "VND")
                         .build())
-                // FIX: Nếu r.getType() là Enum → .name(), nếu là String → dùng trực tiếp
                 .setType(r.getType() != null ? r.getType().name() : "")
                 .setDescription(r.getDescription() != null ? r.getDescription() : "")
                 .setCategoryId(r.getCategoryId() != null ? r.getCategoryId() : 0L)

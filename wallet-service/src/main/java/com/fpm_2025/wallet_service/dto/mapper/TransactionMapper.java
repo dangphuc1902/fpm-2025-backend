@@ -1,12 +1,12 @@
 package com.fpm_2025.wallet_service.dto.mapper;
 
-import com.fpm_2025.wallet_service.dto.payload.request.CreateTransactionRequest;
-import com.fpm_2025.wallet_service.dto.payload.request.UpdateTransactionRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.TransactionResponse;
+import com.fpm2025.domain.dto.request.TransactionRequest;
+import com.fpm2025.domain.dto.request.UpdateTransactionRequest;
+import com.fpm2025.domain.dto.response.TransactionResponse;
 import com.fpm_2025.wallet_service.entity.CategoryEntity;
 import com.fpm_2025.wallet_service.entity.TransactionEntity;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
-import com.fpm_2025.wallet_service.entity.enums.*;
+import com.fpm2025.domain.enums.CategoryType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 public class TransactionMapper {
 
     /**
-     * Chuyển CreateTransactionRequest → TransactionEntity
+     * Chuyển TransactionRequest → TransactionEntity
      * 
      * DÙNG KHI: User tạo transaction mới
      * 
      * LƯU Ý: Cần load WalletEntity và CategoryEntity từ DB trước
      */
-    public TransactionEntity toEntity(CreateTransactionRequest request, 
+    public TransactionEntity toEntity(TransactionRequest request, 
                                      Long userId,
                                      WalletEntity wallet,
                                      CategoryEntity category) {
@@ -46,7 +46,7 @@ public class TransactionMapper {
                 .type(request.getType())
                 .note(request.getNote())
                 .transactionDate(request.getTransactionDate() != null ? 
-                                request.getTransactionDate() : LocalDateTime.now())
+                                 request.getTransactionDate() : LocalDateTime.now())
                 .build();
     }
 

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
-import com.fpm_2025.wallet_service.event.model.WalletCreatedEvent;
+import com.fpm2025.domain.event.WalletCreatedEvent;
 
 @Component
 @RequiredArgsConstructor

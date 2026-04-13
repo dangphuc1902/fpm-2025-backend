@@ -1,7 +1,7 @@
 package com.fpm_2025.wallet_service.event.consumer;
 
 import com.fpm_2025.wallet_service.config.RabbitMQConfig;
-import com.fpm_2025.wallet_service.event.model.TransactionCreatedEvent;
+import com.fpm2025.domain.event.TransactionCreatedEvent;
 import com.fpm_2025.wallet_service.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

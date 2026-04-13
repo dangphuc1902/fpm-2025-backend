@@ -1,8 +1,8 @@
 package com.fpm2025.transaction_service.entity;
 
+import com.fpm2025.domain.enums.CategoryType;
 import com.fpm2025.transaction_service.entity.enums.RecurringFrequency;
 import com.fpm2025.transaction_service.entity.enums.RecurringStatus;
-import com.fpm2025.transaction_service.entity.enums.TransactionType;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,7 +43,7 @@ public class RecurringTransactionEntity {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private TransactionType type;
+    private CategoryType type;
 
     @Column(nullable = false, length = 50)
     @Enumerated(EnumType.STRING)

@@ -1,7 +1,7 @@
 package com.fpm2025.transaction_service.repository;
 
 import com.fpm2025.transaction_service.entity.TransactionEntity;
-import com.fpm2025.transaction_service.entity.enums.TransactionType;
+import com.fpm2025.domain.enums.CategoryType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -47,7 +47,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
             @Param("userId") Long userId,
             @Param("walletId") Long walletId,
             @Param("categoryId") Long categoryId,
-            @Param("type") TransactionType type,
+            @Param("type") CategoryType type,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);

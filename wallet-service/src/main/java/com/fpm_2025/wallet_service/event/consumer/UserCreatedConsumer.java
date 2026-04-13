@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.event.consumer;
 
-import com.fpm_2025.wallet_service.event.model.UserCreatedEvent;
+import com.fpm2025.domain.event.UserCreatedEvent;
 import com.fpm_2025.wallet_service.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

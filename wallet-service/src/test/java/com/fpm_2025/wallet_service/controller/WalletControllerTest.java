@@ -2,9 +2,9 @@ package com.fpm_2025.wallet_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fpm_2025.wallet_service.dto.payload.request.CreateWalletRequest;
-import com.fpm_2025.wallet_service.dto.payload.response.WalletResponse;
-import com.fpm_2025.wallet_service.entity.enums.WalletType;
-import com.fpm_2025.wallet_service.security.JwtService;
+import com.fpm2025.domain.dto.response.WalletResponse;
+import com.fpm2025.domain.enums.WalletType;
+import com.fpm2025.security.jwt.JwtTokenProvider;
 import com.fpm_2025.wallet_service.service.WalletService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ public class WalletControllerTest {
     private WalletService walletService;
 
     @MockBean
-    private JwtService jwtService;
+    private JwtTokenProvider jwtTokenProvider;
 
     @MockBean
     private com.fpm_2025.wallet_service.grpc.client.UserGrpcClient userGrpcClient;

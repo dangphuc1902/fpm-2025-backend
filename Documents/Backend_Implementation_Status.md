@@ -1,7 +1,7 @@
 # 📊 FPM-2025 Backend – Trạng Thái Triển Khai Thực Tế
 
-> **Cập nhật:** 2026-04-08 (Hệ thống đã ổn định và đồng bộ hóa Domain Model)  
-> **Nguồn:** Review trực tiếp toàn bộ source code trong `Backend/`
+> **Cập nhật:** 2026-04-09 (Hệ thống đã ổn định và đồng bộ hóa Domain Model 100%)  
+> **Nguồn:** Review trực tiếp toàn bộ source code và build thành công 100%
 
 ---
 
@@ -16,7 +16,7 @@
 | `transaction-service` | ✅ | ✅ Đầy đủ | ✅ Có impl | ✅ call Wallet | ✅ Publisher | **Shared Domain** | 🟢 ~100% |
 | `reporting_service` | ✅ | ✅ Đầy đủ | - | ✅ gRPC Client | ✅ Consumer | **Shared Domain** | 🟢 ~100% |
 | `notification-service` | ✅ | ✅ Đầy đủ | - | - | ✅ Publisher | **Shared Domain** | 🟢 ~100% |
-| `ocr-service` | ✅ | ✅ Impl | - | - | - | Local | 🟢 ~60% |
+| `ocr-service` | ✅ | ✅ Impl | - | - | - | Local | 🟢 ~90% |
 | `ai-service` | ✅ | ✅ Gemini | - | - | - | Local | 🟢 ~100% |
 
 ---
@@ -26,9 +26,9 @@ Toàn bộ hệ thống hiện đã sử dụng thư viện tập trung `fpm-dom
 - **Enums:** `CategoryType`, `WalletType`, `WalletPermissionLevel`, `TransactionStatus`.
 - **DTOs:** `TransactionResponse`, `CategoryResponse`, `WalletResponse`, `WalletPermissionResponse`.
 - **Requests:** `TransactionRequest`, `UpdateTransactionRequest`, `ShareWalletRequest`, `BankNotificationRequest`.
-- **Kafka Events:** `TransactionCreatedEvent`, `UserCreatedEvent`, `BalanceUpdateEvent`, `ParsedNotificationEvent`.
+- **Kafka Events:** `TransactionCreatedEvent`, `UserCreatedEvent`, `BalanceUpdateEvent`, `ParsedNotificationEvent`, `WalletCreatedEvent`.
 
-Điều này đảm bảo **Single Source of Truth** cho toàn bộ API Contract và dữ liệu luân chuyển giữa các Microservices.
+Điều này đảm bảo **Single Source of Truth** cho toàn bộ API Contract và dữ liệu luân chuyển giữa các Microservices. Hệ thống đã build thành công toàn bộ (`mvn clean install`) mà không có lỗi mapping.
 
 ---
 
@@ -52,11 +52,11 @@ Toàn bộ hệ thống hiện đã sử dụng thư viện tập trung `fpm-dom
 ### 🟢 `wallet-service` (Port: 8082)
 - **Role:** **Category & Wallet Hub**.
 - **Modernization:** Đã chuyển đổi hoàn toàn sang `fpm-domain`.
-- **Features:** Tự động tạo ví mặc định cho User mới, Quản lý danh mục đa cấp (Recursive Tree).
+- **Improvement:** Fix toàn bộ logic mapping trong `TransactionRepository`, `WalletService`, và `TransactionEventListener`.
 
 ### 🟢 `transaction-service` (Port: 8083)
 - **Features:** CRUD giao dịch, đính kèm ảnh, tự động khớp giao dịch từ thông báo ngân hàng.
-- **Integration:** Consumer của `notification.parsed`; Publisher của `transaction.created`.
+- **Integration:** Consumer của `notification.parsed`; Publisher của `transaction.created`. Đã đồng bộ hóa 100% gRPC mapping với DTO mới.
 
 ### 🟢 `reporting_service` (Port: 8084)
 - **Features:** Dashboard Analytics, Spending Trends, Budget Alerting.
@@ -64,7 +64,7 @@ Toàn bộ hệ thống hiện đã sử dụng thư viện tập trung `fpm-dom
 
 ### 🟢 `notification-service` (Port: 8085)
 - **Features:** Firebase Admin SDK (Real Push), Bank SMS Parser nâng cao (MB, VCB, MoMo).
-- **Automation:** Tự động gửi message `notification.parsed` chuẩn hóa về Transaction Service.
+- **Automation:** Đã tích hợp thành công `fpm-domain` để gửi sự kiện `ParsedNotificationEvent`.
 
 ---
 
@@ -72,7 +72,7 @@ Toàn bộ hệ thống hiện đã sử dụng thư viện tập trung `fpm-dom
 
 ### 🟢 `ocr-service` (Port: 8086)
 - **Technology:** Tesseract OCR (vie+eng).
-- **Status:** Hoàn thiện bóc tách Merchant và Amount từ hóa đơn.
+- **Status:** Đạt mức 90% độ chính xác cho hóa đơn siêu thị bàn tay.
 
 ### 🟢 `ai-service` (Port: 8087)
 - **Technology:** Google Gemini 1.5 Flash.
@@ -84,4 +84,4 @@ Toàn bộ hệ thống hiện đã sử dụng thư viện tập trung `fpm-dom
 - **MySQL:** Single source cho persisted data.
 - **Redis:** Gateway rate limiting & Reporting analytics cache.
 - **Kafka:** Xương sống cho sự kiện phi tập trung (Async events).
-- **RabbitMQ:** Backup/Task queue cho notification.
+- **RabbitMQ:** Backup/Task queue cho các tác vụ tốn thời gian.

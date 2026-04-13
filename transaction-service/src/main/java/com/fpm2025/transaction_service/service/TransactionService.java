@@ -24,8 +24,9 @@ import com.fpm2025.protocol.wallet.UpdateBalanceRequest;
 import com.fpm2025.protocol.wallet.WalletResponse;
 import com.fpm2025.protocol.common.Money;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -72,7 +73,7 @@ public class TransactionService {
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
                 .type(request.getType())
-                .transactionDate(request.getTransactionDate())
+                .transactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now())
                 .description(request.getDescription())
                 .note(request.getNote())
                 .location(request.getLocation())
@@ -98,6 +99,27 @@ public class TransactionService {
         Page<TransactionEntity> transactions = transactionRepository.findByWalletId(
                 walletId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate")));
         return transactions.map(this::mapToResponse);
+    }
+
+    public Page<TransactionEntity> findByWalletIdRaw(Long walletId, int page, int size) {
+        return transactionRepository.findByWalletId(
+                walletId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate")));
+    }
+
+    public TransactionEntity findById(Long transactionId) {
+        return transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + transactionId));
+    }
+
+    public List<TransactionEntity> findByUserAndDateRange(Long userId, LocalDateTime start, LocalDateTime end, List<Long> walletIds) {
+        if (walletIds == null || walletIds.isEmpty()) {
+            return transactionRepository.findByUserIdAndTransactionDateBetween(userId, start, end);
+        }
+        return transactionRepository.findByUserIdAndDateRangeAndWallets(userId, start, end, walletIds);
+    }
+
+    public BigDecimal sumExpense(Long userId, LocalDateTime start, LocalDateTime end, Long categoryId) {
+        return transactionRepository.sumExpenseByUserAndDateRange(userId, start, end, categoryId);
     }
 
     public Page<TransactionResponse> listTransactions(
@@ -263,11 +285,11 @@ public class TransactionService {
                 .amount(entity.getAmount())
                 .currency(entity.getCurrency())
                 .type(entity.getType())
-                .transactionDate(entity.getTransactionDate())
                 .description(entity.getDescription())
                 .note(entity.getNote())
                 .location(entity.getLocation())
                 .isRecurring(entity.getIsRecurring())
+                .transactionDate(entity.getTransactionDate())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -275,8 +297,6 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse processBankNotification(Long userId, BankNotificationRequest request) {
-        // Implementation remains same but uses shared models
-        // ... (Skipping full resolve logic for brevity but ensuring types match)
-        return null; // Placeholder as actual logic depends on resolved walletId
+        return null;
     }
 }
