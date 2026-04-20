@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: api-gateway-test
+  cloud:
+    config:
+      enabled: false
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+  # Disable config import for tests to avoid bootstrap errors
+  config:
+    import: ""
+
+eureka:
+  client:
+    enabled: false
+
+# Avoid port conflicts during tests
+server:
+  port: 0

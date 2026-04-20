@@ -1,5 +1,6 @@
 package com.fpm2025.user_auth_service.service;
 
+import com.fpm2025.domain.event.UserCreatedEvent;
 import com.fpm2025.user_auth_service.entity.UserEntity;
 import com.fpm2025.user_auth_service.payload.request.UserLoginRequest;
 import com.fpm2025.user_auth_service.payload.request.UserRegisterRequest;
@@ -233,21 +234,29 @@ public class AuthService {
     /**
      * Publish Kafka event 'user.created' sau khi user đăng ký thành công.
      * wallet-service sẽ consume event này để tạo ví mặc định (CASH) cho user.
+     *
+     * ⚠️ QUAN TRỌNG: Phải publish đúng kiểu UserCreatedEvent (strongly-typed),
+     * không dùng raw Map<String,Object> vì consumer bên wallet-service dùng
+     * JsonDeserializer để deserialize thành UserCreatedEvent.
      */
     private void publishUserCreatedEvent(UserEntity user) {
         try {
-            Map<String, Object> event = new HashMap<>();
-            event.put("userId", user.getId());
-            event.put("email", user.getEmail());
-            event.put("username", user.getUsername());
-            event.put("createdAt", user.getCreatedAt() != null
-                    ? user.getCreatedAt().toString() : LocalDateTime.now().toString());
+            UserCreatedEvent event = UserCreatedEvent.builder()
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .username(user.getUsername())
+                    .createdAt(user.getCreatedAt() != null
+                            ? user.getCreatedAt().toString()
+                            : LocalDateTime.now().toString())
+                    .build();
 
             kafkaTemplate.send(USER_CREATED_TOPIC, String.valueOf(user.getId()), event);
-            log.info("Kafka: Published user.created event for userId: {}", user.getId());
+            log.info("Kafka: Published UserCreatedEvent for userId={} email={}",
+                    user.getId(), user.getEmail());
         } catch (Exception e) {
             // Non-blocking: không để Kafka failure làm fail registration
-            log.error("Kafka: Failed to publish user.created event for userId: {}", user.getId(), e);
+            log.error("Kafka: Failed to publish UserCreatedEvent for userId={}: {}",
+                    user.getId(), e.getMessage(), e);
         }
     }
 }

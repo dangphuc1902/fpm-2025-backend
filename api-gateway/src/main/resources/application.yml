@@ -1,11 +1,67 @@
 spring:
   application:
     name: api-gateway
-  config:
-    import: optional:configserver:http://config-server:8888 # Cập nhật để trỏ đến tên dịch vụ trong Docker Compose
 
+  # Config Server — optional, falls back to local config below
+  config:
+    import: optional:configserver:http://config-server:8888
+
+  # ─── Spring Cloud Gateway ───────────────────────────────────────────────────
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:8080"
+              - "http://localhost:8081"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10s
+
+  # ─── Redis (Rate Limiter) ────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+# ─── Eureka Client ─────────────────────────────────────────────────────────────
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
+
+# ─── Server ────────────────────────────────────────────────────────────────────
 server:
-  port: 8889
+  port: ${GATEWAY_PORT:8889}
+
+# ─── Resilience4j ──────────────────────────────────────────────────────────────
 resilience4j:
   ratelimiter:
     instances:
@@ -13,3 +69,22 @@ resilience4j:
         limitForPeriod: 5
         limitRefreshPeriod: 5m
         timeoutDuration: 0
+  circuitbreaker:
+    instances:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+
+# ─── Security/JWT ─────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:fpm2025-secret-key-for-development-only-must-be-long-enough-to-be-secure-32-chars}
+
+# ─── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.fpm_2025.api_gateway: DEBUG
+    reactor.netty: WARN

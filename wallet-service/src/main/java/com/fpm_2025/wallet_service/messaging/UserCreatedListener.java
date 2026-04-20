@@ -1,18 +1,29 @@
 package com.fpm_2025.wallet_service.messaging;
 
-import java.util.Map;
-
+import com.fpm2025.domain.event.UserCreatedEvent;
+import com.fpm_2025.wallet_service.service.WalletService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.fpm_2025.wallet_service.service.WalletService;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * Lắng nghe sự kiện đăng ký người dùng mới từ user-auth-service.
- * Khi có user mới, tự động khởi tạo ví mặc định (Ví Tiền Mặt).
+ * Kafka Consumer: Lắng nghe sự kiện 'user.created' từ user-auth-service.
+ *
+ * <p>Khi có user mới đăng ký (Email hoặc Google OAuth2), user-auth-service
+ * publish {@link UserCreatedEvent} vào topic "user.created".
+ * Consumer này nhận event và tự động khởi tạo ví mặc định (Ví Tiền Mặt / CASH)
+ * cho user đó trong wallet-service.
+ *
+ * <p><b>Contract:</b>
+ * <ul>
+ *   <li>Topic: {@code user.created}</li>
+ *   <li>Group ID: {@code wallet-group} (riêng biệt với user-auth-group)</li>
+ *   <li>Payload: {@link UserCreatedEvent} — strongly-typed JSON</li>
+ * </ul>
+ *
+ * <p><b>Idempotent:</b> {@code createDefaultWallet()} kiểm tra ví đã tồn tại
+ * trước khi tạo mới, đảm bảo an toàn khi Kafka re-deliver message.
  */
 @Component
 @RequiredArgsConstructor
@@ -21,29 +32,23 @@ public class UserCreatedListener {
 
     private final WalletService walletService;
 
-    @KafkaListener(topics = "user.created", groupId = "wallet-group")
-    public void handleUserCreated(Map<String, Object> event) {
+    @KafkaListener(
+            topics = "user.created",
+            groupId = "wallet-group",
+            containerFactory = "userCreatedKafkaListenerContainerFactory"
+    )
+    public void handleUserCreated(UserCreatedEvent event) {
+        log.info("[Kafka] Received UserCreatedEvent: userId={} email={}",
+                event.getUserId(), event.getEmail());
+
         try {
-            log.info("Kafka: Received user.created event: {}", event);
-            
-            // Lấy userId từ event (đảm bảo kiểu Long)
-            Object userIdObj = event.get("userId");
-            Long userId;
-            
-            if (userIdObj instanceof Integer) {
-                userId = ((Integer) userIdObj).longValue();
-            } else if (userIdObj instanceof Long) {
-                userId = (Long) userIdObj;
-            } else {
-                userId = Long.parseLong(userIdObj.toString());
-            }
-            
-            log.info("Kafka: Creating default wallet for userId: {}", userId);
-            walletService.createDefaultWallet(userId);
-            
-            log.info(" Kafka: Successfully processed user.created for userId: {}", userId);
+            walletService.createDefaultWallet(event.getUserId());
+            log.info("[Kafka] ✅ Default wallet created for userId={}", event.getUserId());
         } catch (Exception e) {
-            log.error(" Kafka: Error processing user.created event: {}", e.getMessage(), e);
+            log.error("[Kafka] ❌ Failed to create default wallet for userId={}: {}",
+                    event.getUserId(), e.getMessage(), e);
+            // Non-blocking: log lỗi nhưng không re-throw để tránh loop retry vô hạn
+            // TODO: Cân nhắc gửi vào Dead Letter Queue (DLQ) cho môi trường production
         }
     }
 }
