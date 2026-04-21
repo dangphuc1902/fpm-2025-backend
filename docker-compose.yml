@@ -197,8 +197,9 @@ services:
       context: .
       dockerfile: ./api-gateway/Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:8089"
     environment:
+      GATEWAY_PORT: 8089
       SPRING_REDIS_HOST: redis
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
