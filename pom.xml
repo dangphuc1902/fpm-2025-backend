@@ -123,6 +123,16 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<repositories>
+		<repository>
+			<id>github</id>
+			<url>https://maven.pkg.github.com/dangphuc1902/fpm-2025-backend</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>

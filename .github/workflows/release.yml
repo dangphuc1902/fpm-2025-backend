@@ -1,0 +1,114 @@
+name: "Release & Publish FPM Project"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # 1. Build all artifacts (JARs)
+  build-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build Libraries
+        run: |
+          cd libs
+          mvn clean install -DskipTests -B
+
+      - name: Build Backend Microservices
+        run: |
+          cd Backend
+          mvn clean package -DskipTests -B
+
+      - name: Stash JAR Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-jars
+          path: |
+            libs/**/target/*.jar
+            Backend/**/target/*.jar
+          retention-days: 1
+
+  # 2. Build and Push Docker Images
+  publish-docker:
+    needs: build-all
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        # Configuration for each service: [service-name, dockerfile-path, build-context]
+        include:
+          - name: 'fpm-libraries'
+            file: './libs/Dockerfile'
+            context: './libs'
+          - name: 'eureka-server'
+            file: './Backend/eureka-server/Dockerfile'
+            context: './Backend'
+          - name: 'api-gateway'
+            file: './Backend/api-gateway/Dockerfile'
+            context: './Backend'
+          - name: 'user-auth-service'
+            file: './Backend/user-auth-service/Dockerfile'
+            context: './Backend'
+          - name: 'wallet-service'
+            file: './Backend/wallet-service/Dockerfile'
+            context: './Backend'
+          - name: 'transaction-service'
+            file: './Backend/transaction-service/Dockerfile'
+            context: './Backend'
+          - name: 'reporting-service'
+            file: './Backend/reporting_service/Dockerfile'
+            context: './Backend'
+          - name: 'notification-service'
+            file: './Backend/notification-service/Dockerfile'
+            context: './Backend'
+          - name: 'ocr-service'
+            file: './Backend/ocr-service/Dockerfile'
+            context: './Backend'
+          - name: 'ai-service'
+            file: './Backend/ai-service/Dockerfile'
+            context: './Backend'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Built JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: all-jars
+          path: .
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
