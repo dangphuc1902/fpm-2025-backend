@@ -1,17 +1,16 @@
-# Stage 1: Build the application with Maven using the root context
-FROM maven:3.9-eclipse-temurin-21 AS build
-WORKDIR /app
-# Copy the entire project
-COPY . .
-# Build only the ai-service module and its dependencies
-RUN mvn -pl ai-service -am clean install -DskipTests
-
-# Stage 2: Create the final lightweight image
+# Sử dụng JRE nhẹ thay vì JDK+Maven để giảm kích thước image (từ ~600MB xuống ~200MB)
 FROM eclipse-temurin:21-jre-jammy
+
 WORKDIR /app
-# Copy the built JAR file from the specific target folder in the build stage
-COPY --from=build /app/ai-service/target/ai-service-0.0.1-SNAPSHOT.jar ./app.jar
-# Expose the port the application runs on
+
+# Copy file JAR đã được build từ bước CI trước đó
+# Lưu ý: file JAR được copy từ thư mục target/ của service tương ứng
+COPY target/*.jar app.jar
+
+# Cấu hình các biến môi trường mặc định (có thể override khi chạy)
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
+
 EXPOSE 8087
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Chạy ứng dụng
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
