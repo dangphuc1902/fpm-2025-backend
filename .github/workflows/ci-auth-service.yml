@@ -2,13 +2,11 @@ name: "CI/CD - User Auth Service"
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'user-auth-service/**' # Đã bỏ tiền tố Backend/ vì file nằm trong repo Backend
-  pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'user-auth-service/**'
+  pull_request:
+    branches: [ main, develop, master ]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read # Quyền để đọc thư viện từ GitHub Packages
+      packages: read
     
     steps:
       - name: Checkout code
@@ -27,14 +25,14 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          # Quan trọng: Cấu hình server-id để khớp với <id>github</id> trong pom.xml
           server-id: github
-          settings-path: ${{ github.workspace }}
           cache: 'maven'
 
-      # KHÔNG CẦN bước build libs nữa vì sẽ tải từ GitHub Packages
       - name: Build Service JAR
         run: |
           cd user-auth-service
+          # Dùng -s settings.xml (được tự động tạo bởi setup-java)
           mvn clean package -B
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,3 +66,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+

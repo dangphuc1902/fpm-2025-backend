@@ -2,13 +2,13 @@ name: "CI/CD - High-Tech Services"
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'ai-service/**'
       - 'ocr-service/**'
       - 'reporting_service/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'ai-service/**'
       - 'ocr-service/**'
@@ -74,3 +74,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+

@@ -2,11 +2,11 @@ name: "CI/CD - Transaction Service"
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'transaction-service/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'transaction-service/**'
   workflow_dispatch:
@@ -67,3 +67,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+

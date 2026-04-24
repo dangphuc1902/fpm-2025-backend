@@ -2,12 +2,12 @@ name: "CI/CD - Infrastructure Services"
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'eureka-server/**'
       - 'api-gateway/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
     paths:
       - 'eureka-server/**'
       - 'api-gateway/**'
@@ -29,6 +29,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          server-id: github
           cache: 'maven'
 
       - name: Build Service JAR
@@ -65,3 +66,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
