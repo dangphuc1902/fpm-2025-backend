@@ -58,35 +58,55 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # Microservices
+  # Configuration & Registry
+  config-server:
+    build:
+      context: ../config
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: git
+      GIT_REPO_URI: https://github.com/dangphuc1902/fpm-2025-config.git
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
   eureka-server:
     build:
-      context: .
-      dockerfile: ./eureka-server/Dockerfile
+      context: ./eureka-server
     ports:
       - "8761:8761"
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
 
+  # Microservices
   user-auth-service:
     build:
-      context: .
-      dockerfile: ./user-auth-service/Dockerfile
+      context: ./user-auth-service
     ports:
       - "8081:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
       mysql:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
       eureka-server:
         condition: service_started
 
   wallet-service:
     build:
-      context: .
-      dockerfile: ./wallet-service/Dockerfile
+      context: ./wallet-service
     ports:
       - "8082:8082"
     environment:
@@ -94,9 +114,12 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
       mysql:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -105,8 +128,7 @@ services:
 
   transaction-service:
     build:
-      context: .
-      dockerfile: ./transaction-service/Dockerfile
+      context: ./transaction-service
     ports:
       - "8083:8083"
       - "9093:9093"
@@ -116,9 +138,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
       mysql:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -129,8 +154,7 @@ services:
 
   reporting-service:
     build:
-      context: .
-      dockerfile: ./reporting_service/Dockerfile
+      context: ./reporting_service
     ports:
       - "8084:8084"
     environment:
@@ -138,9 +162,12 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
       mysql:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -149,8 +176,7 @@ services:
 
   notification-service:
     build:
-      context: .
-      dockerfile: ./notification-service/Dockerfile
+      context: ./notification-service
     ports:
       - "8085:8085"
     environment:
@@ -159,9 +185,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
       mysql:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -172,39 +201,49 @@ services:
 
   ocr-service:
     build:
-      context: .
-      dockerfile: ./ocr-service/Dockerfile
+      context: ./ocr-service
     ports:
       - "8086:8086"
     environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
-      - eureka-server
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
 
   ai-service:
     build:
-      context: .
-      dockerfile: ./ai-service/Dockerfile
+      context: ./ai-service
     ports:
       - "8087:8087"
     environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
-      - eureka-server
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
 
   api-gateway:
     build:
-      context: .
-      dockerfile: ./api-gateway/Dockerfile
+      context: ./api-gateway
     ports:
       - "8080:8089"
     environment:
       GATEWAY_PORT: 8089
       SPRING_REDIS_HOST: redis
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
-      - eureka-server
-      - redis
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+      redis:
+        condition: service_started
 
 volumes:
   mysql_data:
