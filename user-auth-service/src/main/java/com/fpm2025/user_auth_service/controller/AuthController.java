@@ -72,9 +72,9 @@ public class AuthController {
     @PostMapping("/google")
     @Operation(summary = "Login with Google OAuth2")
     public ResponseEntity<BaseResponse<Map<String, Object>>> loginWithGoogle(
-            @RequestParam String token) {
+            @Valid @RequestBody com.fpm2025.user_auth_service.payload.request.GoogleLoginRequest request) {
         
-        Map<String, Object> response = authService.loginWithGoogle(token);
+        Map<String, Object> response = authService.loginWithGoogle(request.getIdToken());
         
         return ResponseEntity.ok(
             BaseResponse.success(response, "Google login successful")

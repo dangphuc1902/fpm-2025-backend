@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import com.fpm2025.protocol.wallet.WalletGrpcServiceGrpc;
 import com.fpm2025.protocol.wallet.UpdateBalanceRequest;
 import com.fpm2025.protocol.wallet.WalletResponse;
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class TransactionService {
 
@@ -38,9 +36,24 @@ public class TransactionService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final RabbitTemplate rabbitTemplate;
     private final com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository;
+    private final WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletGrpcStub;
 
-    @GrpcClient("wallet-service")
-    private WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletGrpcStub;
+    public TransactionService(
+            TransactionRepository transactionRepository,
+            KafkaTemplate<String, Object> kafkaTemplate,
+            RabbitTemplate rabbitTemplate,
+            com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository,
+            @org.springframework.beans.factory.annotation.Value("${grpc.client.wallet-service.address:localhost:9092}") String address) {
+        this.transactionRepository = transactionRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.rabbitTemplate = rabbitTemplate;
+        this.attachmentRepository = attachmentRepository;
+        this.walletGrpcStub = WalletGrpcServiceGrpc.newBlockingStub(
+                io.grpc.ManagedChannelBuilder.forTarget(address)
+                        .usePlaintext()
+                        .build()
+        );
+    }
 
     @Transactional
     public TransactionResponse createTransaction(Long userId, TransactionRequest request) {

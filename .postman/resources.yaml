@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 33ca887a-aa34-4309-893b-5375c5f93438
+
+localResources:
+  collections:
+    - ..\Documents\FPM_2025_Postman_Collection.json

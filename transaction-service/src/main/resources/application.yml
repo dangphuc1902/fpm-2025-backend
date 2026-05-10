@@ -3,6 +3,13 @@ spring:
     name: transaction-service
   config:
     import: optional:configserver:http://localhost:8888
+  main:
+    allow-bean-definition-overriding: true
 
 server:
   port: 8083
+
+eureka:
+  client:
+    restclient:
+      enabled: true

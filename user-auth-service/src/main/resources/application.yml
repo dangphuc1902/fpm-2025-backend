@@ -2,22 +2,24 @@ spring:
   application:
     name: user-auth-service
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: kafka:29092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: "1"
       retries: 3
       properties:
-        spring.json.add.type.headers: false  # Không gửi type header để consumer không bị ràng buộc class
+        spring.json.add.type.headers: false
+  main:
+    allow-bean-definition-overriding: true
 
 server:
   port: 8081
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: 
 
 resilience4j.ratelimiter:
   instances:
@@ -25,3 +27,8 @@ resilience4j.ratelimiter:
       limitForPeriod: 5
       limitRefreshPeriod: 5m
       timeoutDuration: 0
+
+eureka:
+  client:
+    restclient:
+      enabled: true

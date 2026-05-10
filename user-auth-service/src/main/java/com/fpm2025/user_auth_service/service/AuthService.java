@@ -81,7 +81,7 @@ public class AuthService {
         // Create new user
         UserEntity user = UserEntity.builder()
             .email(request.getEmail())
-            .username(request.getFullName())
+            .username(request.getUsername())
             .hashedPassword(passwordEncoder.encode(request.getPassword()))
             .build();
 

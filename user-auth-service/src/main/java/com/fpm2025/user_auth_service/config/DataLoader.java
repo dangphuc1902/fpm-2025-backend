@@ -16,22 +16,29 @@ import java.nio.charset.StandardCharsets;
 @Component
 @Profile("!test")
 public class DataLoader {
-	@Value("classpath:D:\\WorkSpace\\Project\\FPM-2025\\config\\config\\src\\main\\resources\\config\\user.csv")
+	@org.springframework.beans.factory.annotation.Value("${seeding.users.csv:classpath:config/user.csv}")
 	private Resource usersCsv;
 	
 	@PostConstruct
-	public void loadData() throws Exception {
-		try (Reader reader = new InputStreamReader(usersCsv.getInputStream(), StandardCharsets.UTF_8)) {
-            Iterable<CSVRecord> records = CSVFormat.DEFAULT
-                    .withFirstRecordAsHeader()
-                    .parse(reader);
-            for (CSVRecord record : records) {
-                String username = record.get("username");
-                String password = record.get("password");
-                String email = record.get("email");
-                // Lưu vào database (cần Entity và Repository)
-                System.out.println("Loaded user: " + username + ", " + email);
-            }
-        }
+	public void loadData() {
+		try {
+			if (usersCsv == null || !usersCsv.exists()) {
+				System.err.println("[DataLoader] WARN: user.csv missing. Skipping data load.");
+				return;
+			}
+			try (Reader reader = new InputStreamReader(usersCsv.getInputStream(), StandardCharsets.UTF_8)) {
+				Iterable<CSVRecord> records = CSVFormat.DEFAULT
+						.withFirstRecordAsHeader()
+						.parse(reader);
+				for (CSVRecord record : records) {
+					String username = record.get("username");
+					String email = record.get("email");
+					// Lưu vào database (cần Entity và Repository)
+					System.out.println("Loaded user: " + username + ", " + email);
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("[DataLoader] ERROR: Failed to load user.csv: " + e.getMessage());
+		}
 	}
 }

@@ -7,9 +7,7 @@ import com.fpm2025.transaction_service.service.TransactionService;
 import com.fpm2025.protocol.wallet.UserWalletsRequest;
 import com.fpm2025.protocol.wallet.WalletGrpcServiceGrpc;
 import com.fpm2025.protocol.wallet.WalletsResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -20,14 +18,22 @@ import java.time.LocalDateTime;
  * Tiến hành tạo giao dịch tự động.
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class ParsedNotificationConsumer {
 
     private final TransactionService transactionService;
+    private final WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletStub;
 
-    @GrpcClient("wallet-service")
-    private WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletStub;
+    public ParsedNotificationConsumer(
+            TransactionService transactionService,
+            @org.springframework.beans.factory.annotation.Value("${grpc.client.wallet-service.address:localhost:9092}") String address) {
+        this.transactionService = transactionService;
+        this.walletStub = WalletGrpcServiceGrpc.newBlockingStub(
+                io.grpc.ManagedChannelBuilder.forTarget(address)
+                        .usePlaintext()
+                        .build()
+        );
+    }
 
     @KafkaListener(topics = "notification.parsed", groupId = "transaction-group")
     public void handleNotificationParsed(ParsedNotificationEvent event) {

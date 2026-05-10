@@ -3,6 +3,7 @@ services:
   # Infrastructure
   mysql:
     image: mysql:8.0
+    container_name: fpm-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_USER: dev
@@ -21,6 +22,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: fpm-redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
@@ -29,26 +31,30 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
+    container_name: fpm-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
+    container_name: fpm-kafka
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
+    container_name: fpm-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -60,20 +66,26 @@ services:
 
   # Configuration & Registry
   config-server:
+    image: fpm-2025/config-server:latest
+    container_name: fpm-config-server
     build:
       context: ../config
     ports:
       - "8888:8888"
     environment:
-      SPRING_PROFILES_ACTIVE: git
-      GIT_REPO_URI: https://github.com/dangphuc1902/fpm-2025-config.git
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:/app/config/,file:/app/config/yml_service/
+    volumes:
+      - ../config/src/main/resources/config:/app/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
       interval: 20s
       timeout: 10s
       retries: 5
 
   eureka-server:
+    image: fpm-2025/eureka-server:latest
+    container_name: fpm-eureka-server
     build:
       context: ./eureka-server
     ports:
@@ -86,6 +98,8 @@ services:
 
   # Microservices
   user-auth-service:
+    image: fpm-2025/user-auth-service:latest
+    container_name: fpm-user-auth-service
     build:
       context: ./user-auth-service
     ports:
@@ -105,6 +119,8 @@ services:
         condition: service_started
 
   wallet-service:
+    image: fpm-2025/wallet-service:latest
+    container_name: fpm-wallet-service
     build:
       context: ./wallet-service
     ports:
@@ -127,6 +143,8 @@ services:
         condition: service_started
 
   transaction-service:
+    image: fpm-2025/transaction-service:latest
+    container_name: fpm-transaction-service
     build:
       context: ./transaction-service
     ports:
@@ -153,6 +171,8 @@ services:
         condition: service_started
 
   reporting-service:
+    image: fpm-2025/reporting-service:latest
+    container_name: fpm-reporting-service
     build:
       context: ./reporting_service
     ports:
@@ -175,6 +195,8 @@ services:
         condition: service_started
 
   notification-service:
+    image: fpm-2025/notification-service:latest
+    container_name: fpm-notification-service
     build:
       context: ./notification-service
     ports:
@@ -200,6 +222,8 @@ services:
         condition: service_started
 
   ocr-service:
+    image: fpm-2025/ocr-service:latest
+    container_name: fpm-ocr-service
     build:
       context: ./ocr-service
     ports:
@@ -214,6 +238,8 @@ services:
         condition: service_started
 
   ai-service:
+    image: fpm-2025/ai-service:latest
+    container_name: fpm-ai-service
     build:
       context: ./ai-service
     ports:
@@ -228,6 +254,8 @@ services:
         condition: service_started
 
   api-gateway:
+    image: fpm-2025/api-gateway:latest
+    container_name: fpm-api-gateway
     build:
       context: ./api-gateway
     ports:
