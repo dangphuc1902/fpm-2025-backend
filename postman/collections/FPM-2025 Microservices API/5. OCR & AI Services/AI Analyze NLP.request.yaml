@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/ai/nlp"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "text": "Uống cafe 50k",
+      "context": "None"
+    }
+order: 2000

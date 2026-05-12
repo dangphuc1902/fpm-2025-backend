@@ -5,3 +5,9 @@ workspace:
 localResources:
   collections:
     - ..\Documents\FPM_2025_Postman_Collection.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ..\postman\collections\FPM-2025 Microservices API: 28e151f2-8f3e-4520-b95b-5f0e4903dd63

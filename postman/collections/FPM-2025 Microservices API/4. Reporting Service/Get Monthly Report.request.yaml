@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/reports/monthly?month=2026-03"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  month: 2026-03
+order: 2000

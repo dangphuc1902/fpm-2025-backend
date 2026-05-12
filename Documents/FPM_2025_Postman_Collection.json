@@ -47,7 +47,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Test User\",\n  \"phoneNumber\": \"0123456789\"\n}"
+                            "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Password123!\",\n  \"username\": \"testuser\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/auth/register",
@@ -328,7 +328,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/reports/monthly?month=3&year=2026",
+                            "raw": "{{base_url}}/reports/monthly?month=2026-03",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -339,11 +339,7 @@
                             "query": [
                                 {
                                     "key": "month",
-                                    "value": "3"
-                                },
-                                {
-                                    "key": "year",
-                                    "value": "2026"
+                                    "value": "2026-03"
                                 }
                             ]
                         }

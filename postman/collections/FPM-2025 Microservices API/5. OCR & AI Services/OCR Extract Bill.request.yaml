@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{base_url}}/ocr/extract"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - ""
+order: 1000
