@@ -1,8 +1,7 @@
 spring:
   cloud:
     config:
-      uri: http://localhost:8888
-      uri: http://config-server:8888 # Cập nhật để trỏ đến tên dịch vụ trong Docker Compose
+      uri: ${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
       fail-fast: true
       name: api-gateway
       profile: default
