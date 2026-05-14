@@ -1,6 +1,6 @@
 package com.fpm2025.user_auth_service.grpc;
 
-import com.fpm2025.protocol.user.*;
+import com.fpm2025.grpc.protocol.*;
 import com.fpm2025.user_auth_service.entity.FamilyEntity;
 import com.fpm2025.user_auth_service.entity.FamilyMemberEntity;
 import com.fpm2025.user_auth_service.entity.UserEntity;

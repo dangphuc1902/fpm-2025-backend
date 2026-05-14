@@ -18,10 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
-import com.fpm2025.protocol.wallet.WalletGrpcServiceGrpc;
-import com.fpm2025.protocol.wallet.UpdateBalanceRequest;
-import com.fpm2025.protocol.wallet.WalletResponse;
-import com.fpm2025.protocol.common.Money;
+import com.fpm2025.grpc.protocol.WalletGrpcServiceGrpc;
+import com.fpm2025.grpc.protocol.UpdateBalanceRequest;
+import com.fpm2025.grpc.protocol.WalletResponse;
+import com.fpm2025.grpc.protocol.Money;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

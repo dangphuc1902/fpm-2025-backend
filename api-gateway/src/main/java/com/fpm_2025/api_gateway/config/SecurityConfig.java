@@ -23,10 +23,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         // Public endpoints
-                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/google").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
+                        .pathMatchers("/api/v1/auth/**").permitAll()
                         
                         // Actuator endpoints
                         .pathMatchers("/actuator/**").permitAll()

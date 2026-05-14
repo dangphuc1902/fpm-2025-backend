@@ -1,6 +1,6 @@
 package com.fpm_2025.wallet_service.grpc.client;
 
-import com.fpm2025.protocol.user.*;
+import com.fpm2025.grpc.protocol.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

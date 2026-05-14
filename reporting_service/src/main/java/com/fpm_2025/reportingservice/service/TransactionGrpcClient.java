@@ -1,6 +1,6 @@
 package com.fpm_2025.reportingservice.service;
 
-import com.fpm2025.protocol.transaction.*;
+import com.fpm2025.grpc.protocol.*;
 import com.fpm_2025.reportingservice.domain.TransactionData;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

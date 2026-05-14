@@ -1,8 +1,8 @@
 package com.fpm2025.transaction_service.grpc;
 
-import com.fpm2025.protocol.common.Money;
-import com.fpm2025.protocol.common.PageResponse;
-import com.fpm2025.protocol.transaction.*;
+import com.fpm2025.grpc.protocol.Money;
+import com.fpm2025.grpc.protocol.PageResponse;
+import com.fpm2025.grpc.protocol.*;
 import com.fpm2025.domain.dto.request.TransactionRequest;
 import com.fpm2025.domain.dto.response.TransactionResponse;
 import com.fpm2025.domain.enums.CategoryType;
@@ -31,7 +31,7 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
 
     @Override
     public void getTransactionById(TransactionIdRequest request,
-                                   StreamObserver<com.fpm2025.protocol.transaction.TransactionResponse> responseObserver) {
+                                   StreamObserver<com.fpm2025.grpc.protocol.TransactionResponse> responseObserver) {
         log.info("gRPC: getTransactionById called for id: {}", request.getTransactionId());
         try {
             TransactionEntity entity = transactionService.findById(request.getTransactionId());
@@ -132,8 +132,8 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
     }
 
     @Override
-    public void createTransaction(com.fpm2025.protocol.transaction.CreateTransactionRequest request,
-                                  StreamObserver<com.fpm2025.protocol.transaction.TransactionResponse> responseObserver) {
+    public void createTransaction(com.fpm2025.grpc.protocol.CreateTransactionRequest request,
+                                  StreamObserver<com.fpm2025.grpc.protocol.TransactionResponse> responseObserver) {
         log.info("gRPC: createTransaction called by external service (source: {})", request.getSource());
         try {
             TransactionRequest dto = new TransactionRequest();
@@ -196,8 +196,8 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
         }
     }
 
-    private com.fpm2025.protocol.transaction.TransactionResponse toProto(TransactionEntity e) {
-        return com.fpm2025.protocol.transaction.TransactionResponse.newBuilder()
+    private com.fpm2025.grpc.protocol.TransactionResponse toProto(TransactionEntity e) {
+        return com.fpm2025.grpc.protocol.TransactionResponse.newBuilder()
                 .setId(e.getId() != null ? e.getId() : 0L)
                 .setWalletId(e.getWalletId() != null ? e.getWalletId() : 0L)
                 .setUserId(e.getUserId() != null ? e.getUserId() : 0L)
@@ -216,8 +216,8 @@ public class TransactionServiceGrpcImpl extends TransactionGrpcServiceGrpc.Trans
                 .build();
     }
 
-    private com.fpm2025.protocol.transaction.TransactionResponse dtoToProto(TransactionResponse r) {
-        return com.fpm2025.protocol.transaction.TransactionResponse.newBuilder()
+    private com.fpm2025.grpc.protocol.TransactionResponse dtoToProto(TransactionResponse r) {
+        return com.fpm2025.grpc.protocol.TransactionResponse.newBuilder()
                 .setId(r.getId() != null ? r.getId() : 0L)
                 .setWalletId(r.getWalletId() != null ? r.getWalletId() : 0L)
                 .setUserId(r.getUserId() != null ? r.getUserId() : 0L)

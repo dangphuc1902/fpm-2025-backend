@@ -1,7 +1,7 @@
 package com.fpm_2025.wallet_service.grpc;
 
-import com.fpm2025.protocol.common.Money;
-import com.fpm2025.protocol.wallet.*;
+import com.fpm2025.grpc.protocol.Money;
+import com.fpm2025.grpc.protocol.*;
 import com.fpm_2025.wallet_service.entity.WalletEntity;
 import com.fpm_2025.wallet_service.repository.WalletRepository;
 import io.grpc.stub.StreamObserver;
