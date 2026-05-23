@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -63,10 +64,13 @@ public class AuthController {
     }
 
     public ResponseEntity<BaseResponse<Map<String, Object>>> loginFallback(
-            UserLoginRequest request, Throwable t) {
-        return ResponseEntity
-                .status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(BaseResponse.error(null, "Too many login attempts. Please try again later."));
+            UserLoginRequest request, Throwable t) throws Throwable {
+        if (t instanceof RequestNotPermitted) {
+            return ResponseEntity
+                    .status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(BaseResponse.error(429, "Too Many Requests", "Too many login attempts. Please try again later.", "/api/v1/auth/login"));
+        }
+        throw t;
     }
 
     @PostMapping("/google")

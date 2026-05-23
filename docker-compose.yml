@@ -174,7 +174,7 @@ services:
     image: fpm-2025/reporting-service:latest
     container_name: fpm-reporting-service
     build:
-      context: ./reporting_service
+      context: ./reporting-service
     ports:
       - "8084:8084"
     environment:

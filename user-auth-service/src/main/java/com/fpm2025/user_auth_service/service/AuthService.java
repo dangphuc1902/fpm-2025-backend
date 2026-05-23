@@ -8,6 +8,7 @@ import com.fpm2025.user_auth_service.repository.UserRepository;
 import com.fpm2025.security.jwt.JwtTokenProvider;
 import com.fpm2025.user_auth_service.exception.UserAlreadyExistsException;
 import com.fpm2025.user_auth_service.exception.UserEmailNotExistException;
+import com.fpm2025.user_auth_service.exception.InvalidPasswordException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -53,7 +54,7 @@ public class AuthService {
 
         // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getHashedPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new InvalidPasswordException("Invalid password");
         }
 
         // Update last login

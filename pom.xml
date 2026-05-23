@@ -18,7 +18,7 @@
 		<module>ai-service</module>
 		<module>notification-service</module>
 		<module>wallet-service</module>
-		<module>reporting_service</module>
+		<module>reporting-service</module>
 		<module>eureka-server</module>
 		<module>transaction-service</module>
 	</modules>
