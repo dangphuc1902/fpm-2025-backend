@@ -58,7 +58,8 @@ describe('FPM E2E API Tests', () => {
         const response = await apiClient.get('/users/me');
 
         expect(response.status).toBe(200);
-        expect(response.data.statusCode).toBe(200);
+        expect(response.data.id).toBeDefined();
+        expect(response.data.email).toBe(testEmail);
     });
 
     test('4. Gọi API tạo ví mới (CASH - VND)', async () => {
