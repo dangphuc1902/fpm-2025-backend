@@ -265,6 +265,7 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
+      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
     depends_on:
       config-server:
         condition: service_healthy
