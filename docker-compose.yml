@@ -184,7 +184,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/reporting_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
       JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
@@ -269,7 +272,8 @@ services:
       - "8080:8089"
     environment:
       GATEWAY_PORT: 8089
-      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
       JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars

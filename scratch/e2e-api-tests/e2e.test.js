@@ -15,7 +15,8 @@ describe('FPM E2E API Tests', () => {
         baseURL: BASE_URL,
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        maxRedirects: 0
     });
 
     // Thêm interceptor để tự động gắn token vào request nếu có
@@ -64,10 +65,10 @@ describe('FPM E2E API Tests', () => {
 
     test('4. Gọi API tạo ví mới (CASH - VND)', async () => {
         const response = await apiClient.post('/wallets', {
-            name: "Ví sinh hoạt E2E",
+            name: "Ví chi tiêu E2E",
             type: "CASH",
             currency: "VND",
-            balance: 0,
+            initialBalance: 100000,
             color: "#FFFFFF",
             icon: "wallet"
         });
@@ -84,7 +85,7 @@ describe('FPM E2E API Tests', () => {
             categoryId: 1, // Giả sử ID 1 là một category hợp lệ (ví dụ: Ăn uống)
             amount: 50000,
             type: "EXPENSE",
-            date: new Date().toISOString(),
+            transactionDate: new Date().toISOString(),
             description: "Test chi tiêu E2E",
             currency: "VND"
         });
@@ -101,8 +102,7 @@ describe('FPM E2E API Tests', () => {
         const response = await apiClient.get('/dashboard');
 
         expect(response.status).toBe(200);
-        expect(response.data.statusCode).toBe(200);
-        // Kiểm tra xem dữ liệu có trả về thành công không
-        expect(response.data.data).toBeDefined();
+        // Kiểm tra xem dữ liệu có trả về đúng format DashboardResponse không
+        expect(response.data.summary).toBeDefined();
     });
 });

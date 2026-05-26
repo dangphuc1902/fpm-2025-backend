@@ -24,7 +24,6 @@ public class DashboardController {
     }
 
     @GetMapping
-    @Cacheable(value = "dashboard", key = "#userId + '-' + #yearMonth")
     public ResponseEntity<DashboardResponse> getDashboard(
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(required = false) String yearMonth) {

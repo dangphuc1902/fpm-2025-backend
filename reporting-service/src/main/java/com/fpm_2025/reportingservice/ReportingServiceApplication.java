@@ -7,11 +7,18 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import org.springframework.context.annotation.ComponentScan;
+
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableCaching
 @EnableScheduling
 @EnableAsync
+@ComponentScan(basePackages = {
+    "com.fpm_2025.reportingservice",
+    "com.fpm2025.security",
+    "com.fpm2025.common.config"
+})
 public class ReportingServiceApplication {
     
     public static void main(String[] args) {

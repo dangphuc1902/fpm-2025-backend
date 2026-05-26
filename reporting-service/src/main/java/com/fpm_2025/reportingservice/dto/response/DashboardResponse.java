@@ -8,11 +8,13 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
+import java.io.Serializable;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DashboardResponse {
+public class DashboardResponse implements Serializable {
     
     private Long userId;
     private String yearMonth;
@@ -24,7 +26,7 @@ public class DashboardResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Summary {
+    public static class Summary implements Serializable {
         private BigDecimal totalIncome;
         private BigDecimal totalExpense;
         private BigDecimal netIncome;
@@ -37,7 +39,7 @@ public class DashboardResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class CategoryBreakdown {
+    public static class CategoryBreakdown implements Serializable {
         private Long categoryId;
         private String categoryName;
         private String type;
@@ -50,7 +52,7 @@ public class DashboardResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class BudgetStatus {
+    public static class BudgetStatus implements Serializable {
         private Long categoryId;
         private String categoryName;
         private BigDecimal amountLimit;

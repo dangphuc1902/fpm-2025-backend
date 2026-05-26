@@ -25,8 +25,8 @@ import java.util.Map;
 @EnableCaching
 public class RedisConfig {
 
-    @Bean
-    public ObjectMapper redisObjectMapper() {
+    // Do not use @Bean here, otherwise it overrides the global Spring MVC ObjectMapper!
+    private ObjectMapper createRedisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         
@@ -49,7 +49,7 @@ public class RedisConfig {
                 .entryTtl(Duration.ofMinutes(10))
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                                new GenericJackson2JsonRedisSerializer(redisObjectMapper())
+                                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper())
                         )
                 );
 
@@ -90,7 +90,7 @@ public class RedisConfig {
         
         // Use JSON serializer for values
         GenericJackson2JsonRedisSerializer serializer = 
-            new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+            new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
         
