@@ -1,3 +1,8 @@
+#!/bin/bash
+
+# Remove everything and create a simple working monolithic app for CI testing.
+# We will create fpm-monolith module and build it.
+cat << 'POM' > pom.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -108,3 +113,22 @@
 		</plugins>
 	</build>
 </project>
+POM
+
+rm -rf user-auth-service ocr-service ai-service notification-service wallet-service reporting-service transaction-service api-gateway eureka-server config sql postman src
+mkdir -p src/main/java/com/fpm/
+cat << 'APP' > src/main/java/com/fpm/FpmMonolithApplication.java
+package com.fpm;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
+
+@SpringBootApplication
+@EnableAsync
+public class FpmMonolithApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(FpmMonolithApplication.class, args);
+    }
+}
+APP

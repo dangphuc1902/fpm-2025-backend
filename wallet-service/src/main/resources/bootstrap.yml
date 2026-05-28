@@ -1,7 +1,0 @@
-spring:
-  cloud:
-    config:
-      uri: ${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}  # Config Server URL
-      fail-fast: true  # Fail nếu không connect
-      name: wallet-service
-      profile: default  # Profile (e.g., default, dev, prod)
