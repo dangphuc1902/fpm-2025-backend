@@ -1,0 +1,60 @@
+spring:
+  # Database configuration optimizations
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      idle-timeout: 30000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      pool-name: FpmMonolithHikariPool
+
+  # Hibernate performance optimizations
+  jpa:
+    properties:
+      hibernate:
+        jdbc.batch_size: 25
+        order_inserts: true
+        order_updates: true
+        connection.provider_disables_autocommit: true
+
+  # Caching and Redis optimizations
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour default cache TTL
+      cache-null-values: false
+
+# Spring Boot Actuator monitoring & health check endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Gzip compression for REST APIs to reduce network bandwidth
+server:
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+
+# Production logging settings
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    com.fpm2025: INFO
+    com.fpm_2025: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
