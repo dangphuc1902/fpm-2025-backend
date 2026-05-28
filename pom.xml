@@ -12,15 +12,7 @@
 	<name>FPM Backend Parent</name>
 
 	<modules>
-		<module>api-gateway</module>
-		<module>user-auth-service</module>
-		<module>ocr-service</module>
-		<module>ai-service</module>
-		<module>notification-service</module>
-		<module>wallet-service</module>
-		<module>reporting-service</module>
-		<module>eureka-server</module>
-		<module>transaction-service</module>
+        <!-- Removed api-gateway and eureka-server for runtime monolith -->
 	</modules>
 
 	<properties>
