@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "fcm_tokens",
+        schema = "notification",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "device_id"}))
 @Data
 @Builder

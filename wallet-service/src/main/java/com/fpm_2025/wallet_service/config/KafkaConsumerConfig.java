@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @Configuration
 @EnableKafka
+@org.springframework.context.annotation.Profile("!monolith")
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")

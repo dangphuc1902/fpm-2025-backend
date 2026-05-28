@@ -238,6 +238,16 @@
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.fpm2025</groupId>
+			<artifactId>transaction-service</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fpm2025</groupId>
+			<artifactId>wallet-service</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<!-- ========================================
@@ -283,6 +293,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>3.5.5</version>
 				<configuration>
+					<skip>true</skip>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

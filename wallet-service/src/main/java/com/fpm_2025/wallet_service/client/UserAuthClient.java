@@ -1,44 +1,29 @@
 package com.fpm_2025.wallet_service.client;
 
+import com.fpm2025.user_auth_service.repository.UserRepository;
+import com.fpm2025.user_auth_service.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class UserAuthClient {
 
-    private final RestTemplate restTemplate;
-    private static final String USER_SERVICE_URL = "http://user-auth-service/api/v1/users/find-by-email";
+    private final UserRepository userRepository;
 
     /**
-     * Lấy userId thông qua email bằng cách gọi API của user-auth-service.
+     * Lấy userId thông qua email bằng cách gọi trực tiếp UserRepository.
      */
     public Long getUserIdByEmail(String email) {
-        log.info("[UserAuthClient] Resolving userId for email: {}", email);
+        log.info("[UserAuthClient] Resolving userId directly from UserRepository for email: {}", email);
         try {
-            String url = UriComponentsBuilder.fromHttpUrl(USER_SERVICE_URL)
-                    .queryParam("email", email)
-                    .toUriString();
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
-
-            if (response != null && response.containsKey("data")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> userData = (Map<String, Object>) response.get("data");
-                if (userData != null && userData.containsKey("id")) {
-                    return Long.valueOf(userData.get("id").toString());
-                }
-            }
-            return null;
+            return userRepository.findByEmail(email)
+                    .map(UserEntity::getId)
+                    .orElse(null);
         } catch (Exception e) {
-            log.error("[UserAuthClient] Error calling user-auth-service: {}", e.getMessage());
+            log.error("[UserAuthClient] Error querying UserRepository: {}", e.getMessage());
             return null;
         }
     }

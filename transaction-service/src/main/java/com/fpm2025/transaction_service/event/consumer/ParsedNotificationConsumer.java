@@ -1,20 +1,22 @@
 package com.fpm2025.transaction_service.event.consumer;
 
 import com.fpm2025.domain.dto.request.TransactionRequest;
+import com.fpm2025.domain.dto.response.WalletResponse;
 import com.fpm2025.domain.enums.CategoryType;
 import com.fpm2025.domain.event.ParsedNotificationEvent;
 import com.fpm2025.transaction_service.service.TransactionService;
-import com.fpm2025.grpc.protocol.UserWalletsRequest;
-import com.fpm2025.grpc.protocol.WalletGrpcServiceGrpc;
-import com.fpm2025.grpc.protocol.WalletsResponse;
+import com.fpm_2025.wallet_service.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Kafka Consumer lắng nghe sự kiện 'notification.parsed' từ notification-service.
+ * Consumer lắng nghe sự kiện 'notification.parsed' từ notification-service.
  * Tiến hành tạo giao dịch tự động.
  */
 @Component
@@ -22,35 +24,33 @@ import java.time.LocalDateTime;
 public class ParsedNotificationConsumer {
 
     private final TransactionService transactionService;
-    private final WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletStub;
+    private final WalletService walletService;
 
     public ParsedNotificationConsumer(
             TransactionService transactionService,
-            @org.springframework.beans.factory.annotation.Value("${grpc.client.wallet-service.address:localhost:9092}") String address) {
+            WalletService walletService) {
         this.transactionService = transactionService;
-        this.walletStub = WalletGrpcServiceGrpc.newBlockingStub(
-                io.grpc.ManagedChannelBuilder.forTarget(address)
-                        .usePlaintext()
-                        .build()
-        );
+        this.walletService = walletService;
     }
 
     @KafkaListener(topics = "notification.parsed", groupId = "transaction-group")
+    @EventListener
+    @Async
     public void handleNotificationParsed(ParsedNotificationEvent event) {
-        log.info("[Kafka Received] ParsedNotificationEvent: userId={} amount={} type={}",
+        log.info("[Local/Kafka Received] ParsedNotificationEvent: userId={} amount={} type={}",
                 event.getUserId(), event.getAmount(), event.getType());
 
         try {
-            // 1️ Tìm wallet phù hợp (heuristic: tìm ví có tên giống account hoặc lấy ví mặc định đầu tiên)
+            // 1 Tìm wallet phù hợp (heuristic: tìm ví có tên giống account hoặc lấy ví mặc định đầu tiên)
             Long walletId = resolveWalletId(event.getUserId(), event.getAccount(), event.getBankName());
             
             if (walletId == null) {
-                log.warn("[Kafka] Could not resolve wallet for userId={} account={}. Skipping auto-transaction.",
+                log.warn("Could not resolve wallet for userId={} account={}. Skipping auto-transaction.",
                         event.getUserId(), event.getAccount());
                 return;
             }
 
-            // 2️ Tạo TransactionRequest
+            // 2 Tạo TransactionRequest
             TransactionRequest request = TransactionRequest.builder()
                     .walletId(walletId)
                     .amount(event.getAmount())
@@ -62,34 +62,30 @@ public class ParsedNotificationConsumer {
                     .note("Ref: " + event.getTransactionRef())
                     .build();
 
-            // 3️ Gọi service tạo giao dịch
+            // 3 Gọi service tạo giao dịch
             transactionService.createTransaction(event.getUserId(), request);
-            log.info("[Kafka Processed] Auto-transaction created for userId={} walletId={}", event.getUserId(), walletId);
+            log.info("[Local/Kafka Processed] Auto-transaction created for userId={} walletId={}", event.getUserId(), walletId);
 
         } catch (Exception e) {
-            log.error("[Kafka Failed] Failed to process parsed notification for userId={}, error={}",
+            log.error("[Local/Kafka Failed] Failed to process parsed notification for userId={}, error={}",
                     event.getUserId(), e.getMessage(), e);
         }
     }
 
     private Long resolveWalletId(Long userId, String account, String bankName) {
         try {
-            UserWalletsRequest request = UserWalletsRequest.newBuilder()
-                    .setUserId(userId)
-                    .setActiveOnly(true)
-                    .build();
-            WalletsResponse response = walletStub.getWalletsByUserId(request);
+            List<WalletResponse> wallets = walletService.getUserActiveWallets(userId);
 
-            if (response.getWalletsCount() == 0) return null;
+            if (wallets.isEmpty()) return null;
 
-            for (var w : response.getWalletsList()) {
+            for (var w : wallets) {
                 if (account != null && !account.isEmpty() && w.getName().contains(account)) return w.getId();
                 if (bankName != null && !bankName.isEmpty() && w.getName().toLowerCase().contains(bankName.toLowerCase())) return w.getId();
             }
 
-            return response.getWalletsList().get(0).getId();
+            return wallets.get(0).getId();
         } catch (Exception e) {
-            log.error("Failed to resolve wallet via gRPC: {}", e.getMessage());
+            log.error("Failed to resolve wallet directly: {}", e.getMessage());
             return null;
         }
     }

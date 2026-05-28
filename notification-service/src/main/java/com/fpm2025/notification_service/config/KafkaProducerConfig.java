@@ -18,6 +18,7 @@ import java.util.Map;
  * Publish events tới topic: notification.parsed
  */
 @Configuration
+@org.springframework.context.annotation.Profile("!monolith")
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")

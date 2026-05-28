@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "export_jobs", indexes = {
+@Table(name = "export_jobs", schema = "reporting", indexes = {
     @Index(name = "idx_export_user_id", columnList = "user_id"),
     @Index(name = "idx_export_status", columnList = "status")
 })

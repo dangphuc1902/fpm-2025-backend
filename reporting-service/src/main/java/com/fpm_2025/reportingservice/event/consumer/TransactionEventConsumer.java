@@ -39,9 +39,11 @@ public class TransactionEventConsumer {
     }
 
     @KafkaListener(topics = "transaction.created", groupId = "reporting-group")
+    @org.springframework.context.event.EventListener
+    @org.springframework.scheduling.annotation.Async
     public void consumeTransactionCreated(TransactionCreatedEvent event) {
         try {
-            log.info("Kafka: Received transaction.created event for userId={}", event.getUserId());
+            log.info("Local/Kafka: Received transaction.created event for userId={}", event.getUserId());
 
             // Convert Instant to LocalDateTime for period formatting
             LocalDateTime date = LocalDateTime.ofInstant(event.getTimestamp(), ZoneId.systemDefault());
@@ -62,12 +64,12 @@ public class TransactionEventConsumer {
             }
 
             summaryRepository.save(summary);
-            log.info("Kafka: Updated reporting summary for userId={} period={}", event.getUserId(), period);
+            log.info("Local/Kafka: Updated reporting summary for userId={} period={}", event.getUserId(), period);
 
             clearDashboardCache();
 
         } catch (Exception e) {
-            log.error("Kafka: Failed to process transaction.created event", e);
+            log.error("Local/Kafka: Failed to process transaction.created event", e);
         }
     }
 
@@ -77,9 +79,23 @@ public class TransactionEventConsumer {
         clearDashboardCache();
     }
 
+    @org.springframework.context.event.EventListener(condition = "#event instanceof T(java.util.Map) and #event.get('topic') == 'transaction.updated'")
+    @org.springframework.scheduling.annotation.Async
+    public void consumeTransactionUpdatedSpring(java.util.Map<?, ?> event) {
+        log.info("SpringEvent: Received transaction.updated, clearing cache...");
+        clearDashboardCache();
+    }
+
     @KafkaListener(topics = "transaction.deleted", groupId = "reporting-group")
     public void consumeTransactionDeleted(String message) {
         log.info("Kafka: Received transaction.deleted event, clearing cache...");
+        clearDashboardCache();
+    }
+
+    @org.springframework.context.event.EventListener(condition = "#event instanceof T(java.util.Map) and #event.get('topic') == 'transaction.deleted'")
+    @org.springframework.scheduling.annotation.Async
+    public void consumeTransactionDeletedSpring(java.util.Map<?, ?> event) {
+        log.info("SpringEvent: Received transaction.deleted, clearing cache...");
         clearDashboardCache();
     }
 }

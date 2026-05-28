@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "wallet_permissions", indexes = {
+@Table(name = "wallet_permissions", schema = "wallet", indexes = {
         @Index(name = "idx_wp_wallet_id", columnList = "wallet_id"),
         @Index(name = "idx_wp_user_id", columnList = "user_id")
 }, uniqueConstraints = {

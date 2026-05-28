@@ -16,7 +16,7 @@ import com.fpm2025.domain.enums.WalletType;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "wallets", indexes = {
+@Table(name = "wallets", schema = "wallet", indexes = {
         @Index(name = "idx_wallets_user_id", columnList = "user_id"),
         @Index(name = "idx_wallets_type", columnList = "type"),
         @Index(name = "idx_wallets_active", columnList = "is_active"),

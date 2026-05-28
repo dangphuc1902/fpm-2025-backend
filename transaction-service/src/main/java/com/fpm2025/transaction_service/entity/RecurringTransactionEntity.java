@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "recurring_transactions")
+@Table(name = "recurring_transactions", schema = "transaction")
 @Getter
 @Setter
 @NoArgsConstructor

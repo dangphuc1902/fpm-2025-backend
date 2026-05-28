@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@Service("walletTransactionService")
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
@@ -43,8 +43,10 @@ public class TransactionService implements TransactionServiceImp {
 	private CategoryRepository categoryRepository;
 	@Autowired
 	private WalletRepository walletRepository;
-	@Autowired
+	@Autowired(required = false)
 	private KafkaTemplate<String, Object> kafkaTemplate;
+	@Autowired
+	private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
 	@Override
 	@Transactional
@@ -92,7 +94,14 @@ public class TransactionService implements TransactionServiceImp {
 				.timestamp(java.time.Instant.now())
 				.build();
 				
-		kafkaTemplate.send("transaction.created", event);
+		if (kafkaTemplate != null) {
+			try {
+				kafkaTemplate.send("transaction.created", event);
+			} catch (Exception e) {
+				log.error("Kafka error: ", e);
+			}
+		}
+		eventPublisher.publishEvent(event);
 
 		return mapToResponse(savedTransaction);
 	}
@@ -154,7 +163,23 @@ public class TransactionService implements TransactionServiceImp {
 	    TransactionEntity updatedTransaction = transactionRepository.save(transaction);
 	    log.info("Transaction updated successfully with id: {}", updatedTransaction.getId());
 
-	    kafkaTemplate.send("transaction.updated", mapToResponse(updatedTransaction));
+	    if (kafkaTemplate != null) {
+			try {
+				kafkaTemplate.send("transaction.updated", mapToResponse(updatedTransaction));
+			} catch (Exception e) {
+				log.error("Kafka error: ", e);
+			}
+		}
+		try {
+			eventPublisher.publishEvent(java.util.Map.of(
+					"topic", "transaction.updated",
+					"userId", userId,
+					"transactionId", updatedTransaction.getId(),
+					"amount", updatedTransaction.getAmount()
+			));
+		} catch (Exception e) {
+			log.error("SpringEvent error: ", e);
+		}
 	    return mapToResponse(updatedTransaction);
 	}
 
@@ -175,8 +200,23 @@ public class TransactionService implements TransactionServiceImp {
 		walletRepository.save(wallet);
 		transactionRepository.delete(transaction);
 		log.info("Transaction deleted successfully with id: {}", transactionId);
-
-		kafkaTemplate.send("transaction.deleted", transactionId);
+		if (kafkaTemplate != null) {
+			try {
+				kafkaTemplate.send("transaction.deleted", transactionId);
+			} catch (Exception e) {
+				log.error("Kafka error: ", e);
+			}
+		}
+		try {
+			eventPublisher.publishEvent(java.util.Map.of(
+					"topic", "transaction.deleted",
+					"userId", userId,
+					"transactionId", transactionId,
+					"amount", transaction.getAmount()
+			));
+		} catch (Exception e) {
+			log.error("SpringEvent error: ", e);
+		}
 	}
 
 	@Override

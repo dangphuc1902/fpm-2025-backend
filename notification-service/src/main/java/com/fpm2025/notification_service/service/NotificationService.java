@@ -23,7 +23,6 @@ import java.util.Map;
  * Core notification service.
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class NotificationService {
 
@@ -33,6 +32,25 @@ public class NotificationService {
     private final BankNotificationParser parser;
     private final FcmPushService fcmPushService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public NotificationService(
+            NotificationHistoryRepository historyRepository,
+            BankNotificationRepository bankNotifRepository,
+            FcmTokenRepository fcmTokenRepository,
+            BankNotificationParser parser,
+            FcmPushService fcmPushService,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) KafkaTemplate<String, Object> kafkaTemplate,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.historyRepository = historyRepository;
+        this.bankNotifRepository = bankNotifRepository;
+        this.fcmTokenRepository = fcmTokenRepository;
+        this.parser = parser;
+        this.fcmPushService = fcmPushService;
+        this.kafkaTemplate = kafkaTemplate;
+        this.eventPublisher = eventPublisher;
+    }
 
     private static final String PARSED_TOPIC = "notification.parsed";
 
@@ -194,19 +212,25 @@ public class NotificationService {
                     .parsedAt(LocalDateTime.now().toString())
                     .build();
 
-            kafkaTemplate.send(PARSED_TOPIC, String.valueOf(userId), event)
-                    .whenComplete((sendResult, ex) -> {
-                        if (ex == null) {
-                            log.info("✅ Kafka: Published [{}] for userId={}, notifId={}, amount={}, partition={}",
-                                    PARSED_TOPIC, userId, saved.getId(), result.amount(),
-                                    sendResult.getRecordMetadata().partition());
-                        } else {
-                            log.error("❌ Kafka: Failed to publish [{}] for userId={}: {}",
-                                    PARSED_TOPIC, userId, ex.getMessage());
-                        }
-                    });
+            if (kafkaTemplate != null) {
+                kafkaTemplate.send(PARSED_TOPIC, String.valueOf(userId), event)
+                        .whenComplete((sendResult, ex) -> {
+                            if (ex == null) {
+                                log.info("✅ Kafka: Published [{}] for userId={}, notifId={}, amount={}, partition={}",
+                                         PARSED_TOPIC, userId, saved.getId(), result.amount(),
+                                         sendResult.getRecordMetadata().partition());
+                            } else {
+                                log.error("❌ Kafka: Failed to publish [{}] for userId={}: {}",
+                                         PARSED_TOPIC, userId, ex.getMessage());
+                            }
+                        });
+            }
+            
+            eventPublisher.publishEvent(event);
+            log.info("✅ SpringEvent: Published [{}] locally for userId={}, notifId={}, amount={}",
+                    PARSED_TOPIC, userId, saved.getId(), result.amount());
         } catch (Exception e) {
-            log.error("❌ Kafka: Exception publishing [{}]: {}", PARSED_TOPIC, e.getMessage(), e);
+            log.error("❌ Error publishing [{}]: {}", PARSED_TOPIC, e.getMessage(), e);
         }
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
 @Configuration
+@org.springframework.context.annotation.Profile("!monolith")
 public class KafkaConfig {
 
     public static final String TRANSACTION_CREATED_TOPIC = "transaction.created";

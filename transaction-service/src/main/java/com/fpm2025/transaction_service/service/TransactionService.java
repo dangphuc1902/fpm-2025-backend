@@ -16,12 +16,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
-import com.fpm2025.grpc.protocol.WalletGrpcServiceGrpc;
-import com.fpm2025.grpc.protocol.UpdateBalanceRequest;
-import com.fpm2025.grpc.protocol.WalletResponse;
-import com.fpm2025.grpc.protocol.Money;
+import org.springframework.context.ApplicationEventPublisher;
+import com.fpm2025.domain.event.TransactionCreatedEvent;
+import com.fpm_2025.wallet_service.service.WalletService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,26 +30,19 @@ import java.util.Map;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final RabbitTemplate rabbitTemplate;
+    private final WalletService walletService;
+    private final ApplicationEventPublisher eventPublisher;
     private final com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository;
-    private final WalletGrpcServiceGrpc.WalletGrpcServiceBlockingStub walletGrpcStub;
 
     public TransactionService(
             TransactionRepository transactionRepository,
-            KafkaTemplate<String, Object> kafkaTemplate,
-            RabbitTemplate rabbitTemplate,
-            com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository,
-            @org.springframework.beans.factory.annotation.Value("${grpc.client.wallet-service.address:localhost:9092}") String address) {
+            WalletService walletService,
+            ApplicationEventPublisher eventPublisher,
+            com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository) {
         this.transactionRepository = transactionRepository;
-        this.kafkaTemplate = kafkaTemplate;
-        this.rabbitTemplate = rabbitTemplate;
+        this.walletService = walletService;
+        this.eventPublisher = eventPublisher;
         this.attachmentRepository = attachmentRepository;
-        this.walletGrpcStub = WalletGrpcServiceGrpc.newBlockingStub(
-                io.grpc.ManagedChannelBuilder.forTarget(address)
-                        .usePlaintext()
-                        .build()
-        );
     }
 
     @Transactional
@@ -60,22 +50,11 @@ public class TransactionService {
         log.info("Creating transaction for user {} in wallet {}", userId, request.getWalletId());
 
         try {
-            Money money = Money.newBuilder()
-                    .setAmount(request.getAmount().doubleValue())
-                    .setCurrency(request.getCurrency())
-                    .build();
-
-            UpdateBalanceRequest balanceRequest = UpdateBalanceRequest.newBuilder()
-                    .setWalletId(request.getWalletId())
-                    .setAmount(money)
-                    .setOperation(request.getType() == CategoryType.EXPENSE ? "SUBTRACT" : "ADD")
-                    .setDescription(request.getDescription() != null ? request.getDescription() : "")
-                    .build();
-
-            WalletResponse walletResponse = walletGrpcStub.updateBalance(balanceRequest);
-            log.info("gRPC: Balance updated successfully for wallet: {}", walletResponse.getId());
+            boolean isAddition = request.getType() != CategoryType.EXPENSE;
+            walletService.updateBalance(request.getWalletId(), userId, request.getAmount(), isAddition);
+            log.info("Direct call: Balance updated successfully for wallet: {}", request.getWalletId());
         } catch (Exception e) {
-            log.error("gRPC: Failed to update balance in Wallet Service", e);
+            log.error("Direct call: Failed to update balance in Wallet Service", e);
             throw new RuntimeException("Failed to update wallet balance: " + e.getMessage());
         }
 
@@ -96,8 +75,7 @@ public class TransactionService {
 
         TransactionEntity saved = transactionRepository.save(entity);
 
-        publishKafkaEvent("transaction.created", userId, saved);
-        sendNotification(userId, request.getType(), request.getAmount(), request.getCurrency());
+        publishTransactionEvent("transaction.created", userId, saved);
 
         return mapToResponse(saved);
     }
@@ -182,7 +160,16 @@ public class TransactionService {
         if (request.getIsRecurring() != null)      entity.setIsRecurring(request.getIsRecurring());
 
         TransactionEntity updated = transactionRepository.save(entity);
-        publishKafkaEvent("transaction.updated", userId, updated);
+        try {
+            eventPublisher.publishEvent(Map.of(
+                    "topic", "transaction.updated",
+                    "userId", userId,
+                    "transactionId", updated.getId(),
+                    "amount", updated.getAmount()
+            ));
+        } catch (Exception e) {
+            log.error("EventPublisher: Failed to publish transaction.updated event", e);
+        }
 
         return mapToResponse(updated);
     }
@@ -198,10 +185,14 @@ public class TransactionService {
         transactionRepository.delete(entity);
 
         try {
-            kafkaTemplate.send("transaction.deleted", String.valueOf(userId),
-                    Map.of("transactionId", transactionId, "userId", userId));
+            eventPublisher.publishEvent(Map.of(
+                    "topic", "transaction.deleted",
+                    "userId", userId,
+                    "transactionId", transactionId,
+                    "amount", entity.getAmount()
+            ));
         } catch (Exception e) {
-            log.error("Kafka: Failed to publish transaction.deleted event", e);
+            log.error("EventPublisher: Failed to publish transaction.deleted event", e);
         }
     }
 
@@ -234,60 +225,41 @@ public class TransactionService {
     }
 
     private void revertWalletBalance(TransactionEntity entity) {
-        String revertOp = entity.getType() == CategoryType.EXPENSE ? "ADD" : "SUBTRACT";
         try {
-            Money money = Money.newBuilder()
-                    .setAmount(entity.getAmount().doubleValue())
-                    .setCurrency(entity.getCurrency())
-                    .build();
-            UpdateBalanceRequest req = UpdateBalanceRequest.newBuilder()
-                    .setWalletId(entity.getWalletId())
-                    .setAmount(money)
-                    .setOperation(revertOp)
-                    .setDescription("Revert transaction #" + entity.getId())
-                    .build();
-            walletGrpcStub.updateBalance(req);
+            walletService.updateBalance(entity.getWalletId(), entity.getUserId(), entity.getAmount(), entity.getType() == CategoryType.EXPENSE);
         } catch (Exception e) {
-            log.error("gRPC: Failed to revert wallet balance", e);
+            log.error("Direct call: Failed to revert wallet balance", e);
         }
     }
 
     private void applyWalletBalance(Long walletId, java.math.BigDecimal amount,
                                      CategoryType type, String currency, String desc) {
-        String op = type == CategoryType.EXPENSE ? "SUBTRACT" : "ADD";
         try {
-            Money money = Money.newBuilder()
-                    .setAmount(amount.doubleValue())
-                    .setCurrency(currency)
-                    .build();
-            UpdateBalanceRequest req = UpdateBalanceRequest.newBuilder()
-                    .setWalletId(walletId)
-                    .setAmount(money)
-                    .setOperation(op)
-                    .setDescription(desc)
-                    .build();
-            walletGrpcStub.updateBalance(req);
+            walletService.updateBalance(walletId, null, amount, type != CategoryType.EXPENSE);
         } catch (Exception e) {
-            log.error("gRPC: Failed to apply wallet balance", e);
+            log.error("Direct call: Failed to apply wallet balance", e);
         }
     }
 
-    private void publishKafkaEvent(String topic, Long userId, TransactionEntity saved) {
+    private void publishTransactionEvent(String topic, Long userId, TransactionEntity saved) {
         try {
-            kafkaTemplate.send(topic, String.valueOf(userId), mapToResponse(saved));
+            TransactionCreatedEvent event = TransactionCreatedEvent.builder()
+                    .transactionId(saved.getId())
+                    .walletId(saved.getWalletId())
+                    .userId(saved.getUserId())
+                    .categoryId(saved.getCategoryId())
+                    .amount(saved.getAmount())
+                    .type(saved.getType().name())
+                    .note(saved.getNote())
+                    .timestamp(java.time.Instant.now())
+                    .build();
+            eventPublisher.publishEvent(event);
         } catch (Exception e) {
-            log.error("Kafka: Failed to publish {} event", topic, e);
+            log.error("EventPublisher: Failed to publish {} event", topic, e);
         }
     }
 
-    private void sendNotification(Long userId, CategoryType type, java.math.BigDecimal amount, String currency) {
-        try {
-            String msg = String.format("User %d has a new %s transaction of %s %s", userId, type, amount, currency);
-            rabbitTemplate.convertAndSend("notification.exchange", "notification.routing.key", msg);
-        } catch (Exception e) {
-            log.error("RabbitMQ: Failed to send notification task", e);
-        }
-    }
+
 
     public TransactionResponse mapToResponse(TransactionEntity entity) {
         return TransactionResponse.builder()

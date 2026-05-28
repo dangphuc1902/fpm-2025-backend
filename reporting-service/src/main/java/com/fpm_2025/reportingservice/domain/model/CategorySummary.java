@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "category_summaries", indexes = {
+@Table(name = "category_summaries", schema = "reporting", indexes = {
     @Index(name = "idx_cat_summary_user_month", columnList = "user_id, year_month")
 },
 uniqueConstraints = {

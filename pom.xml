@@ -12,15 +12,14 @@
 	<name>FPM Backend Parent</name>
 
 	<modules>
-		<module>api-gateway</module>
 		<module>user-auth-service</module>
 		<module>ocr-service</module>
 		<module>ai-service</module>
 		<module>notification-service</module>
 		<module>wallet-service</module>
 		<module>reporting-service</module>
-		<module>eureka-server</module>
 		<module>transaction-service</module>
+		<module>fpm-monolith</module>
 	</modules>
 
 	<properties>
@@ -39,6 +38,7 @@
 		<spring-grpc.version>0.10.0</spring-grpc.version>
 		<kotlin.version>1.9.20</kotlin.version>
 		<mysql.version>8.4.0</mysql.version>  <!-- CVE-2023-22102: Fixed in 8.2.0+ -->
+		<postgresql.version>42.7.3</postgresql.version>
 	</properties>
 
 	<dependencyManagement>
@@ -49,6 +49,12 @@
 				<version>${spring-boot.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.postgresql</groupId>
+				<artifactId>postgresql</artifactId>
+				<version>${postgresql.version}</version>
 			</dependency>
 
 			<dependency>

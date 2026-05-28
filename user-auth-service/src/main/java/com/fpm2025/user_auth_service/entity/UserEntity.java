@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     name = "users",
+    schema = "auth",
     indexes = {
         @Index(name = "idx_users_email", columnList = "email"),
         @Index(name = "idx_users_google_id", columnList = "google_id"),

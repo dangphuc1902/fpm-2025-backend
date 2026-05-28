@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@org.springframework.context.annotation.Profile("!monolith")
 public class RabbitMQConfig {
 
     public static final String NOTIFICATION_EXCHANGE = "notification.exchange";

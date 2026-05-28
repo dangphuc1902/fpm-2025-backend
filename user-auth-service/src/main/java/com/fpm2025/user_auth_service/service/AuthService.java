@@ -30,7 +30,6 @@ import java.util.Map;
  * - JWT token generation & validation
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
 public class AuthService {
@@ -41,6 +40,25 @@ public class AuthService {
     private final WebClient.Builder webClientBuilder;
     private final JwtBlacklistService jwtBlacklistService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtTokenProvider jwtTokenProvider,
+            WebClient.Builder webClientBuilder,
+            JwtBlacklistService jwtBlacklistService,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) KafkaTemplate<String, Object> kafkaTemplate,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.webClientBuilder = webClientBuilder;
+        this.jwtBlacklistService = jwtBlacklistService;
+        this.kafkaTemplate = kafkaTemplate;
+        this.eventPublisher = eventPublisher;
+    }
 
     private static final String USER_CREATED_TOPIC = "user.created";
 
@@ -251,12 +269,17 @@ public class AuthService {
                             : LocalDateTime.now().toString())
                     .build();
 
-            kafkaTemplate.send(USER_CREATED_TOPIC, String.valueOf(user.getId()), event);
-            log.info("Kafka: Published UserCreatedEvent for userId={} email={}",
+            if (kafkaTemplate != null) {
+                kafkaTemplate.send(USER_CREATED_TOPIC, String.valueOf(user.getId()), event);
+                log.info("Kafka: Published UserCreatedEvent for userId={} email={}",
+                        user.getId(), user.getEmail());
+            }
+            
+            eventPublisher.publishEvent(event);
+            log.info("Local SpringEvent: Published UserCreatedEvent for userId={} email={}",
                     user.getId(), user.getEmail());
         } catch (Exception e) {
-            // Non-blocking: không để Kafka failure làm fail registration
-            log.error("Kafka: Failed to publish UserCreatedEvent for userId={}: {}",
+            log.error("Failed to publish UserCreatedEvent for userId={}: {}",
                     user.getId(), e.getMessage(), e);
         }
     }

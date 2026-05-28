@@ -19,12 +19,24 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class BudgetService {
     
     private final BudgetRepository budgetRepository;
     private final BudgetAlertRepository budgetAlertRepository;
     private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BudgetService(
+            BudgetRepository budgetRepository,
+            BudgetAlertRepository budgetAlertRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate,
+            org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.budgetRepository = budgetRepository;
+        this.budgetAlertRepository = budgetAlertRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.eventPublisher = eventPublisher;
+    }
 
     private static final String TOPIC_BUDGET_ALERTS = "budget.alerts";
     
@@ -146,7 +158,27 @@ public class BudgetService {
             .triggeredAt(LocalDateTime.now())
             .build();
             
-        kafkaTemplate.send(TOPIC_BUDGET_ALERTS, String.valueOf(budget.getUserId()), event);
+        if (kafkaTemplate != null) {
+            try {
+                kafkaTemplate.send(TOPIC_BUDGET_ALERTS, String.valueOf(budget.getUserId()), event);
+            } catch (Exception e) {
+                log.error("Kafka error publishing budget alert: ", e);
+            }
+        }
+        
+        try {
+            eventPublisher.publishEvent(java.util.Map.of(
+                "topic", "budget.alerts",
+                "userId", budget.getUserId(),
+                "budgetId", budget.getId(),
+                "categoryName", budget.getCategoryName(),
+                "thresholdPercent", thresholdPercent,
+                "amountUsed", budget.getAmountUsed(),
+                "amountLimit", budget.getAmountLimit()
+            ));
+        } catch (Exception e) {
+            log.error("SpringEvent error publishing budget alert: ", e);
+        }
         
         log.warn("Budget alert created and published: category={}, threshold={}%, used={}/{}", 
             budget.getCategoryName(), thresholdPercent, 
