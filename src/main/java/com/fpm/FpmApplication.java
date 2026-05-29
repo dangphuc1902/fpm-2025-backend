@@ -6,8 +6,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-public class FpmMonolithApplication {
+public class FpmApplication {
     public static void main(String[] args) {
-        SpringApplication.run(FpmMonolithApplication.class, args);
+        SpringApplication.run(FpmApplication.class, args);
     }
 }
