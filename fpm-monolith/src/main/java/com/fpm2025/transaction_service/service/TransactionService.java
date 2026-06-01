@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import com.fpm2025.domain.event.TransactionCreatedEvent;
-import com.fpm_2025.wallet_service.service.WalletService;
+import com.fpm2025.wallet_service.service.WalletService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -285,3 +285,4 @@ public class TransactionService {
         return null;
     }
 }
+

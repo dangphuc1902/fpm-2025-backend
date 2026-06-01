@@ -5,7 +5,7 @@ import com.fpm2025.domain.dto.response.WalletResponse;
 import com.fpm2025.domain.enums.CategoryType;
 import com.fpm2025.domain.event.ParsedNotificationEvent;
 import com.fpm2025.transaction_service.service.TransactionService;
-import com.fpm_2025.wallet_service.service.WalletService;
+import com.fpm2025.wallet_service.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.context.event.EventListener;
@@ -88,3 +88,4 @@ public class ParsedNotificationConsumer {
         }
     }
 }
+
