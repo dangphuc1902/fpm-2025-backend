@@ -2,17 +2,10 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
-COPY user-auth-service user-auth-service
-COPY ocr-service ocr-service
-COPY ai-service ai-service
-COPY notification-service notification-service
-COPY wallet-service wallet-service
-COPY reporting-service reporting-service
-COPY transaction-service transaction-service
 COPY fpm-monolith fpm-monolith
 
-# Compile and package only the monolith executable
-RUN mvn clean package -pl fpm-monolith -am -DskipTests
+# Compile and package the monolith executable
+RUN mvn clean package -pl fpm-monolith -DskipTests
 
 # Stage 2: Runtime JRE
 FROM eclipse-temurin:21-jre-jammy

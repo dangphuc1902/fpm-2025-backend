@@ -12,13 +12,6 @@
 	<name>FPM Backend Parent</name>
 
 	<modules>
-		<module>user-auth-service</module>
-		<module>ocr-service</module>
-		<module>ai-service</module>
-		<module>notification-service</module>
-		<module>wallet-service</module>
-		<module>reporting-service</module>
-		<module>transaction-service</module>
 		<module>fpm-monolith</module>
 	</modules>
 

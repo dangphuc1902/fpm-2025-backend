@@ -2,19 +2,10 @@ package com.fpm2025.monolith;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
-import org.springframework.cloud.config.client.ConfigClientAutoConfiguration;
-import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@SpringBootApplication(exclude = {
-    KafkaAutoConfiguration.class,
-    RabbitAutoConfiguration.class,
-    EurekaClientAutoConfiguration.class,
-    ConfigClientAutoConfiguration.class
-})
+@SpringBootApplication
 @ComponentScan(basePackages = {
     "com.fpm2025.user_auth_service",
     "com.fpm_2025.wallet_service",
