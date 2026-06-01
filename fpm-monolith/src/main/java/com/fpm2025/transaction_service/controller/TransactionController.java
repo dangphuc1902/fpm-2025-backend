@@ -96,4 +96,25 @@ public class TransactionController {
         transactionService.deleteTransaction(userId, id);
         return ResponseEntity.ok(BaseResponse.success(null, "Transaction deleted successfully"));
     }
+
+    @PostMapping(value = "/{id}/attachments", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload attachment to transaction")
+    public ResponseEntity<BaseResponse<com.fpm2025.transaction_service.entity.TransactionAttachmentEntity>> uploadAttachment(
+            @PathVariable Long id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @AuthenticationPrincipal Long userId) {
+        com.fpm2025.transaction_service.entity.TransactionAttachmentEntity attachment = transactionService.uploadAttachment(userId, id, file);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponse.success(attachment, "Attachment uploaded successfully"));
+    }
+
+    @DeleteMapping("/{id}/attachments/{attachId}")
+    @Operation(summary = "Delete attachment from transaction")
+    public ResponseEntity<BaseResponse<Void>> deleteAttachment(
+            @PathVariable Long id,
+            @PathVariable Long attachId,
+            @AuthenticationPrincipal Long userId) {
+        transactionService.deleteAttachment(userId, id, attachId);
+        return ResponseEntity.ok(BaseResponse.success(null, "Attachment deleted successfully"));
+    }
 }
