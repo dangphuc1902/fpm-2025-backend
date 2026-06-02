@@ -1,4 +1,5 @@
 $kind: http-request
+name: Register
 url: "{{base_url}}/auth/register"
 method: POST
 headers:
@@ -7,8 +8,10 @@ body:
   type: text
   content: |-
     {
-      "email": "test@example.com",
-      "password": "Password123!",
-      "username": "testuser"
+        email    = "nobita37na@gmail.com"
+        password = "123456"
+        username = "phucdang"
     }
+auth:
+  type: noauth
 order: 1000

@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/transactions/{{transaction_id}}"
+method: PUT
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "amount": 60000,
+      "note": "Ăn sáng (cập nhật)"
+    }
+order: 3000

@@ -11,7 +11,7 @@ import org.springframework.web.context.request.WebRequest;
  
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler extends BaseGlobalExceptionHandler {
+public class WalletGlobalExceptionHandler extends BaseGlobalExceptionHandler {
     
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<BaseResponse<Void>> handleResourceNotFoundException(

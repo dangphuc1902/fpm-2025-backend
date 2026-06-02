@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/wallets"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Ví sinh hoạt",
+      "type": "CASH",
+      "currency": "VND",
+      "initialBalance": 5000000,
+      "icon": "ic_wallet"
+    }
+order: 1000

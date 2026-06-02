@@ -1,16 +1,8 @@
-# Stage 1: Build
-FROM maven:3.9.6-eclipse-temurin-21 AS build
-WORKDIR /app
-COPY pom.xml .
-COPY fpm-monolith fpm-monolith
-
-# Compile and package the monolith executable
-RUN mvn clean package -pl fpm-monolith -DskipTests
-
-# Stage 2: Runtime JRE
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=build /app/fpm-monolith/target/fpm-monolith-1.0.0-SNAPSHOT.jar app.jar
+
+# Copy the pre-built jar from the host target directory
+COPY target/fpm-monolith-1.0.0-SNAPSHOT.jar app.jar
 
 ENV PORT=8080
 EXPOSE 8080

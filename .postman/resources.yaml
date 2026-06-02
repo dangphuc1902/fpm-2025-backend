@@ -11,3 +11,4 @@ localResources:
 cloudResources:
   collections:
     ..\postman\collections\FPM-2025 Microservices API: 28e151f2-8f3e-4520-b95b-5f0e4903dd63
+    ..\postman\collections\FPM-2025 Monolith API: 60a695df-4c0f-4a3e-a1bb-72915e2af4e9

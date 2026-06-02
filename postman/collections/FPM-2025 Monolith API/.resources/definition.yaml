@@ -1,0 +1,11 @@
+$kind: collection
+description: Toàn bộ API của hệ thống Monolith giao tiếp qua Nginx Gateway (Port 8090).
+variables:
+  base_url: http://localhost:8090/api/v1
+  token: ""
+  wallet_id: "1"
+  transaction_id: "1"
+  family_id: "1"
+  invitation_id: "1"
+  job_id: "1"
+  attachment_id: "1"

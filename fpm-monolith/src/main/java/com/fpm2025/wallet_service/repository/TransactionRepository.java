@@ -21,7 +21,7 @@ import java.util.Optional;
  * Một số method phức tạp (tổng hợp, range ngày) dùng @Query.
  * </p>
  */
-@Repository
+@Repository("walletTransactionRepository")
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Long> {
 
     // 1. Tìm kiếm theo userId
@@ -58,7 +58,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     // 6. Tính tổng amount theo user + type + khoảng thời gian
     @Query("""
             SELECT COALESCE(SUM(t.amount), 0)
-            FROM TransactionEntity t
+            FROM WalletTransactionEntity t
             WHERE t.userId = :userId
               AND t.type = :type
               AND t.transactionDate BETWEEN :startDate AND :endDate

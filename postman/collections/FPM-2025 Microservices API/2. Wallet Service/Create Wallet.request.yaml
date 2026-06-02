@@ -1,4 +1,5 @@
 $kind: http-request
+name: Create Wallet
 url: "{{base_url}}/wallets"
 method: POST
 headers:
@@ -14,4 +15,8 @@ body:
       "initialBalance": 5000000,
       "icon": "ic_wallet"
     }
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzUxMiJ9.eyJ0eXBlIjoiQUNDRVNTIiwidXNlcklkIjo4LCJlbWFpbCI6InRlc3RAZnBtLmRldiIsInN1YiI6InRlc3RAZnBtLmRldiIsImlhdCI6MTc3OTc0OTMwOSwiZXhwIjoxNzc5NzUyOTA5fQ.Bs1IGHpX_x_lQobRpfLpz2Ewb4zXco1CiHehPVgglpOl6ChygBEcKPzDAM-J5mZkfJH1XcTLscihpndTPmkndg
 order: 1000

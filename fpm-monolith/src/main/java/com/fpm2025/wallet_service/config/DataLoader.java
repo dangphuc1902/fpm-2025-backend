@@ -12,7 +12,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
-@Component
+@Component("walletDataLoader")
 public class DataLoader {
 	@org.springframework.beans.factory.annotation.Value("${seeding.users.csv:classpath:config/csv/user.csv}")
 	private Resource usersCsv;

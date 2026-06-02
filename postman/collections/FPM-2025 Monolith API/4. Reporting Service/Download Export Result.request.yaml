@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/reports/export/{{job_id}}/download"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 10000

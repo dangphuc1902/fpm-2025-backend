@@ -10,7 +10,7 @@ import com.fpm2025.domain.enums.CategoryType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
+@Entity(name = "WalletTransactionEntity")
 @Table(name = "transactions", schema = "wallet", indexes = {
     @Index(name = "idx_transactions_user_id", columnList = "user_id"),
     @Index(name = "idx_transactions_wallet_id", columnList = "wallet_id"),

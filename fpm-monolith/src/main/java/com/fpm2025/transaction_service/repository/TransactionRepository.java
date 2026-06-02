@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+@Repository("txTransactionRepository")
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Long>,
         JpaSpecificationExecutor<TransactionEntity> {
 
@@ -34,7 +34,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
 
     // Dynamic filter query — supports optional params (null = no filter)
     @Query("""
-        SELECT t FROM TransactionEntity t
+        SELECT t FROM TxTransactionEntity t
         WHERE t.userId = :userId
           AND (:walletId IS NULL OR t.walletId = :walletId)
           AND (:categoryId IS NULL OR t.categoryId = :categoryId)
@@ -54,7 +54,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
 
     // For gRPC: date range by walletIds
     @Query("""
-        SELECT t FROM TransactionEntity t
+        SELECT t FROM TxTransactionEntity t
         WHERE t.userId = :userId
           AND t.transactionDate BETWEEN :startDate AND :endDate
           AND (:#{#walletIds == null || #walletIds.isEmpty()} = true OR t.walletId IN :walletIds)
@@ -69,7 +69,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
     // For gRPC: total spending
     @Query("""
         SELECT COALESCE(SUM(t.amount), 0)
-        FROM TransactionEntity t
+        FROM TxTransactionEntity t
         WHERE t.userId = :userId
           AND t.type = 'EXPENSE'
           AND t.transactionDate BETWEEN :startDate AND :endDate

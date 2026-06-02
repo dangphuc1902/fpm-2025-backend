@@ -12,7 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
  
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler extends BaseGlobalExceptionHandler {
+public class UserAuthGlobalExceptionHandler extends BaseGlobalExceptionHandler {
  
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<BaseResponse<Void>> handleUserAlreadyExistsException(

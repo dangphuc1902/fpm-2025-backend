@@ -77,7 +77,11 @@ public class AiService {
         log.info("Chatting via Gemini: {}", request.getText());
         
         if (apiKey == null || apiKey.isEmpty()) {
-            return AiResponse.builder().success(false).errorMessage("Gemini API key not configured").build();
+            log.warn("Gemini API key is missing, falling back to mock reply.");
+            return AiResponse.builder()
+                    .success(true)
+                    .rawText("Chào bạn! Hiện tại hệ thống chưa cấu hình Gemini API Key, nhưng tôi vẫn có thể hỗ trợ bạn offline. Để quản lý tài chính và tiết kiệm tiền hiệu quả, bạn nên: 1. Thiết lập hạn mức chi tiêu hàng tháng. 2. Ghi chép đầy đủ mọi giao dịch. 3. Phân bổ ngân sách theo quy tắc 50/30/20.")
+                    .build();
         }
 
         try {

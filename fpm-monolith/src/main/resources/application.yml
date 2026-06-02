@@ -40,6 +40,10 @@ server:
 jwt:
   secret: ${JWT_SECRET:supersecretkeyforfpm2025mustbelongenoughotherwiseitwillthrowanexception}
 
+app:
+  jwt:
+    refreshTokenExpirationMs: 604800000
+
 monolith:
   security:
     permit-all:

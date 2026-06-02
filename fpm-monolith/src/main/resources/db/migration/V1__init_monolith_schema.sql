@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS wallet.wallets (
     name VARCHAR(100) NOT NULL,
     type VARCHAR(20) NOT NULL DEFAULT 'CASH',
     currency VARCHAR(3) NOT NULL DEFAULT 'VND',
+    currency_symbol VARCHAR(5) NOT NULL DEFAULT '₫',
     balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     icon VARCHAR(50),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -268,10 +269,12 @@ CREATE TABLE IF NOT EXISTS reporting.export_jobs (
 CREATE TABLE IF NOT EXISTS reporting.reports (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    data_json TEXT,
+    report_type VARCHAR(50) NOT NULL,
+    period VARCHAR(7) NOT NULL,
+    file_name VARCHAR(255),
+    file_url VARCHAR(500),
+    file_size BIGINT,
+    status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

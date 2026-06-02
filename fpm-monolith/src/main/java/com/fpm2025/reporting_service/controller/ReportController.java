@@ -1,7 +1,6 @@
 package com.fpm2025.reporting_service.controller;
 
 import com.fpm2025.reporting_service.dto.response.BaseResponse;
-import com.fpm2025.reporting_service.security.UserPrincipal;
 import com.fpm2025.reporting_service.domain.valueobject.ExportFormat;
 import com.fpm2025.reporting_service.dto.request.ReportRequest;
 import com.fpm2025.reporting_service.dto.response.ReportResponse;
@@ -32,13 +31,13 @@ public class ReportController {
     @GetMapping("/monthly")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<ReportResponse> getMonthlyReport(
-            @AuthenticationPrincipal UserPrincipal user,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
+            @AuthenticationPrincipal Long userId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate month) {
         
-        log.info("Getting monthly report for user: {}, month: {}", user.getId(), month);
+        log.info("Getting monthly report for user: {}, month: {}", userId, month);
         
         ReportRequest request = ReportRequest.builder()
-                .userId(user.getId())
+                .userId(userId)
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
                 .format(ExportFormat.PDF)
@@ -52,13 +51,13 @@ public class ReportController {
     @GetMapping("/export/pdf")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> exportPdf(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
         
-        log.info("Exporting PDF report for user: {}, month: {}", user.getId(), month);
+        log.info("Exporting PDF report for user: {}, month: {}", userId, month);
         
         ReportRequest request = ReportRequest.builder()
-                .userId(user.getId())
+                .userId(userId)
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
                 .format(ExportFormat.PDF)
@@ -70,7 +69,7 @@ public class ReportController {
         ByteArrayResource resource = new ByteArrayResource(pdfData);
         
         String filename = String.format("report_%s_%s.pdf", 
-                user.getId(), 
+                userId, 
                 month.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")));
         
         return ResponseEntity.ok()
@@ -82,13 +81,13 @@ public class ReportController {
     @GetMapping("/export/excel")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> exportExcel(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") LocalDate month) {
         
-        log.info("Exporting Excel report for user: {}, month: {}", user.getId(), month);
+        log.info("Exporting Excel report for user: {}, month: {}", userId, month);
         
         ReportRequest request = ReportRequest.builder()
-                .userId(user.getId())
+                .userId(userId)
                 .startDate(month.withDayOfMonth(1))
                 .endDate(month.withDayOfMonth(month.lengthOfMonth()))
                 .format(ExportFormat.EXCEL)
@@ -100,7 +99,7 @@ public class ReportController {
         ByteArrayResource resource = new ByteArrayResource(excelData);
         
         String filename = String.format("report_%s_%s.xlsx", 
-                user.getId(), 
+                userId, 
                 month.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")));
         
         return ResponseEntity.ok()
@@ -116,7 +115,7 @@ public class ReportController {
     @GetMapping("/spending-by-category")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<?> getSpendingByCategory(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(required = false) String yearMonth,
             @RequestParam(required = false, defaultValue = "EXPENSE") String type) {
 
@@ -124,9 +123,9 @@ public class ReportController {
                 ? yearMonth
                 : java.time.YearMonth.now().toString();
 
-        log.info("spending-by-category: userId={}, month={}, type={}", user.getId(), month, type);
+        log.info("spending-by-category: userId={}, month={}, type={}", userId, month, type);
 
-        var chartData = reportingService.getSpendingByCategory(user.getId(), month, type);
+        var chartData = reportingService.getSpendingByCategory(userId, month, type);
         return BaseResponse.success(chartData);
     }
 
@@ -137,12 +136,12 @@ public class ReportController {
     @GetMapping("/trends")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<?> getTrends(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(required = false, defaultValue = "6") int months) {
 
-        log.info("trends: userId={}, months={}", user.getId(), months);
+        log.info("trends: userId={}, months={}", userId, months);
 
-        var trendData = reportingService.getMonthlyTrends(user.getId(), months);
+        var trendData = reportingService.getMonthlyTrends(userId, months);
         return BaseResponse.success(trendData);
     }
 
@@ -153,48 +152,48 @@ public class ReportController {
     @GetMapping("/budget-comparison")
     @PreAuthorize("isAuthenticated()")
     public BaseResponse<?> getBudgetComparison(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(required = false) String yearMonth) {
 
         String month = (yearMonth != null && !yearMonth.isBlank())
                 ? yearMonth
                 : java.time.YearMonth.now().toString();
 
-        log.info("budget-comparison: userId={}, month={}", user.getId(), month);
+        log.info("budget-comparison: userId={}, month={}", userId, month);
  
-         var comparisonData = reportingService.getBudgetComparison(user.getId(), month);
+         var comparisonData = reportingService.getBudgetComparison(userId, month);
          return BaseResponse.success(comparisonData);
      }
  
      @PostMapping("/export")
      @PreAuthorize("isAuthenticated()")
      public BaseResponse<Long> exportAsync(
-             @AuthenticationPrincipal UserPrincipal user,
+             @AuthenticationPrincipal Long userId,
              @RequestBody ReportRequest request) {
          
-         log.info("Requesting async export for user: {}, format: {}", user.getId(), request.getFormat());
-         request.setUserId(user.getId());
+         log.info("Requesting async export for user: {}, format: {}", userId, request.getFormat());
+         request.setUserId(userId);
          
-         Long jobId = reportingService.submitExportJob(user.getId(), request);
+         Long jobId = reportingService.submitExportJob(userId, request);
          return BaseResponse.success(jobId, "Export job submitted successfully. Use its ID to check status.");
      }
  
      @GetMapping("/export/{jobId}")
      @PreAuthorize("isAuthenticated()")
      public BaseResponse<com.fpm2025.reporting_service.domain.model.ExportJob> getExportStatus(
-             @AuthenticationPrincipal UserPrincipal user,
+             @AuthenticationPrincipal Long userId,
              @PathVariable Long jobId) {
          
-         return BaseResponse.success(reportingService.getExportJobStatus(jobId, user.getId()));
+         return BaseResponse.success(reportingService.getExportJobStatus(jobId, userId));
      }
  
      @GetMapping("/export/{jobId}/download")
      @PreAuthorize("isAuthenticated()")
      public ResponseEntity<Resource> downloadExportResult(
-             @AuthenticationPrincipal UserPrincipal user,
+             @AuthenticationPrincipal Long userId,
              @PathVariable Long jobId) {
          
-         com.fpm2025.reporting_service.domain.model.ExportJob job = reportingService.getExportJobStatus(jobId, user.getId());
+         com.fpm2025.reporting_service.domain.model.ExportJob job = reportingService.getExportJobStatus(jobId, userId);
          
          if (!"DONE".equals(job.getStatus().name())) {
              return ResponseEntity.badRequest().build();
@@ -213,7 +212,7 @@ public class ReportController {
 
     @GetMapping("/insights")
     @PreAuthorize("isAuthenticated()")
-    public BaseResponse<String> getInsights(@AuthenticationPrincipal UserPrincipal user) {
+    public BaseResponse<String> getInsights(@AuthenticationPrincipal Long userId) {
         return BaseResponse.success("AI Insights upcoming!");
     }
 }

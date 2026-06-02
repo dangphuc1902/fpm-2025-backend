@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/reports/export"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "month": 3,
+      "year": 2026,
+      "format": "PDF"
+    }
+order: 8000

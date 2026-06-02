@@ -16,7 +16,6 @@ spring:
         jdbc.batch_size: 25
         order_inserts: true
         order_updates: true
-        connection.provider_disables_autocommit: true
 
   # Caching and Redis optimizations
   cache:

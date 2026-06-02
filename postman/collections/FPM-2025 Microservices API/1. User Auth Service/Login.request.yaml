@@ -8,13 +8,11 @@ body:
   type: text
   content: |-
     {
-      "email": "admin@fpm.com",
-      "password": "password"
+      "email": "test@fpm.dev",
+      "password": "Password123!"
     }
 auth:
   type: bearer
   credentials:
-    token: |-
-      "eyJhbGciOiJIUzUxMiJ9.eyJ0eXBlIjoiQUNDRVNTIiwidXNlcklkIjo4LCJlbWFpbCI6InRlc3RAZnBtLmRldiIsInN1YiI6InRlc3RAZnBtLmRldiIsImlhdCI6MTc3OTQ3MDQ5OSwiZXhwIjoxNzc5NTU2ODk5fQ.At1-GqnWkr46CslhXd7hqUpfA0MqhNhNmhIUKxtTWAUviQkPV6L79gSxbAR5DzMPnMUFueZok4uC734cb27FVA"
-          }
+    token: eyJhbGciOiJIUzUxMiJ9.eyJ0eXBlIjoiQUNDRVNTIiwidXNlcklkIjo4LCJlbWFpbCI6InRlc3RAZnBtLmRldiIsInN1YiI6InRlc3RAZnBtLmRldiIsImlhdCI6MTc3OTQ3MDQ5OSwiZXhwIjoxNzc5NTU2ODk5fQ.At1-GqnWkr46CslhXd7hqUpfA0MqhNhNmhIUKxtTWAUviQkPV6L79gSxbAR5DzMPnMUFueZok4uC734cb27FVA
 order: 2000

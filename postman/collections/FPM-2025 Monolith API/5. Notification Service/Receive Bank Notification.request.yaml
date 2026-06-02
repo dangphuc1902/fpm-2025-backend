@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/notifications/receive"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "smsContent": "GD: +50,000VND vao tai khoan...",
+      "sender": "Vietcombank"
+    }
+order: 1000

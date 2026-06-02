@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/transactions?walletId={{wallet_id}}&page=0&size=10"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  walletId: "{{wallet_id}}"
+  page: "0"
+  size: "10"
+order: 2000

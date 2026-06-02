@@ -5,7 +5,6 @@ import com.fpm2025.reporting_service.dto.BudgetSummaryDTO;
 import com.fpm2025.reporting_service.domain.model.Budget;
 import com.fpm2025.reporting_service.domain.valueobject.BudgetPeriod;
 import com.fpm2025.reporting_service.dto.request.BudgetRequest;
-import com.fpm2025.reporting_service.security.UserPrincipal;
 import com.fpm2025.reporting_service.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,14 +45,14 @@ public class BudgetController {
     @PostMapping
     @Operation(summary = "Tạo ngân sách mới")
     public ResponseEntity<BudgetDTO> createBudget(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody BudgetDTO budgetDTO) {
 
         log.info("[BudgetController] Create budget: userId={}, category={}", 
-                user.getId(), budgetDTO.getCategoryName());
+                userId, budgetDTO.getCategoryName());
 
         BudgetRequest request = toRequest(budgetDTO);
-        Budget created = budgetService.createBudget(user.getId(), request);
+        Budget created = budgetService.createBudget(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(created));
     }
@@ -65,10 +64,10 @@ public class BudgetController {
     @GetMapping
     @Operation(summary = "Lấy danh sách ngân sách của tôi")
     public ResponseEntity<List<BudgetDTO>> getAllBudgets(
-            @AuthenticationPrincipal UserPrincipal user) {
+            @AuthenticationPrincipal Long userId) {
 
-        log.info("[BudgetController] List budgets: userId={}", user.getId());
-        List<Budget> budgets = budgetService.getActiveBudgets(user.getId());
+        log.info("[BudgetController] List budgets: userId={}", userId);
+        List<Budget> budgets = budgetService.getActiveBudgets(userId);
         
         return ResponseEntity.ok(budgets.stream()
                 .map(this::toDTO)
@@ -82,15 +81,15 @@ public class BudgetController {
     @GetMapping("/summary")
     @Operation(summary = "Xem tổng kết ngân sách")
     public ResponseEntity<BudgetSummaryDTO> getBudgetSummary(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(required = false) String yearMonth) {
 
         String month = (yearMonth != null && !yearMonth.isBlank()) 
                 ? yearMonth : YearMonth.now().toString();
 
-        log.info("[BudgetController] Budget summary: userId={}, month={}", user.getId(), month);
+        log.info("[BudgetController] Budget summary: userId={}, month={}", userId, month);
 
-        List<Budget> budgets = budgetService.getActiveBudgets(user.getId());
+        List<Budget> budgets = budgetService.getActiveBudgets(userId);
         List<Budget> filtered = budgets.stream()
                 .filter(b -> month.equals(b.getYearMonth()))
                 .collect(Collectors.toList());
@@ -104,9 +103,9 @@ public class BudgetController {
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết một ngân sách")
     public ResponseEntity<BudgetDTO> getBudgetById(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
-        return ResponseEntity.ok(toDTO(budgetService.getBudgetById(user.getId(), id)));
+        return ResponseEntity.ok(toDTO(budgetService.getBudgetById(userId, id)));
     }
 
     /**
@@ -115,14 +114,14 @@ public class BudgetController {
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật ngân sách")
     public ResponseEntity<BudgetDTO> updateBudget(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id,
             @Valid @RequestBody BudgetDTO budgetDTO) {
 
-        log.info("[BudgetController] Update budget: id={}, userId={}", id, user.getId());
+        log.info("[BudgetController] Update budget: id={}, userId={}", id, userId);
         
         BudgetRequest request = toRequest(budgetDTO);
-        Budget updated = budgetService.updateBudget(user.getId(), id, request);
+        Budget updated = budgetService.updateBudget(userId, id, request);
         
         return ResponseEntity.ok(toDTO(updated));
     }
@@ -133,11 +132,11 @@ public class BudgetController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa ngân sách")
     public ResponseEntity<Map<String, String>> deleteBudget(
-            @AuthenticationPrincipal UserPrincipal user,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
 
-        log.info("[BudgetController] Delete budget: id={}, userId={}", id, user.getId());
-        budgetService.deleteBudget(user.getId(), id);
+        log.info("[BudgetController] Delete budget: id={}, userId={}", id, userId);
+        budgetService.deleteBudget(userId, id);
         
         return ResponseEntity.ok(Map.of(
             "status", "success", 
