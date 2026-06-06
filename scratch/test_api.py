@@ -25,7 +25,7 @@ class ResDict(dict):
             return self["data"].get(key, default)
         return default
 
-BASE_URL = "http://localhost:8090/api/v1"
+BASE_URL = "http://localhost:8080/api/v1"
 
 def print_success(msg):
     print(f"\033[92m[SUCCESS] {msg}\033[0m")

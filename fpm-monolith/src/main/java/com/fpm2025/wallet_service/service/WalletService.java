@@ -6,6 +6,7 @@ import com.fpm2025.domain.dto.response.WalletResponse;
 import com.fpm2025.domain.enums.WalletPermissionLevel;
 import com.fpm2025.domain.enums.WalletType;
 import com.fpm2025.domain.event.TransactionCreatedEvent;
+import com.fpm2025.user_auth_service.entity.UserEntity;
 import com.fpm2025.wallet_service.client.UserAuthClient;
 import com.fpm2025.wallet_service.dto.mapper.WalletMapper;
 import com.fpm2025.wallet_service.dto.payload.request.CreateWalletRequest;
@@ -190,10 +191,16 @@ public class WalletService {
         permission.setPermissionLevel(request.getPermissionLevel());
         permissionRepository.save(permission);
 
+        UserEntity user = userAuthClient.getUserById(targetUserId);
+
         return WalletPermissionResponse.builder()
+                .id(permission.getId())
                 .walletId(walletId)
                 .userId(targetUserId)
+                .userName(user != null ? user.getUsername() : "Unknown")
+                .userEmail(user != null ? user.getEmail() : "Unknown")
                 .permissionLevel(request.getPermissionLevel())
+                .createdAt(permission.getCreatedAt())
                 .build();
     }
 
@@ -202,11 +209,18 @@ public class WalletService {
                 .orElseThrow(() -> new RuntimeException("Wallet not found or not owned by user"));
 
         return permissionRepository.findByWalletId(walletId).stream()
-                .map(p -> WalletPermissionResponse.builder()
-                        .walletId(p.getWallet().getId())
-                        .userId(p.getUserId())
-                        .permissionLevel(p.getPermissionLevel())
-                        .build())
+                .map(p -> {
+                    UserEntity user = userAuthClient.getUserById(p.getUserId());
+                    return WalletPermissionResponse.builder()
+                            .id(p.getId())
+                            .walletId(p.getWallet().getId())
+                            .userId(p.getUserId())
+                            .userName(user != null ? user.getUsername() : "Unknown")
+                            .userEmail(user != null ? user.getEmail() : "Unknown")
+                            .permissionLevel(p.getPermissionLevel())
+                            .createdAt(p.getCreatedAt())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

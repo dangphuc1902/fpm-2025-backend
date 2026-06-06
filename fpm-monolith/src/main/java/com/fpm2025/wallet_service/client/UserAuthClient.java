@@ -27,5 +27,19 @@ public class UserAuthClient {
             return null;
         }
     }
+
+    /**
+     * Lấy UserEntity thông qua userId.
+     */
+    public UserEntity getUserById(Long userId) {
+        if (userId == null) return null;
+        log.info("[UserAuthClient] Resolving UserEntity directly from UserRepository for id: {}", userId);
+        try {
+            return userRepository.findById(userId.intValue()).orElse(null);
+        } catch (Exception e) {
+            log.error("[UserAuthClient] Error querying UserRepository for id {}: {}", userId, e.getMessage());
+            return null;
+        }
+    }
 }
 
