@@ -148,6 +148,7 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<!--
 	<repositories>
 		<repository>
 			<id>github</id>
@@ -157,6 +158,7 @@
 			</snapshots>
 		</repository>
 	</repositories>
+	-->
 
 	<build>
 		<pluginManagement>

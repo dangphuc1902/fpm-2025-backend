@@ -68,7 +68,8 @@
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
+            <artifactId>flyway-mysql</artifactId>
+            <version>10.11.0</version>
         </dependency>
 
         <!-- OpenAPI / Swagger -->
@@ -168,11 +169,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!--
         <dependency>
             <groupId>com.fpm2025</groupId>
             <artifactId>shared-utils</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        -->
 
         <!-- Lombok Developer Tool -->
         <dependency>

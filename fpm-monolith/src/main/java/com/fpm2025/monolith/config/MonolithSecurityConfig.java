@@ -18,6 +18,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.fpm2025.user_auth_service.service.JwtBlacklistService;
+import com.fpm2025.security.jwt.JwtTokenProvider;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +37,8 @@ import java.util.Arrays;
 public class MonolithSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtBlacklistService jwtBlacklistService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -53,6 +58,7 @@ public class MonolithSecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new MonolithJwtBlacklistFilter(jwtBlacklistService, jwtTokenProvider), JwtAuthenticationFilter.class)
             .addFilterAfter(new MonolithHeaderBridgeFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -157,6 +163,31 @@ public class MonolithSecurityConfig {
             } catch (Exception ignored) {}
             
             return principal.toString();
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class MonolithJwtBlacklistFilter extends OncePerRequestFilter {
+        private final JwtBlacklistService jwtBlacklistService;
+        private final JwtTokenProvider jwtTokenProvider;
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            
+            String authHeader = request.getHeader("Authorization");
+            String token = jwtTokenProvider.extractTokenFromHeader(authHeader);
+
+            if (token != null && jwtBlacklistService.isTokenBlacklisted(token)) {
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Token is blacklisted\"}");
+                return;
+            }
+
+            filterChain.doFilter(request, response);
         }
     }
 }

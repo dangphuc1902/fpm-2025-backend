@@ -2,6 +2,7 @@ package com.fpm2025.user_auth_service.controller;
 
 import com.fpm2025.user_auth_service.payload.request.UserLoginRequest;
 import com.fpm2025.user_auth_service.payload.request.UserRegisterRequest;
+import com.fpm2025.user_auth_service.payload.request.RefreshTokenRequest;
 import com.fpm2025.domain.common.BaseResponse;
 import com.fpm2025.user_auth_service.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -117,7 +118,19 @@ public class AuthController {
         return ResponseEntity.ok(
             BaseResponse.success(null, "Logout successful")
         );
-    }
+     }
+
+     @PostMapping("/refresh")
+     @Operation(summary = "Refresh JWT token")
+     public ResponseEntity<BaseResponse<Map<String, Object>>> refreshToken(
+             @Valid @RequestBody RefreshTokenRequest request) {
+         
+         Map<String, Object> response = authService.refreshToken(request);
+         
+         return ResponseEntity.ok(
+             BaseResponse.success(response, "Token refresh successful")
+         );
+     }
 
     @GetMapping("/health")
     @Operation(summary = "Health check endpoint")

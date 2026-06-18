@@ -9,6 +9,8 @@ import com.fpm2025.security.jwt.JwtTokenProvider;
 import com.fpm2025.user_auth_service.exception.UserAlreadyExistsException;
 import com.fpm2025.user_auth_service.exception.UserEmailNotExistException;
 import com.fpm2025.user_auth_service.exception.InvalidPasswordException;
+import com.fpm2025.user_auth_service.payload.request.RefreshTokenRequest;
+import com.fpm2025.user_auth_service.entity.RefreshToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +41,7 @@ public class AuthService {
     private final WebClient.Builder webClientBuilder;
     private final JwtBlacklistService jwtBlacklistService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final RefreshTokenService refreshTokenService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public AuthService(
@@ -47,13 +50,15 @@ public class AuthService {
             JwtTokenProvider jwtTokenProvider,
             WebClient.Builder webClientBuilder,
             JwtBlacklistService jwtBlacklistService,
-            org.springframework.context.ApplicationEventPublisher eventPublisher) {
+            org.springframework.context.ApplicationEventPublisher eventPublisher,
+            RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.webClientBuilder = webClientBuilder;
         this.jwtBlacklistService = jwtBlacklistService;
         this.eventPublisher = eventPublisher;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -237,7 +242,12 @@ public class AuthService {
         userInfo.put("username", user.getUsername());
         userInfo.put("googleId", user.getGoogleId());
 
+        // Delete any existing refresh tokens and create a new one
+        refreshTokenService.deleteByUserId(user.getId());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
         response.put("token", token);
+        response.put("refreshToken", refreshToken.getToken());
         response.put("user", userInfo);
         response.put("expiresIn", jwtTokenProvider.getExpiration());
 
@@ -265,5 +275,40 @@ public class AuthService {
             log.error("Failed to publish UserCreatedEvent for userId={}: {}",
                     user.getId(), e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public Map<String, Object> refreshToken(RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+        if (requestRefreshToken == null || requestRefreshToken.isBlank()) {
+            throw new RuntimeException("Refresh token is missing or empty");
+        }
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), null);
+                    
+                    // Rotate refresh token
+                    refreshTokenService.deleteByUserId(user.getId());
+                    RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("token", accessToken);
+                    response.put("refreshToken", newRefreshToken.getToken());
+                    response.put("expiresIn", jwtTokenProvider.getExpiration());
+                    
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("id", user.getId());
+                    userInfo.put("email", user.getEmail());
+                    userInfo.put("username", user.getUsername());
+                    userInfo.put("googleId", user.getGoogleId());
+                    response.put("user", userInfo);
+                    
+                    log.info("Token refreshed successfully for user ID: {}", user.getId());
+                    return response;
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database"));
     }
 }

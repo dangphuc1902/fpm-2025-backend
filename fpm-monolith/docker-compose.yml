@@ -21,34 +21,36 @@ services:
       - "8080"
     environment:
       SPRING_PROFILES_ACTIVE: monolith,prod
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: fpm_db
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: auth
       DB_USER: ${DB_USER:-dev}
       DB_PASS: ${DB_PASS:-secret}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyforfpm2025mustbelongenoughotherwiseitwillthrowanexception}
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: always
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: fpm-monolith-postgres
+  mysql:
+    image: mysql:8.0
+    container_name: fpm-monolith-mysql
     ports:
-      - "5433:5432"
+      - "3306:3306"
     environment:
-      POSTGRES_DB: fpm_db
-      POSTGRES_USER: ${DB_USER:-dev}
-      POSTGRES_PASSWORD: ${DB_PASS:-secret}
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ${DB_USER:-dev}
+      MYSQL_PASSWORD: ${DB_PASS:-secret}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -69,5 +71,5 @@ services:
     restart: always
 
 volumes:
-  postgres_data:
+  mysql_data:
   redis_data:

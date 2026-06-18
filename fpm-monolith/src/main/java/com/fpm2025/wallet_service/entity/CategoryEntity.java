@@ -72,8 +72,4 @@ public class CategoryEntity {
     @Builder.Default
     private List<CategoryEntity> children = new ArrayList<>();
 
-    // Relationship with transactions
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<TransactionEntity> transactions = new ArrayList<>();
 }
