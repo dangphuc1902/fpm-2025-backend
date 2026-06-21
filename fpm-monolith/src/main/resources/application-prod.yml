@@ -16,6 +16,7 @@ spring:
         jdbc.batch_size: 25
         order_inserts: true
         order_updates: true
+        globally_quoted_identifiers: true
 
   # Caching and Redis optimizations
   cache:

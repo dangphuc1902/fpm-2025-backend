@@ -21,10 +21,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "monthly_summaries", schema = "reporting", indexes = {
     @Index(name = "idx_monthly_user_id", columnList = "user_id"),
-    @Index(name = "idx_monthly_year_month", columnList = "year_month")
+    @Index(name = "idx_monthly_year_month", columnList = "summary_month")
 },
 uniqueConstraints = {
-    @UniqueConstraint(name = "uk_monthly_user_month", columnNames = {"user_id", "year_month"})
+    @UniqueConstraint(name = "uk_monthly_user_month", columnNames = {"user_id", "summary_month"})
 })
 @Data
 @Builder
@@ -39,7 +39,7 @@ public class MonthlySummary {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(name = "year_month", nullable = false, length = 7)
+    @Column(name = "summary_month", nullable = false, length = 7)
     private String yearMonth;
     
     @Builder.Default

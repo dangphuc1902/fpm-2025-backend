@@ -4,7 +4,7 @@ spring:
   profiles:
     active: monolith
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:auth}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:auth}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USER:dev}
     password: ${DB_PASS:secret}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -21,6 +21,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        globally_quoted_identifiers: true
   flyway:
     enabled: true
     locations: classpath:db/migration

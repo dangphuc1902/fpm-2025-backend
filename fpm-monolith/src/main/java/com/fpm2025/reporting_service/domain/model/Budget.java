@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "budgets", schema = "reporting", indexes = {
-    @Index(name = "idx_budgets_user_month", columnList = "user_id, year_month"),
+    @Index(name = "idx_budgets_user_month", columnList = "user_id, summary_month"),
     @Index(name = "idx_budgets_category", columnList = "category_id")
 },
 uniqueConstraints = {
-    @UniqueConstraint(name = "uk_budget_user_cat_month", columnNames = {"user_id", "category_id", "year_month"})
+    @UniqueConstraint(name = "uk_budget_user_cat_month", columnNames = {"user_id", "category_id", "summary_month"})
 })
 @Data
 @Builder
@@ -49,7 +49,7 @@ public class Budget {
     @Column(name = "period", nullable = false, length = 20)
     private BudgetPeriod period = BudgetPeriod.MONTHLY;
     
-    @Column(name = "year_month", nullable = false, length = 7)
+    @Column(name = "summary_month", nullable = false, length = 7)
     private String yearMonth;
     
     @Builder.Default

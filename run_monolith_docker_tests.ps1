@@ -36,7 +36,7 @@ Write-Host "Docker Compose services launched successfully." -ForegroundColor Gre
 
 # 4. Wait for the monolith to become healthy
 Write-Host "[4/5] Waiting for backend-monolith to start and report health UP..." -ForegroundColor Yellow
-$healthUrl = "http://localhost:8090/actuator/health"
+$healthUrl = "http://localhost:8080/actuator/health"
 $maxRetries = 30
 $retryIntervalSec = 3
 $isHealthy = $false

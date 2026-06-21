@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS reporting.transaction_summaries (
 CREATE TABLE IF NOT EXISTS reporting.monthly_summaries (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    year_month VARCHAR(7) NOT NULL,
+    summary_month VARCHAR(7) NOT NULL,
     total_income DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     total_expense DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     net_income DECIMAL(15,2) NOT NULL DEFAULT 0.00,
@@ -199,13 +199,13 @@ CREATE TABLE IF NOT EXISTS reporting.monthly_summaries (
     top_expense_category VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_monthly_user_month UNIQUE (user_id, year_month)
+    CONSTRAINT uk_monthly_user_month UNIQUE (user_id, summary_month)
 );
 
 CREATE TABLE IF NOT EXISTS reporting.category_summaries (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    year_month VARCHAR(7) NOT NULL,
+    summary_month VARCHAR(7) NOT NULL,
     category_id BIGINT NOT NULL,
     category_name VARCHAR(100) NOT NULL,
     type VARCHAR(20) NOT NULL,
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS reporting.category_summaries (
     percentage DECIMAL(5,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_cat_summary UNIQUE (user_id, year_month, category_id)
+    CONSTRAINT uk_cat_summary UNIQUE (user_id, summary_month, category_id)
 );
 
 CREATE TABLE IF NOT EXISTS reporting.budgets (
@@ -225,11 +225,11 @@ CREATE TABLE IF NOT EXISTS reporting.budgets (
     amount_limit DECIMAL(15,2) NOT NULL,
     amount_used DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     period VARCHAR(20) NOT NULL DEFAULT 'MONTHLY',
-    year_month VARCHAR(7) NOT NULL,
+    summary_month VARCHAR(7) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_budget_user_cat_month UNIQUE (user_id, category_id, year_month)
+    CONSTRAINT uk_budget_user_cat_month UNIQUE (user_id, category_id, summary_month)
 );
 
 CREATE TABLE IF NOT EXISTS reporting.budget_alerts (

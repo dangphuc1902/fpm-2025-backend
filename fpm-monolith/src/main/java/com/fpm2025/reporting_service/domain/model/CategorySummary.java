@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "category_summaries", schema = "reporting", indexes = {
-    @Index(name = "idx_cat_summary_user_month", columnList = "user_id, year_month")
+    @Index(name = "idx_cat_summary_user_month", columnList = "user_id, summary_month")
 },
 uniqueConstraints = {
-    @UniqueConstraint(name = "uk_cat_summary", columnNames = {"user_id", "year_month", "category_id"})
+    @UniqueConstraint(name = "uk_cat_summary", columnNames = {"user_id", "summary_month", "category_id"})
 })
 @Data
 @Builder
@@ -29,7 +29,7 @@ public class CategorySummary {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(name = "year_month", nullable = false, length = 7)
+    @Column(name = "summary_month", nullable = false, length = 7)
     private String yearMonth;
     
     @Column(name = "category_id", nullable = false)
