@@ -1,6 +1,6 @@
 # 30 Câu Hỏi Phỏng Vấn Chắc Chắn Sẽ Bị Hỏi (Thiết kế dựa trên FPM / Distributed Systems / C++ Game Backend)
 
-Tài liệu này tổng hợp **30 câu hỏi phỏng vấn chuyên sâu** dựa trên cấu trúc CV của bạn và toàn bộ kiến trúc thực tế của hệ thống **FPM (Financial Portfolio Manager)** cùng với các kỹ thuật thiết kế **C++ Game Backend**. Các câu trả lời được biên soạn chi tiết, mạch lạc, sử dụng các thuật ngữ kỹ thuật chuẩn xác và tham chiếu trực tiếp đến các file code, cấu hình có sẵn trong dự án của bạn để giúp bạn đạt phong độ tốt nhất khi đối thoại với Nhà tuyển dụng.
+Tài liệu này tổng hợp **30 câu hỏi phỏng vấn chuyên sâu** dựa trên cấu trúc CV của bạn và toàn bộ kiến trúc thực tế của hệ thống **FPM (Financial Personal Manager)** cùng với các kỹ thuật thiết kế **C++ Game Backend**. Các câu trả lời được biên soạn chi tiết, mạch lạc, sử dụng các thuật ngữ kỹ thuật chuẩn xác và tham chiếu trực tiếp đến các file code, cấu hình có sẵn trong dự án của bạn để giúp bạn đạt phong độ tốt nhất khi đối thoại với Nhà tuyển dụng.
 
 ---
 

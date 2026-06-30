@@ -22,7 +22,7 @@
 
 ## 1. Business Objectives
 
-**FPM** (Financial Portfolio Manager) là một ứng dụng **quản lý tài chính cá nhân** nhắm đến người dùng cá nhân muốn theo dõi, phân tích và tối ưu hóa tài chính của mình theo thời gian thực.
+**FPM** (Financial Personal Manager) là một ứng dụng **quản lý tài chính cá nhân** nhắm đến người dùng cá nhân muốn theo dõi, phân tích và tối ưu hóa tài chính của mình theo thời gian thực.
 
 ### 1.1 Core Problem Statement
 
