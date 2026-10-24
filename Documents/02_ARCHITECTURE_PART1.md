@@ -1,7 +1,8 @@
 # 02 — Architecture Deep Dive (Part 1: Edge & Domain Layer)
 
-> **Document version:** 2.0 — Enhanced with technical term definitions  
-> **Last updated:** 2026-05-15
+> **Document version:** 2.1 — Added API Contract Examples
+> **Last updated:** 2026-05-16  
+> **Prerequisite:** Read `01_HIGH_LEVEL_ARCHITECTURE.md` first
 
 ---
 

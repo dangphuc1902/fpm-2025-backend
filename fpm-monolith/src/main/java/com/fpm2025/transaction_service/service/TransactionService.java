@@ -49,6 +49,11 @@ public class TransactionService {
     public TransactionResponse createTransaction(Long userId, TransactionRequest request) {
         log.info("Creating transaction for user {} in wallet {}", userId, request.getWalletId());
 
+        if (!walletService.validateWalletAccess(request.getWalletId(), userId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Bạn không có quyền ghi giao dịch vào ví " + request.getWalletId());
+        }
+
         try {
             boolean isAddition = request.getType() != CategoryType.EXPENSE;
             walletService.updateBalance(request.getWalletId(), userId, request.getAmount(), isAddition);
@@ -225,20 +230,14 @@ public class TransactionService {
     }
 
     private void revertWalletBalance(TransactionEntity entity) {
-        try {
-            walletService.updateBalance(entity.getWalletId(), entity.getUserId(), entity.getAmount(), entity.getType() == CategoryType.EXPENSE);
-        } catch (Exception e) {
-            log.error("Direct call: Failed to revert wallet balance", e);
-        }
+        // Không try/catch: nếu revert lỗi thì để @Transactional rollback, tránh lệch số dư âm thầm
+        walletService.updateBalance(entity.getWalletId(), entity.getUserId(), entity.getAmount(), entity.getType() == CategoryType.EXPENSE);
     }
 
     private void applyWalletBalance(Long walletId, java.math.BigDecimal amount,
                                      CategoryType type, String currency, String desc) {
-        try {
-            walletService.updateBalance(walletId, null, amount, type != CategoryType.EXPENSE);
-        } catch (Exception e) {
-            log.error("Direct call: Failed to apply wallet balance", e);
-        }
+        // Không try/catch: nếu lỗi thì để @Transactional rollback
+        walletService.updateBalance(walletId, null, amount, type != CategoryType.EXPENSE);
     }
 
     private void publishTransactionEvent(String topic, Long userId, TransactionEntity saved) {

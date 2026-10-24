@@ -30,14 +30,9 @@ public class TransactionEventListener {
     	logger.info("[Local/Spring] TransactionCreatedEvent: transactionId={} walletId={} amount={}",
                 event.getTransactionId(), event.getWalletId(), event.getAmount());
 
-        try {
-            // Logic cập nhật số dư ví khi có giao dịch mới
-            walletService.updateBalanceFromTransaction(event);
-
-            logger.info("[Local/Spring] Wallet updated successfully for walletId={}", event.getWalletId());
-        } catch (Exception e) {
-        	logger.error("[Local/Spring Failed] TransactionCreatedEvent: walletId={}, error={}", event.getWalletId(), e.getMessage(), e);
-        }
+        // FIX double-update: Ở monolith, TransactionService.createTransaction() đã cập nhật số dư
+        // trực tiếp trong cùng @Transactional. Nếu cập nhật thêm ở đây thì số dư bị cộng/trừ 2 lần.
+        // Listener chỉ giữ lại để log.
     }
 }
 
