@@ -24,6 +24,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class MonolithApplication {
     public static void main(String[] args) {
+        // Moi LocalDateTime trong he thong (ngay giao dich, YearMonth.now(), bao cao theo thang)
+        // tinh theo gio Viet Nam, khong phu thuoc mui gio cua server/container (mac dinh UTC).
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SpringApplication.run(MonolithApplication.class, args);
     }
 }

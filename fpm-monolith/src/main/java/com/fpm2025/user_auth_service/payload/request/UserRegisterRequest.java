@@ -16,7 +16,11 @@ public class UserRegisterRequest  {
     private String email;
 
     @NotBlank(message = "Mật khẩu là bắt buộc")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    // BR-AUTH-02: >= 8 ky tu, co chu hoa, chu so va ky tu dac biet
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$",
+            message = "Mật khẩu phải có chữ hoa, chữ số và ký tự đặc biệt")
     private String password;
 
     @NotBlank(message = "Tên người dùng là bắt buộc")
