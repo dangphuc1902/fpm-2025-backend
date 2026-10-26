@@ -33,25 +33,62 @@ public class TransactionService {
     private final WalletService walletService;
     private final ApplicationEventPublisher eventPublisher;
     private final com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository;
+    private final com.fpm2025.wallet_service.repository.CategoryRepository categoryRepository;
 
     public TransactionService(
             TransactionRepository transactionRepository,
             WalletService walletService,
             ApplicationEventPublisher eventPublisher,
-            com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository) {
+            com.fpm2025.transaction_service.repository.TransactionAttachmentRepository attachmentRepository,
+            com.fpm2025.wallet_service.repository.CategoryRepository categoryRepository) {
         this.transactionRepository = transactionRepository;
         this.walletService = walletService;
         this.eventPublisher = eventPublisher;
         this.attachmentRepository = attachmentRepository;
+        this.categoryRepository = categoryRepository;
     }
 
+    /** Uu tien categoryId; neu khong co thi tra theo ten category he thong. Khong tim thay -> null. */
+    private Long resolveCategoryId(Long categoryId, String categoryName) {
+        if (categoryId != null) return categoryId;
+        if (categoryName == null || categoryName.isBlank()) return null;
+        return categoryRepository.findFirstByNameAndUserIdIsNull(categoryName.trim())
+                .map(com.fpm2025.wallet_service.entity.CategoryEntity::getId)
+                .orElseGet(() -> {
+                    log.warn("Khong tim thay category '{}', luu giao dich khong co category", categoryName);
+                    return null;
+                });
+    }
+
+    /** Giao dich ghi tay tu app (API). */
     @Transactional
     public TransactionResponse createTransaction(Long userId, TransactionRequest request) {
-        log.info("Creating transaction for user {} in wallet {}", userId, request.getWalletId());
+        return createTransaction(userId, request, false);
+    }
+
+    /**
+     * Cach A (quyet dinh 25/10):
+     * - Ghi tay: chi vuot so tien trong hu -> tu choi 400 (BR-WALLET-02, BR-TXN-02).
+     * - Tu dong tu thong bao ngan hang: khoan da xay ra o ngan hang -> luon ghi, hu am thi gui canh bao.
+     */
+    @Transactional
+    public TransactionResponse createTransaction(Long userId, TransactionRequest request, boolean fromBankNotification) {
+        log.info("Creating transaction for user {} in wallet {} (auto={})", userId, request.getWalletId(), fromBankNotification);
 
         if (!walletService.validateWalletAccess(request.getWalletId(), userId)) {
-            throw new org.springframework.security.access.AccessDeniedException(
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
                     "Bạn không có quyền ghi giao dịch vào ví " + request.getWalletId());
+        }
+
+        if (!fromBankNotification && request.getType() == CategoryType.EXPENSE) {
+            var wallet = walletService.getWalletOrThrow(request.getWalletId());
+            if (wallet.getBalance().compareTo(request.getAmount()) < 0) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        String.format("Hũ \"%s\" không đủ tiền: còn %s, cần %s",
+                                wallet.getName(), vnd(wallet.getBalance()), vnd(request.getAmount())));
+            }
         }
 
         try {
@@ -63,10 +100,22 @@ public class TransactionService {
             throw new RuntimeException("Failed to update wallet balance: " + e.getMessage());
         }
 
+        if (fromBankNotification) {
+            var wallet = walletService.getWalletOrThrow(request.getWalletId());
+            if (wallet.getBalance().signum() < 0) {
+                // Dung khuon Map-event giong 'budget.alerts' -> NotificationListener gui push
+                eventPublisher.publishEvent(Map.of(
+                        "topic", "wallet.negative",
+                        "userId", userId,
+                        "walletName", wallet.getName(),
+                        "overAmount", vnd(wallet.getBalance().negate())));
+            }
+        }
+
         TransactionEntity entity = TransactionEntity.builder()
                 .userId(userId)
                 .walletId(request.getWalletId())
-                .categoryId(request.getCategoryId())
+                .categoryId(resolveCategoryId(request.getCategoryId(), request.getCategoryName()))
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
                 .type(request.getType())
@@ -229,6 +278,10 @@ public class TransactionService {
         attachmentRepository.deleteById(attachmentId);
     }
 
+    private static String vnd(BigDecimal value) {
+        return String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ", value);
+    }
+
     private void revertWalletBalance(TransactionEntity entity) {
         // Không try/catch: nếu revert lỗi thì để @Transactional rollback, tránh lệch số dư âm thầm
         walletService.updateBalance(entity.getWalletId(), entity.getUserId(), entity.getAmount(), entity.getType() == CategoryType.EXPENSE);
@@ -266,6 +319,9 @@ public class TransactionService {
                 .userId(entity.getUserId())
                 .walletId(entity.getWalletId())
                 .categoryId(entity.getCategoryId())
+                .categoryName(entity.getCategoryId() == null ? null :
+                        categoryRepository.findById(entity.getCategoryId())
+                                .map(com.fpm2025.wallet_service.entity.CategoryEntity::getName).orElse(null))
                 .amount(entity.getAmount())
                 .currency(entity.getCurrency())
                 .type(entity.getType())

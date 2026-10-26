@@ -66,6 +66,12 @@ public class NotificationService {
         String bankName = parser.detectBank(packageName, rawContent);
         BankNotificationParser.ParseResult result = parser.parse(bankName, rawContent);
 
+        // Khong phai bien dong so du (khuyen mai, bao tri...): khong luu noi dung, khong gui push.
+        if (!result.parsed()) {
+            log.info("Ignored non-transaction notification from bank={} (length={})", bankName, rawContent.length());
+            return BankNotificationEntity.builder().bankName(bankName).isProcessed(false).build(); // khong luu DB
+        }
+
         BankNotificationEntity entity = BankNotificationEntity.builder()
                 .userId(userId)
                 .bankName(bankName)
@@ -101,12 +107,6 @@ public class NotificationService {
             saved.setIsProcessed(true);
             saved.setProcessedAt(LocalDateTime.now());
             bankNotifRepository.save(saved);
-        } else {
-            log.warn("⚠️ Could not parse bank notification from {}: {}",
-                    bankName, rawContent.substring(0, Math.min(80, rawContent.length())));
-            sendFcm(userId, "📩 Thông báo mới từ " + bankName,
-                    "Không thể tự động nhận diện giao dịch. Bấm để xem.",
-                    "SYSTEM", Map.of());
         }
 
         return saved;

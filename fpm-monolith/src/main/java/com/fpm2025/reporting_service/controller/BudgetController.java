@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 public class BudgetController {
 
     private final BudgetService budgetService;
+    private final com.fpm2025.wallet_service.repository.CategoryRepository categoryRepository;
 
     /**
      * POST /api/v1/budgets
@@ -50,6 +51,16 @@ public class BudgetController {
 
         log.info("[BudgetController] Create budget: userId={}, category={}", 
                 userId, budgetDTO.getCategoryName());
+
+        // Client chi gui categoryName -> tra categoryId cua category he thong (giong TransactionService)
+        if (budgetDTO.getCategoryId() == null) {
+            String name = budgetDTO.getCategoryName() == null ? "" : budgetDTO.getCategoryName().trim();
+            Long catId = categoryRepository.findFirstByNameAndUserIdIsNull(name)
+                    .map(com.fpm2025.wallet_service.entity.CategoryEntity::getId)
+                    .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Không tìm thấy danh mục: " + name));
+            budgetDTO.setCategoryId(catId);
+        }
 
         BudgetRequest request = toRequest(budgetDTO);
         Budget created = budgetService.createBudget(userId, request);

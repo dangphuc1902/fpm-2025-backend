@@ -56,6 +56,9 @@ public class RefreshTokenService {
     public void deleteByUserId(Long userId) {
         UserEntity user = userRepository.findById(Math.toIntExact(userId))
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        refreshTokenRepository.deleteAll(user.getRefreshTokens());
+        // User vua tao bang builder co refreshTokens == null -> deleteAll(null) nem IllegalArgumentException
+        if (user.getRefreshTokens() != null && !user.getRefreshTokens().isEmpty()) {
+            refreshTokenRepository.deleteAll(user.getRefreshTokens());
+        }
     }
 }

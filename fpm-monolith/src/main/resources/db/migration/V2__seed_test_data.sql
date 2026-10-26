@@ -27,7 +27,7 @@ VALUES
 -- MOCK TRANSACTIONS (user1)
 -- -------------------------------------------------------
 INSERT IGNORE INTO transaction.transactions
-    (id, user_id, wallet_id, category_name, type, amount, currency, note, transaction_date)
+    (id, user_id, wallet_id, description, type, amount, currency, note, transaction_date)
 VALUES
     (1, 2, 1, 'Ăn uống',      'EXPENSE', 150000,   'VND', 'Ăn sáng + trưa',    '2026-10-01 08:00:00'),
     (2, 2, 1, 'Di chuyển',    'EXPENSE', 50000,    'VND', 'Grab đi làm',        '2026-10-02 07:30:00'),

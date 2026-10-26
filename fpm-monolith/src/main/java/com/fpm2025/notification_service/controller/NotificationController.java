@@ -67,6 +67,11 @@ public class NotificationController {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("message", "Duplicate notification, already processed"));
             }
+            if (result.getId() == null) {
+                // Khong phai bien dong so du -> bo qua, khong luu
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                        .body(Map.of("message", "Ignored: not a balance-change notification"));
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "id", result.getId(),

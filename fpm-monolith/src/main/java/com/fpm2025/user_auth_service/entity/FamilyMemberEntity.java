@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "family_members",
-    schema = "auth",
+    catalog = "auth",
     uniqueConstraints = {
         @UniqueConstraint(columnNames = {"family_id", "user_id"})
     }

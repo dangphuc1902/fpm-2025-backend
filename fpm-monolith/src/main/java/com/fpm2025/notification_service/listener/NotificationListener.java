@@ -123,6 +123,24 @@ public class NotificationListener {
     // Spring Event Listener for Budget Alert → Cảnh báo ngân sách
     // =========================================================================
 
+    /** Hu am sau giao dich tu dong tu ngan hang (cach A). */
+    @EventListener(condition = "#event instanceof T(java.util.Map) and #event.get('topic') == 'wallet.negative'")
+    @Async
+    @SuppressWarnings("unchecked")
+    public void handleWalletNegative(java.util.Map event) {
+        try {
+            Long userId = getLong((Map<String, Object>) event, "userId");
+            if (userId == null) return;
+            String walletName = (String) event.getOrDefault("walletName", "Hũ");
+            Object overAmount = event.getOrDefault("overAmount", "");
+            notificationService.sendFcm(userId, "🔴 Hũ " + walletName + " đã hết tiền",
+                    "Hũ " + walletName + " đã vượt " + overAmount + ". Cân nhắc chuyển tiền từ hũ khác.",
+                    "WALLET", Map.of());
+        } catch (Exception e) {
+            log.error("SpringEvent: Error handling wallet.negative", e);
+        }
+    }
+
     @EventListener(condition = "#event instanceof T(java.util.Map) and #event.get('topic') == 'budget.alerts'")
     @Async
     @SuppressWarnings("unchecked")

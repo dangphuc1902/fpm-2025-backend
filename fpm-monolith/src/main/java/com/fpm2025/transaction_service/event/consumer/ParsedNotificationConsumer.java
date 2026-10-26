@@ -61,7 +61,7 @@ public class ParsedNotificationConsumer {
                     .build();
 
             // 3 Gọi service tạo giao dịch
-            transactionService.createTransaction(event.getUserId(), request);
+            transactionService.createTransaction(event.getUserId(), request, true); // tu dong: luon ghi (cach A)
             log.info("[Local/Spring Processed] Auto-transaction created for userId={} walletId={}", event.getUserId(), walletId);
 
         } catch (Exception e) {

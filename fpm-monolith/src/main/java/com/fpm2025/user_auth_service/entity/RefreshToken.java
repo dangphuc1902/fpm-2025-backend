@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
-@Table(name = "refresh_tokens", schema = "auth")
+@Table(name = "refresh_tokens", catalog = "auth")
 @Data
 @Builder
 @NoArgsConstructor

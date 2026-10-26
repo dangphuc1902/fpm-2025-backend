@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "monthly_summaries", schema = "reporting", indexes = {
+@Table(name = "monthly_summaries", catalog = "reporting", indexes = {
     @Index(name = "idx_monthly_user_id", columnList = "user_id"),
     @Index(name = "idx_monthly_year_month", columnList = "summary_month")
 },

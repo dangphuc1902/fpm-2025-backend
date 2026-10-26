@@ -15,6 +15,9 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> 
 
     Optional<CategoryEntity> findByName(String name);
 
+    // Category he thong (user_id NULL); "First" de khong loi khi trung ten
+    Optional<CategoryEntity> findFirstByNameAndUserIdIsNull(String name);
+
     List<CategoryEntity> findByType(CategoryType type);
 
     List<CategoryEntity> findByParentIdIsNull();

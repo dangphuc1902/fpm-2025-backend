@@ -129,6 +129,11 @@ public class WalletService {
                 .collect(Collectors.toList());
     }
 
+    public WalletEntity getWalletOrThrow(Long walletId) {
+        return walletRepository.findById(walletId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+    }
+
     public boolean validateWalletAccess(Long walletId, Long userId) {
         WalletEntity wallet = walletRepository.findById(walletId).orElse(null);
         if (wallet == null) return false;

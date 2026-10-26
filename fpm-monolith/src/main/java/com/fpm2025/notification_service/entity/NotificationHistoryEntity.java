@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * Table: notification_history (notification_db)
  */
 @Entity
-@Table(name = "notification_history", schema = "notification")
+@Table(name = "notification_history", catalog = "notification")
 @Data
 @Builder
 @NoArgsConstructor

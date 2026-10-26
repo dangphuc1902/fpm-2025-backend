@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * Table: bank_notifications (notification_db)
  */
 @Entity
-@Table(name = "bank_notifications", schema = "notification")
+@Table(name = "bank_notifications", catalog = "notification")
 @Data
 @Builder
 @NoArgsConstructor

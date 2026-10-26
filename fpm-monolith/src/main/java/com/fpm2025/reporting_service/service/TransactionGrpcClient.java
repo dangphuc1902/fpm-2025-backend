@@ -78,7 +78,8 @@ public class TransactionGrpcClient {
                 .userId(entity.getUserId())
                 .walletId(entity.getWalletId())
                 .walletName("")
-                .categoryName("")
+                // Lay ten danh muc qua mapToResponse; khong de null vi groupingBy nem NPE voi key null
+                .categoryName(java.util.Optional.ofNullable(transactionService.mapToResponse(entity).getCategoryName()).orElse("Other"))
                 .type(entity.getType() != null ? entity.getType().name() : "")
                 .amount(entity.getAmount())
                 .note(entity.getNote())

@@ -57,6 +57,10 @@ public class MonolithSecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            // Token thieu/het han -> 401 (mac dinh Spring tra 403). Client Android chi tu refresh token khi nhan 401.
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED)))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new MonolithJwtBlacklistFilter(jwtBlacklistService, jwtTokenProvider), JwtAuthenticationFilter.class)
             .addFilterAfter(new MonolithHeaderBridgeFilter(), UsernamePasswordAuthenticationFilter.class);

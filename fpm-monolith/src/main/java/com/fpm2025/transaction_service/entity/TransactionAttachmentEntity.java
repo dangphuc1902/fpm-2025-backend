@@ -7,7 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transaction_attachments", schema = "transaction")
+@Table(name = "transaction_attachments", catalog = "transaction")
 @Getter
 @Setter
 @NoArgsConstructor

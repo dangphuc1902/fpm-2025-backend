@@ -30,7 +30,7 @@ public class BudgetDTO {
     private Long id;
 
     /** ID danh mục chi tiêu */
-    @NotNull(message = "Category ID is required")
+    // Khong bat buoc: client Android gui categoryName, controller tu tra ra categoryId
     private Long categoryId;
 
     /** Tên danh mục (hiển thị cho client) */

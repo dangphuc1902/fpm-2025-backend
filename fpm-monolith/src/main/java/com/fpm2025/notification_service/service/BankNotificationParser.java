@@ -56,6 +56,7 @@ public class BankNotificationParser {
     public String detectBank(String packageName, String rawContent) {
         if (packageName != null) {
             String pkg = packageName.toLowerCase();
+            if (pkg.contains("hdbank")) return "HDBank"; // TODO: xac nhan package Android that cua app HDBank
             if (pkg.contains("mbbank") || pkg.contains("mb.bank") || pkg.contains("com.mbmobile")) return "MBBank";
             if (pkg.contains("vietcombank") || pkg.contains("vcb") || pkg.contains("com.VCB")) return "VCB";
             if (pkg.contains("momo") || pkg.contains("com.mservice")) return "MoMo";
@@ -68,7 +69,8 @@ public class BankNotificationParser {
             if (pkg.contains("sacombank")) return "Sacombank";
         }
         if (rawContent != null) {
-            String upper = rawContent.toUpperCase();
+            String upper = normalize(rawContent).toUpperCase();
+            if (upper.contains("HDBANK")) return "HDBank";
             if (upper.contains("MBBANK") || upper.contains("MB BANK") || upper.contains("NGAN HANG QUAN DOI")) return "MBBank";
             if (upper.contains("VIETCOMBANK") || upper.contains("VCB")) return "VCB";
             if (upper.contains("MOMO") || upper.contains("VI MOMO") || upper.contains("MSERVICE")) return "MoMo";
@@ -90,16 +92,27 @@ public class BankNotificationParser {
     public ParseResult parse(String bankName, String rawContent) {
         if (rawContent == null || rawContent.isBlank()) return ParseResult.failed(bankName);
 
+        // Chuan hoa: bo dau tieng Viet ("So du" thay vi "Số dư") de cac mau khong dau ben duoi khop
+        String content = normalize(rawContent);
+
+        // Cong chan tin rac: khuyen mai, bao tri, OTP... bi loai TRUOC khi vao bat ky parser nao,
+        // ke ca cac mau du phong "so bat ky + VND" ben duoi.
+        if (!looksLikeBalanceChange(content)) {
+            log.debug("Not a balance-change notification (bank={}, length={})", bankName, content.length());
+            return ParseResult.failed(bankName);
+        }
+
         try {
             return switch (bankName) {
-                case "MBBank"      -> parseMBBank(rawContent);
-                case "VCB"         -> parseVCB(rawContent);
-                case "MoMo"        -> parseMoMo(rawContent);
-                case "Techcombank" -> parseTechcombank(rawContent);
-                case "VPBank"      -> parseVPBank(rawContent);
-                case "VietinBank"  -> parseVietinBank(rawContent);
-                case "BIDV"        -> parseBIDV(rawContent);
-                default            -> parseGeneric(bankName, rawContent);
+                case "HDBank"      -> parseHDBank(content);
+                case "MBBank"      -> parseMBBank(content);
+                case "VCB"         -> parseVCB(content);
+                case "MoMo"        -> parseMoMo(content);
+                case "Techcombank" -> parseTechcombank(content);
+                case "VPBank"      -> parseVPBank(content);
+                case "VietinBank"  -> parseVietinBank(content);
+                case "BIDV"        -> parseBIDV(content);
+                default            -> parseGeneric(bankName, content);
             };
         } catch (Exception e) {
             log.warn("Parse failed for bank={}: {}", bankName, e.getMessage());
@@ -394,128 +407,42 @@ public class BankNotificationParser {
     //    Ma GD: 121212. SD: 575,000d"
     // =========================================================================
 
+    // MoMo — tu mau thong bao that (10/2026), tieu de + noi dung da ghep va bo dau:
+    //   "Nhan tien tu <ten>\nSo tien: 250.000 d ve vi MoMo..."                          -> THU
+    //   "Chuyen tien thanh cong\nBan da chuyen thanh cong so tien 500.000 d den <ten> (Techcombank)..." -> CHI
+    //   "Thanh toan HIGHLANDS COFFEE thanh cong\n... thanh toan thanh cong cho HIGHLANDS COFFEE voi so tien 39.000d" -> CHI
+    // Bo qua o MVP: quy nhom (rut quy, chuyen bang tien quy), nap/rut giua ngan hang va vi
+    // (la chuyen giua 2 hu, se xu ly khi sua TRANSFER), giao dich that bai.
     private ParseResult parseMoMo(String content) {
+        String c = content;
+        if (Pattern.compile("\\b(?:nap thanh cong|nap tien thanh cong|rut tien thanh cong|rut tien ve)\\b",
+                Pattern.CASE_INSENSITIVE).matcher(c).find()) {
+            return ParseResult.failed("MoMo"); // TODO: chuyen giua hu khi TRANSFER duoc sua
+        }
+
         BigDecimal amount = null;
-        String type = null;
-        String account = "MoMo Wallet";
-        String balance = null;
-        String transactionRef = null;
-        String note = null;
+        Matcher m = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})+|\\d+)\\s*(?:VND|d)\\b", Pattern.CASE_INSENSITIVE).matcher(c);
+        if (m.find()) amount = parseAmount(m.group(1));
 
-        // ── EXPENSE patterns
-        // Chuyển tiền
-        Pattern sendPattern = Pattern.compile(
-                "(?:chuyen|chuyen thanh cong|chuyen tien)\\s+(?:thanh cong\\s+)?([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)\\s+(?:toi|cho|den)\\s+(.+?)(?:\\.|Ma|$)",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        // Thanh toán
-        Pattern payPattern = Pattern.compile(
-                "(?:thanh toan|thanh toan thanh cong|TT)\\s+(?:thanh cong\\s+)?([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)\\s+(?:cho|tai|toi)\\s+(.+?)(?:\\.|Ma|qua|$)",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        // Rút tiền
-        Pattern withdrawPattern = Pattern.compile(
-                "(?:rut tien|rut)\\s+(?:thanh cong\\s+)?([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)\\s+(?:ve|ra)\\s+(.+?)(?:\\.|Ma|$)",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
-        // ── INCOME patterns
-        // Nhận tiền
-        Pattern receivePattern = Pattern.compile(
-                "(?:nhan|nhan duoc|da nhan)\\s+([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)\\s+(?:tu|from)\\s+(.+?)(?:\\.|Ma|$)",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        // Nạp tiền
-        Pattern topupPattern = Pattern.compile(
-                "(?:nap tien|nap)\\s+(?:thanh cong\\s+)?([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)\\s+(?:tu|from)\\s+(.+?)(?:\\.|Ma|$)",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        // Hoàn tiền
-        Pattern refundPattern = Pattern.compile(
-                "(?:hoan tien|hoan)\\s+(?:thanh cong\\s+)?([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)",
-                Pattern.CASE_INSENSITIVE);
-
-        Matcher m;
-
-        // Try expense patterns
-        m = sendPattern.matcher(content);
-        if (m.find()) {
-            amount = parseAmount(m.group(1));
+        String type = null, note = null;
+        if (Pattern.compile("\\b(?:nhan tien tu|ve vi momo|vua nhan|da nhan|nhan duoc|hoan tien)\\b",
+                Pattern.CASE_INSENSITIVE).matcher(c).find()) {
+            type = "INCOME";
+            m = Pattern.compile("nhan tien tu\\s+([^\\n.]+)", Pattern.CASE_INSENSITIVE).matcher(c);
+            if (m.find()) note = "Nhận từ: " + m.group(1).trim();
+        } else if (Pattern.compile("\\b(?:da chuyen thanh cong|chuyen tien thanh cong)\\b",
+                Pattern.CASE_INSENSITIVE).matcher(c).find()) {
             type = "EXPENSE";
-            note = "Chuyển đến: " + m.group(2).trim();
+            m = Pattern.compile("\\bden\\s+(.+?)\\s*(?:\\(|,|\\.|$)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE).matcher(c);
+            if (m.find()) note = "Chuyển đến: " + m.group(1).trim();
+        } else if (Pattern.compile("\\bthanh toan thanh cong\\b", Pattern.CASE_INSENSITIVE).matcher(c).find()) {
+            type = "EXPENSE";
+            m = Pattern.compile("thanh toan thanh cong cho\\s+(.+?)\\s+voi so tien", Pattern.CASE_INSENSITIVE).matcher(c);
+            if (m.find()) note = m.group(1).trim(); // ten cua hang -> goi y danh muc
         }
-
-        if (amount == null) {
-            m = payPattern.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = "EXPENSE";
-                note = "Thanh toán: " + m.group(2).trim();
-            }
-        }
-
-        if (amount == null) {
-            m = withdrawPattern.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = "EXPENSE";
-                note = "Rút tiền: " + m.group(2).trim();
-            }
-        }
-
-        // Try income patterns
-        if (amount == null) {
-            m = receivePattern.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = "INCOME";
-                note = "Nhận từ: " + m.group(2).trim();
-            }
-        }
-
-        if (amount == null) {
-            m = topupPattern.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = "INCOME";
-                note = "Nạp tiền từ: " + m.group(2).trim();
-            }
-        }
-
-        if (amount == null) {
-            m = refundPattern.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = "INCOME";
-                note = "Hoàn tiền";
-            }
-        }
-
-        // Fallback: generic
-        if (amount == null) {
-            Pattern genAmt = Pattern.compile("([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)", Pattern.CASE_INSENSITIVE);
-            m = genAmt.matcher(content);
-            if (m.find()) {
-                amount = parseAmount(m.group(1));
-                type = determineType("", content);
-                note = content.length() > 100 ? content.substring(0, 100) : content;
-            }
-        }
-
-        // ── Mã giao dịch
-        Pattern refPattern = Pattern.compile(
-                "(?:Ma GD|Ma giao dich)\\s*:?\\s*([A-Za-z0-9]+)",
-                Pattern.CASE_INSENSITIVE);
-        m = refPattern.matcher(content);
-        if (m.find()) transactionRef = m.group(1);
-
-        // ── Số dư
-        Pattern balPattern = Pattern.compile(
-                "(?:So du vi|So du|SD)\\s*:?\\s*([\\d,.]+)\\s*(?:VND|VNĐ|d|đ)",
-                Pattern.CASE_INSENSITIVE);
-        m = balPattern.matcher(content);
-        if (m.find()) balance = m.group(1);
 
         boolean parsed = amount != null && type != null;
-        log.debug("MoMo parse: amount={}, type={}, ref={}, note={}, balance={}, parsed={}",
-                amount, type, transactionRef, note, balance, parsed);
-
-        return new ParseResult("MoMo", amount, type, account, balance, transactionRef, note, null, parsed);
+        return new ParseResult("MoMo", amount, type, "MoMo Wallet", null, null, note, null, parsed);
     }
 
     // =========================================================================
@@ -661,6 +588,106 @@ public class BankNotificationParser {
     //   "500000"      → 500000
     //   "1,500,000.5" → 1500000  (bỏ phần thập phân VND)
     // =========================================================================
+
+    // =========================================================================
+    // Chuan hoa + cong "chu ky bien dong so du"
+    // =========================================================================
+
+    private static final Pattern OTP_PATTERN =
+            Pattern.compile("\\b(?:otp|ma xac thuc|ma xac nhan)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ACCOUNT_PATTERN =
+            Pattern.compile("\\b(?:TK|STK|Tai khoan)\\s*:?\\s*[\\dxX*]{4,}", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BALANCE_PATTERN =
+            Pattern.compile("\\b(?:SD|So du)\\b[^\\n\\d]{0,25}\\d", Pattern.CASE_INSENSITIVE);
+    // So tien co dau +/- dung rieng (HDBank: "-2,788,146" khong kem VND)
+    private static final Pattern SIGNED_AMOUNT_PATTERN =
+            Pattern.compile("(?<![\\w.,])[+-]\\s?\\d{1,3}(?:[.,]\\d{3})+(?!\\d)|(?<![\\w.,])[+-]\\s?\\d+\\s*(?:VND|d)\\b",
+                    Pattern.CASE_INSENSITIVE);
+    private static final Pattern CURRENCY_AMOUNT_PATTERN =
+            Pattern.compile("\\d[\\d.,]*\\s*(?:VND|d)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DEBIT_CREDIT_PATTERN =
+            Pattern.compile("\\bghi\\s+(?:no|co)\\b", Pattern.CASE_INSENSITIVE);
+    // Vi dien tu (MoMo, ZaloPay) thuong khong co TK/SD -> can dong tu xac nhan giao dich da xay ra
+    private static final Pattern EWALLET_VERB_PATTERN =
+            Pattern.compile("\\b(?:vua nhan|da nhan|nhan duoc|nhan tien tu|ve vi momo|da chuyen thanh cong|chuyen tien thanh cong|thanh toan thanh cong)\\b",
+                    Pattern.CASE_INSENSITIVE);
+    // Giao dich that bai: khong bao gio ghi
+    private static final Pattern FAILED_PATTERN =
+            Pattern.compile("\\b(?:khong thanh cong|that bai|bi tu choi|da huy|khong the thuc hien)\\b",
+                    Pattern.CASE_INSENSITIVE);
+    // Quy nhom MoMo: bien dong cua quy chung, khong phai vi ca nhan (MVP bo qua)
+    private static final Pattern GROUP_FUND_PATTERN =
+            Pattern.compile("\\b(?:rut quy|bang quy|bang tien quy|quy nhom)\\b", Pattern.CASE_INSENSITIVE);
+
+    /** Bo dau tieng Viet, doi d/D, gop khoang trang (giu xuong dong). */
+    static String normalize(String raw) {
+        String s = java.text.Normalizer.normalize(raw, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('\u0111', 'd').replace('\u0110', 'D');
+        return s.replaceAll("[ \\t\\u00A0]+", " ").trim();
+    }
+
+    /**
+     * Tin bien dong so du phai co so tien VA it nhat 2 trong 3 dau hieu:
+     * so tai khoan, so du sau giao dich, chieu tien (+/- hoac ghi no/co).
+     * Tin khuyen mai ("Giam 50.000 VND cho don dau tien"), bao tri, OTP bi loai.
+     */
+    static boolean looksLikeBalanceChange(String content) {
+        if (content == null || content.isBlank()) return false;
+        if (OTP_PATTERN.matcher(content).find()) return false;
+        if (FAILED_PATTERN.matcher(content).find()) return false;
+        if (GROUP_FUND_PATTERN.matcher(content).find()) return false;
+
+        boolean signed = SIGNED_AMOUNT_PATTERN.matcher(content).find();
+        boolean currencyAmount = CURRENCY_AMOUNT_PATTERN.matcher(content).find();
+        if (!signed && !currencyAmount) return false;
+
+        int signals = 0;
+        if (ACCOUNT_PATTERN.matcher(content).find()) signals++;
+        if (BALANCE_PATTERN.matcher(content).find()) signals++;
+        if (signed || DEBIT_CREDIT_PATTERN.matcher(content).find()) signals++;
+        if (signals >= 2) return true;
+
+        return currencyAmount && EWALLET_VERB_PATTERN.matcher(content).find();
+    }
+
+    // =========================================================================
+    // HDBank — tu mau thong bao that (10/2026, so TK da che):
+    //   "15/10/2026 20:12:03 TK xxxx1234
+    //    -2,788,146
+    //    SD 0
+    //    SD KHA DUNG 0
+    //    <ten> chuyen tien"
+    // So tien co dau +/- dung rieng, KHONG kem "VND".
+    // =========================================================================
+
+    private ParseResult parseHDBank(String content) {
+        String account = null, balance = null, note = null, time = null;
+        BigDecimal amount = null;
+        String type = "EXPENSE";
+        Matcher m;
+
+        m = Pattern.compile("\\bTK\\s*:?\\s*([\\dxX*]{4,})", Pattern.CASE_INSENSITIVE).matcher(content);
+        if (m.find()) account = m.group(1);
+
+        m = Pattern.compile("(?<![\\w.,])([+-])\\s?(\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?![\\d.,])").matcher(content);
+        if (m.find()) {
+            amount = parseAmount(m.group(2));
+            type = "+".equals(m.group(1)) ? "INCOME" : "EXPENSE";
+        }
+
+        m = Pattern.compile("\\bSD\\s+(?!KHA)([\\d.,]+)", Pattern.CASE_INSENSITIVE).matcher(content);
+        if (m.find()) balance = m.group(1);
+
+        m = Pattern.compile("(\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2})").matcher(content);
+        if (m.find()) time = m.group(1);
+
+        m = Pattern.compile("SD KHA DUNG\\s+[\\d.,]+\\s*(.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(content);
+        if (m.find()) note = m.group(1).trim().split("\\R")[0].trim();
+
+        boolean parsed = amount != null && account != null;
+        return new ParseResult("HDBank", amount, type, account, balance, null, note, time, parsed);
+    }
 
     private BigDecimal parseAmount(String raw) {
         if (raw == null || raw.isBlank()) return null;

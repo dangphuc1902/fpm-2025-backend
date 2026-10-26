@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity(name = "TxTransactionEntity")
-@Table(name = "transactions", schema = "transaction")
+@Table(name = "transactions", catalog = "transaction")
 @Getter
 @Setter
 @NoArgsConstructor
