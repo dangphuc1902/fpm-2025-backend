@@ -31,3 +31,10 @@ docker-compose.override.yml
 
 # Firebase Credentials (SENSITIVE)
 firebase-service-account.json
+
+.vscode/
+.claude/
+.classpath
+scratch/
+.env
+!.env.example

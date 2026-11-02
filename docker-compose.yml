@@ -107,10 +107,10 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
@@ -129,11 +129,11 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wallet_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_REDIS_HOST: redis
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
@@ -155,12 +155,12 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/transaction_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
@@ -183,14 +183,14 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/reporting_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
@@ -211,12 +211,12 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/notification_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
@@ -239,7 +239,7 @@ services:
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       config-server:
         condition: service_healthy
@@ -256,7 +256,7 @@ services:
     environment:
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       config-server:
         condition: service_healthy
@@ -276,7 +276,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_CLOUD_CONFIG_URI: http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:admin@eureka-server:8761/eureka/
-      JWT_SECRET: your_jwt_secret_key_must_be_very_long_and_secure_at_least_32_chars
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       config-server:
         condition: service_healthy
