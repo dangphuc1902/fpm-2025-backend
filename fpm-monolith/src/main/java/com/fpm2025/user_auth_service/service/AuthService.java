@@ -281,15 +281,19 @@ public class AuthService {
     public Map<String, Object> refreshToken(RefreshTokenRequest request) {
         String requestRefreshToken = request.getRefreshToken();
         if (requestRefreshToken == null || requestRefreshToken.isBlank()) {
-            throw new RuntimeException("Refresh token is missing or empty");
+            throw new com.fpm2025.user_auth_service.exception.InvalidRefreshTokenException("Refresh token is missing or empty");
         }
 
         return refreshTokenService.findByToken(requestRefreshToken)
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUser)
                 .map(user -> {
+                    if (!refreshTokenService.consume(requestRefreshToken)) {
+                        throw new com.fpm2025.user_auth_service.exception.InvalidRefreshTokenException("Refresh token was already used");
+                    }
+
                     String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), null);
-                    
+
                     // Rotate refresh token
                     refreshTokenService.deleteByUserId(user.getId());
                     RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
@@ -309,6 +313,6 @@ public class AuthService {
                     log.info("Token refreshed successfully for user ID: {}", user.getId());
                     return response;
                 })
-                .orElseThrow(() -> new RuntimeException("Refresh token is not in database"));
+                .orElseThrow(() -> new com.fpm2025.user_auth_service.exception.InvalidRefreshTokenException("Refresh token is not in database"));
     }
 }

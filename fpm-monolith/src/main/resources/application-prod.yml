@@ -25,6 +25,10 @@ spring:
       time-to-live: 3600000 # 1 hour default cache TTL
       cache-null-values: false
 
+# Khong co gia tri mac dinh: thieu JWT_SECRET thi ban prod khong khoi dong
+jwt:
+  secret: ${JWT_SECRET}
+
 # Spring Boot Actuator monitoring & health check endpoints
 management:
   endpoints:

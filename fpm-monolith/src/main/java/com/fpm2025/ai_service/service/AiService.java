@@ -133,13 +133,35 @@ public class AiService {
 
     private AiResponse fallbackNlp(AiRequest request) {
         // ... (Keep simpler regex logic here as fallback)
-        String text = request.getText().toLowerCase();
         return AiResponse.builder()
                 .success(true)
                 .intent("ADD_TRANSACTION")
-                .amount(new BigDecimal(text.replaceAll("[^0-9]", "").isEmpty() ? "0" : text.replaceAll("[^0-9]", "")))
+                .amount(parseAmount(request.getText()))
                 .category("OTHER")
                 .rawText(request.getText())
                 .build();
+    }
+
+    // Lay so lon nhat trong cau: "2 ly cafe 50k" -> 50000, "do xang 1.5tr" -> 1500000, "120.000 dong" -> 120000
+    private BigDecimal parseAmount(String rawText) {
+        String text = java.text.Normalizer.normalize(rawText.toLowerCase(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(\\d+(?:[.,]\\d+)*)\\s*(k|nghin|ngan|tr|trieu)?\\b")
+                .matcher(text);
+
+        BigDecimal max = BigDecimal.ZERO;
+        while (matcher.find()) {
+            String number = matcher.group(1);
+            BigDecimal value = number.matches("\\d{1,3}([.,]\\d{3})+")
+                    ? new BigDecimal(number.replaceAll("[.,]", ""))
+                    : new BigDecimal(number.replace(',', '.').replaceAll("\\.(?=.*\\.)", ""));
+            String unit = matcher.group(2);
+            if (unit != null) {
+                value = value.multiply(BigDecimal.valueOf(unit.startsWith("tr") ? 1_000_000 : 1_000));
+            }
+            max = max.max(value);
+        }
+        return max.setScale(0, java.math.RoundingMode.HALF_UP);
     }
 }

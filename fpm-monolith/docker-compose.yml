@@ -24,11 +24,12 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: auth
-      DB_USER: ${DB_USER:-dev}
-      DB_PASS: ${DB_PASS:-secret}
+      DB_USER: ${DB_USER:?Dat DB_USER trong file .env}
+      DB_PASS: ${DB_PASS:?Dat DB_PASS trong file .env}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET:-supersecretkeyforfpm2025mustbelongenoughotherwiseitwillthrowanexception}
+      JWT_SECRET: ${JWT_SECRET:?Dat JWT_SECRET trong file .env}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:
       mysql:
         condition: service_healthy
@@ -43,8 +44,8 @@ services:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: ${DB_USER:-dev}
-      MYSQL_PASSWORD: ${DB_PASS:-secret}
+      MYSQL_USER: ${DB_USER:?Dat DB_USER trong file .env}
+      MYSQL_PASSWORD: ${DB_PASS:?Dat DB_PASS trong file .env}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql

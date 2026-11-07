@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fpm2025.domain.common.BaseResponse;
 import com.fpm2025.user_auth_service.entity.UserEntity;
 import com.fpm2025.user_auth_service.repository.UserRepository;
 
@@ -25,7 +26,7 @@ public class UserController {
     private final UserRepository userRepository;
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> getCurrentUser(@RequestHeader("X-User-Id") String userIdStr) {
+    public ResponseEntity<BaseResponse<Map<String, Object>>> getCurrentUser(@RequestHeader("X-User-Id") String userIdStr) {
         Long userId = Long.parseLong(userIdStr);
         Optional<UserEntity> userOpt = userRepository.findById(userId.intValue());
         if (userOpt.isEmpty()) {
@@ -33,7 +34,7 @@ public class UserController {
         }
 
         UserEntity user = userOpt.get();
-        return ResponseEntity.ok(mapToResponse(user));
+        return ResponseEntity.ok(BaseResponse.success(mapToResponse(user), "Profile retrieved successfully"));
     }
 
     @GetMapping("/find-by-email")
@@ -44,7 +45,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<Map<String, Object>> updateProfile(
+    public ResponseEntity<BaseResponse<Map<String, Object>>> updateProfile(
             @RequestHeader("X-User-Id") String userIdStr,
             @RequestBody Map<String, String> request) {
 
@@ -63,7 +64,7 @@ public class UserController {
         }
 
         userRepository.save(user);
-        return ResponseEntity.ok(mapToResponse(user));
+        return ResponseEntity.ok(BaseResponse.success(mapToResponse(user), "Profile updated successfully"));
     }
 
     private Map<String, Object> mapToResponse(UserEntity user) {

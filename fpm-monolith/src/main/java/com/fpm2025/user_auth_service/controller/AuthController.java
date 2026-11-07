@@ -4,7 +4,12 @@ import com.fpm2025.user_auth_service.payload.request.UserLoginRequest;
 import com.fpm2025.user_auth_service.payload.request.UserRegisterRequest;
 import com.fpm2025.user_auth_service.payload.request.RefreshTokenRequest;
 import com.fpm2025.domain.common.BaseResponse;
+import com.fpm2025.user_auth_service.exception.InvalidPasswordException;
+import com.fpm2025.user_auth_service.exception.UserEmailNotExistException;
 import com.fpm2025.user_auth_service.service.AuthService;
+import com.fpm2025.user_auth_service.service.LoginAttemptService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,6 +44,9 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
     @PostMapping("/register")
     @Operation(summary = "Register new user")
 	public ResponseEntity<BaseResponse<Map<String, Object>>> register(
@@ -55,17 +63,32 @@ public class AuthController {
     @Operation(summary = "Login with email and password")
     @RateLimiter(name = "login", fallbackMethod = "loginFallback")
     public ResponseEntity<BaseResponse<Map<String, Object>>> login(
-            @Valid @RequestBody UserLoginRequest request) {
-        
-        Map<String, Object> response = authService.login(request);
-        
+            @Valid @RequestBody UserLoginRequest request, HttpServletRequest httpRequest) {
+
+        // nginx luon ghi de X-Real-IP bang IP thuc cua ket noi
+        String realIp = httpRequest.getHeader("X-Real-IP");
+        String ip = realIp != null ? realIp : httpRequest.getRemoteAddr();
+        if (loginAttemptService.isBlocked(ip, request.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 5 phút.");
+        }
+
+        Map<String, Object> response;
+        try {
+            response = authService.login(request);
+        } catch (InvalidPasswordException | UserEmailNotExistException e) {
+            loginAttemptService.recordFailure(ip, request.getEmail());
+            throw e;
+        }
+        loginAttemptService.reset(ip, request.getEmail());
+
         return ResponseEntity.ok(
             BaseResponse.success(response, "Login successful")
         );
     }
 
     public ResponseEntity<BaseResponse<Map<String, Object>>> loginFallback(
-            UserLoginRequest request, Throwable t) throws Throwable {
+            UserLoginRequest request, HttpServletRequest httpRequest, Throwable t) throws Throwable {
         if (t instanceof RequestNotPermitted) {
             return ResponseEntity
                     .status(HttpStatus.TOO_MANY_REQUESTS)

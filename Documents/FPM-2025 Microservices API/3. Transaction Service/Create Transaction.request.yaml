@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/transactions"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "walletId": {{wallet_id}},
+      "categoryId": 1,
+      "amount": 50000,
+      "type": "EXPENSE",
+      "note": "Ăn sáng",
+      "transactionDate": "2026-03-31T08:00:00"
+    }
+order: 1000

@@ -2,6 +2,7 @@ package com.fpm2025.user_auth_service.service;
 
 import com.fpm2025.user_auth_service.entity.RefreshToken;
 import com.fpm2025.user_auth_service.entity.UserEntity;
+import com.fpm2025.user_auth_service.exception.InvalidRefreshTokenException;
 import com.fpm2025.user_auth_service.repository.RefreshTokenRepository;
 import com.fpm2025.user_auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,21 +45,22 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiresAt().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+            throw new InvalidRefreshTokenException("Refresh token was expired. Please make a new signin request");
         }
         if(token.isRevoked()){
-            throw new RuntimeException("Refresh token was revoked. Please make a new signin request");
+            throw new InvalidRefreshTokenException("Refresh token was revoked. Please make a new signin request");
         }
         return token;
     }
 
+    /** @return false neu request khac da dung token nay truoc */
+    @Transactional
+    public boolean consume(String token) {
+        return refreshTokenRepository.consumeToken(token) > 0;
+    }
+
     @Transactional
     public void deleteByUserId(Long userId) {
-        UserEntity user = userRepository.findById(Math.toIntExact(userId))
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        // User vua tao bang builder co refreshTokens == null -> deleteAll(null) nem IllegalArgumentException
-        if (user.getRefreshTokens() != null && !user.getRefreshTokens().isEmpty()) {
-            refreshTokenRepository.deleteAll(user.getRefreshTokens());
-        }
+        refreshTokenRepository.deleteAllByUserId(userId);
     }
 }

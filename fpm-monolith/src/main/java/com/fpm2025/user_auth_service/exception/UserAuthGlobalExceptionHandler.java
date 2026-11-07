@@ -59,6 +59,47 @@ public class UserAuthGlobalExceptionHandler extends BaseGlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<BaseResponse<Void>> handleInvalidRefreshTokenException(
+            InvalidRefreshTokenException ex, WebRequest request) {
+        log.warn("Invalid refresh token: {}", ex.getMessage());
+
+        BaseResponse<Void> errorResponse = BaseResponse.error(
+            HttpStatus.UNAUTHORIZED.value(),
+            "Unauthorized",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=", "")
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<BaseResponse<Void>> handleNoResourceFoundException(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex, WebRequest request) {
+        BaseResponse<Void> errorResponse = BaseResponse.error(
+            HttpStatus.NOT_FOUND.value(),
+            "Not Found",
+            "Resource not found",
+            request.getDescription(false).replace("uri=", "")
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<BaseResponse<Void>> handleMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex, WebRequest request) {
+        BaseResponse<Void> errorResponse = BaseResponse.error(
+            HttpStatus.PAYLOAD_TOO_LARGE.value(),
+            "Payload Too Large",
+            "Tệp tải lên vượt quá 10MB",
+            request.getDescription(false).replace("uri=", "")
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<BaseResponse<Void>> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex, WebRequest request) {

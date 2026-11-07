@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/wallets/{{wallet_id}}/share"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "userId": 2,
+      "permissionLevel": "VIEWER"
+    }
+order: 3000

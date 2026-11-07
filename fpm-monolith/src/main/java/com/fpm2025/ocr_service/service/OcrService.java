@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -91,11 +92,23 @@ public class OcrService {
     }
 
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
-        File convFile = File.createTempFile("ocr_", "_" + System.currentTimeMillis());
+        byte[] content = file.getBytes();
+        // Tess4J chon bo doc anh theo duoi file, thieu duoi se bao "Unsupported image format"
+        File convFile = File.createTempFile("ocr_", imageSuffix(content));
         try (FileOutputStream fos = new FileOutputStream(convFile)) {
-            fos.write(file.getBytes());
+            fos.write(content);
         }
         return convFile;
+    }
+
+    static String imageSuffix(byte[] content) {
+        if (content.length >= 2 && (content[0] & 0xFF) == 0xFF && (content[1] & 0xFF) == 0xD8) {
+            return ".jpg";
+        }
+        if (content.length >= 4 && (content[0] & 0xFF) == 0x89 && content[1] == 'P' && content[2] == 'N' && content[3] == 'G') {
+            return ".png";
+        }
+        return ".tmp";
     }
 
     private OcrResponse parseOcrResult(String rawText) {
@@ -113,21 +126,27 @@ public class OcrService {
     
     private BigDecimal extractAmount(String text) {
         // Regex optimized for common Vietnamese receipt formats
-        // Matches "TONG CONG", "THANH TOAN", "VALUE", etc. followed by numbers
-        Pattern pattern = Pattern.compile("(TỔNG CỘNG|TOTAL|THANH TOÁN|VALUE|CỘNG)\\s*[:\\-]?\\s*([\\d,\\.\\s]+)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(text);
-        
+        // OCR hay mat dau tieng Viet nen bo dau truoc khi so tu khoa; so tien chi lay tren cung mot dong
+        String plainText = Normalizer.normalize(text, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .replace('đ', 'd')
+            .replace('Đ', 'D');
+        Pattern pattern = Pattern.compile("\\b(TONG(?: CONG| TIEN| THANH TOAN)?|TOTAL|THANH TOAN|VALUE|CONG)\\b[^\\d\\r\\n]{0,20}?(\\d[\\d,\\. ]*)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(plainText);
+
         BigDecimal maxAmount = BigDecimal.ZERO;
+        BigDecimal amountToPay = null; // "Thanh toan" la so tien sau giam gia, uu tien hon "Tong cong"
         while (matcher.find()) {
-            String amountStr = matcher.group(2).replaceAll("[^0-9]", "");
+            String amountStr = matcher.group(2).trim().replaceAll("[.,]\\d{1,2}$", "").replaceAll("[^0-9]", "");
             if (!amountStr.isEmpty()) {
                 try {
                     BigDecimal val = new BigDecimal(amountStr);
                     if (val.compareTo(maxAmount) > 0) maxAmount = val;
+                    if (matcher.group(1).toUpperCase().contains("THANH TOAN")) amountToPay = val;
                 } catch (Exception ignored) {}
             }
         }
-        return maxAmount;
+        return amountToPay != null ? amountToPay : maxAmount;
     }
     
     private String extractMerchant(String text) {
