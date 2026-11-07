@@ -1,0 +1,7 @@
+# Profile dev: nap them du lieu test (user admin@fpm.com / user1 / user2, vi, giao dich mau).
+# KHONG bat profile nay tren production.
+spring:
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/seed-dev
